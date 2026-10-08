@@ -2,12 +2,18 @@ package com.prz.juego.lwjgl3;
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+import com.prz.juego.hilos.HiloCliente;
 import com.prz.juego.principal.Principal;
+import com.prz.juego.red.Cliente;
 
 /** Launches the desktop (LWJGL3) application. */
 public class Lwjgl3Launcher {
+
+    private static Cliente cliente;
+
     public static void main(String[] args) {
         if (StartupHelper.startNewJvmIfRequired()) return; // This handles macOS support and helps on Windows.
+        cliente = new Cliente();
         createApplication();
     }
 
