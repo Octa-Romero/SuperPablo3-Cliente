@@ -6,16 +6,26 @@ import java.util.Scanner;
 
 public class Cliente {
 
+    private Scanner s = new Scanner(System.in);
     private HiloCliente hc;
-    private Scanner s;
     private boolean fin = false;
+    private volatile boolean empiezaChat = false;
 
     public Cliente()
     {
-        hc = new HiloCliente();
-        s = new Scanner(System.in);
+        hc = new HiloCliente(this);
         hc.start();
-        do{
+        System.out.println("Esperando al otro participante...");
+        synchronized (this) {
+            while (!empiezaChat) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        do {
             System.out.println("Ingrese una opcion:");
             System.out.println("1. Ingresar un mensaje");
             System.out.println("2. Salir del programa");
@@ -28,6 +38,11 @@ public class Cliente {
                 String msj = s.nextLine();
                 hc.enviarMensaje(msj);
             }
-        }while(!fin);
+        } while (!fin);
+    }
+
+    public synchronized void empezarChat(boolean valor) {
+        this.empiezaChat = valor;
+        notify();
     }
 }
