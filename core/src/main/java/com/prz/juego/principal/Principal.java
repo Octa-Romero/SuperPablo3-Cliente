@@ -5,16 +5,20 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.prz.juego.pantallas.PantallaMenu;
 import com.prz.juego.recursos.GestorRecursos;
+import com.prz.juego.red.Cliente;
 import com.prz.juego.utilidades.Musica;
 import com.prz.juego.utilidades.Render;
 import com.prz.juego.utilidades.Sonido;
 
 public class Principal extends Game implements Navegable{
 
+    private Cliente cliente;
+
     @Override
     public void create() {
         Render.batch = new SpriteBatch();
-        this.setScreen(new PantallaMenu(this));
+        cliente = new Cliente();
+        this.setScreen(new PantallaMenu(this, cliente));
     }
 
     @Override
@@ -28,6 +32,11 @@ public class Principal extends Game implements Navegable{
         if (Render.batch != null) {
             Render.batch.dispose();
             Render.batch = null;
+        }
+
+        if(cliente != null)
+        {
+            cliente.cerrar();
         }
 
         Musica.dispose();

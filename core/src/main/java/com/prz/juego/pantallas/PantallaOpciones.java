@@ -19,6 +19,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.prz.juego.principal.Navegable;
 import com.prz.juego.recursos.Imagen;
+import com.prz.juego.red.Cliente;
 import com.prz.juego.utilidades.Config;
 import com.prz.juego.utilidades.Musica;
 import com.prz.juego.utilidades.Render;
@@ -26,6 +27,7 @@ import com.prz.juego.utilidades.Sonido;
 
 public class PantallaOpciones implements Screen {
 
+    private Cliente cliente;
     private Stage stage;
     private Imagen fondo;
     private BitmapFont fontTitulo;
@@ -48,8 +50,9 @@ public class PantallaOpciones implements Screen {
     private Texture texturaSlider;
     private Texture texturaKnob;
 
-    public PantallaOpciones(Navegable nav, Screen pantallaAnterior, boolean VENIA_DE_JUEGO) {
+    public PantallaOpciones(Navegable nav, Cliente cliente, Screen pantallaAnterior, boolean VENIA_DE_JUEGO) {
         this.nav = nav;
+        this.cliente = cliente;
         this.pantallaAnterior = pantallaAnterior;
         this.VENIA_DE_JUEGO = VENIA_DE_JUEGO;
     }
@@ -190,7 +193,7 @@ public class PantallaOpciones implements Screen {
                         pantallaJuego.restaurarPosicionCamara();
                         pantallaJuego.setPausa(true);
                     } else {
-                        nav.cambiarPantalla(new PantallaMenu(nav));
+                        nav.cambiarPantalla(new PantallaMenu(nav, cliente));
                     }
                 }
             }

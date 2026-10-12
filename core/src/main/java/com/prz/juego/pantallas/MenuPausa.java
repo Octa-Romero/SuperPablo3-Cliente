@@ -84,7 +84,7 @@ public class MenuPausa {
                 public void clicked(InputEvent event, float x, float y) {
                     Sonido.CLICK.sonar();
                     pantallaJuego.guardarPosicionCamara();
-                    nav.cambiarPantalla(new PantallaOpciones(nav, pantallaJuego, true));
+                    //nav.cambiarPantalla(new PantallaOpciones(nav, pantallaJuego, true));
                 }
             }
         );
@@ -94,7 +94,7 @@ public class MenuPausa {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     Sonido.CLICK.sonar();
-                    nav.cambiarPantalla(new PantallaMenu(nav));
+                    //nav.cambiarPantalla(new PantallaMenu(nav));
                 }
             }
         );

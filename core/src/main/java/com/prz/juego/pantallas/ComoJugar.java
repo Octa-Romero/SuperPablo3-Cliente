@@ -86,7 +86,7 @@ public class ComoJugar implements Screen {
         volver.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                nav.cambiarPantalla(new PantallaMenu(nav));
+                //nav.cambiarPantalla(new PantallaMenu(nav));
             }
         });
 

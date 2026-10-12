@@ -11,8 +11,10 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
+import com.prz.juego.hilos.HiloCliente;
 import com.prz.juego.principal.Navegable;
 import com.prz.juego.recursos.Imagen;
+import com.prz.juego.red.Cliente;
 import com.prz.juego.utilidades.Config;
 import com.prz.juego.utilidades.Musica;
 import com.prz.juego.utilidades.Render;
@@ -20,6 +22,7 @@ import com.prz.juego.utilidades.Sonido;
 
 public class PantallaMenu implements Screen {
 
+    private Cliente cliente;
     private Stage stage;
     private Imagen fondo;
     private BitmapFont fontTitulo;
@@ -27,8 +30,9 @@ public class PantallaMenu implements Screen {
     private BitmapFont fontBoton;
     private final Navegable nav;
 
-    public PantallaMenu(Navegable nav) {
+    public PantallaMenu(Navegable nav, Cliente cliente) {
         this.nav = nav;
+        this.cliente = cliente;
     }
 
     @Override
@@ -92,8 +96,9 @@ public class PantallaMenu implements Screen {
             new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
+                    cliente.conectar();
                     Sonido.CLICK.sonar();
-                    nav.cambiarPantalla(new SeleccionPersonaje(nav));
+                    nav.cambiarPantalla(new SeleccionPersonaje(nav, cliente));
                 }
             }
         );
@@ -103,7 +108,7 @@ public class PantallaMenu implements Screen {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     Sonido.CLICK.sonar();
-                    nav.cambiarPantalla(new PantallaOpciones(nav, PantallaMenu.this, false));
+                    nav.cambiarPantalla(new PantallaOpciones(nav, cliente, PantallaMenu.this, false));
                 }
             }
         );

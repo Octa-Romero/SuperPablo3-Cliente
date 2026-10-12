@@ -9,12 +9,10 @@ public enum Personajes {
         switch (this) {
 
             case PABLO:
-                Pablo p = new Pablo(x, y);
-                return p;
+                return new Pablo(x, y);
 
             case WALTER:
-                Walter w = new Walter(x, y);
-                return w;
+                return new Walter(x, y);
 
             default:
                 throw new IllegalArgumentException("Personaje inválido");
