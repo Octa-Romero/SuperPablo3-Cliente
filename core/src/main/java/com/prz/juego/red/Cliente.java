@@ -28,6 +28,28 @@ public class Cliente {
 
     public void cerrar()
     {
-        hilo.cerrar();
+        if(hilo != null) {
+            hilo.cerrar();
+        }
+    }
+
+    public String getPersonajeRemoto()
+    {
+        return hilo.getPersonajeRemoto();
+    }
+
+    public float getX()
+    {
+        return hilo.getXRecibida();
+    }
+
+    public float getY()
+    {
+        return hilo.getYRecibida();
+    }
+
+    public boolean llegoPosicionRecibida()
+    {
+        return hilo.isPosicionRecibida();
     }
 }

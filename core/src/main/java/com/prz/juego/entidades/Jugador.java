@@ -24,7 +24,7 @@ public abstract class Jugador extends Entidad {
 
 	@Override
 	public void update(float delta) {
-		guardarPosicionAnterior();
+		//guardarPosicionAnterior();
 
 		if (entrada.mueveArriba() && enSuelo) {
 			saltar();
@@ -39,22 +39,22 @@ public abstract class Jugador extends Entidad {
 			velocidadY = 0;
 		}
 
-		if (entrada.mueveIzquierda()) {
-			x -= velocidadX * delta;
-		}
+		//if (entrada.mueveIzquierda()) {
+		//	x -= velocidadX * delta;
+		//}
 
-		if (entrada.mueveDerecha()) {
-			x += velocidadX * delta;
-		}
+		//if (entrada.mueveDerecha()) {
+		//	x += velocidadX * delta;
+		//}
 
 		if (entrada.ataca()) {
 			atacar();
 		}
 
-		actualizarAnimacion(delta, x != xAnterior, atacando);
-		actualizarOrientacionSegunMovimiento();
-		actualizarSpriteVisual();
-		bounds.setPosition(x, y);
+		//actualizarAnimacion(delta, x != xAnterior, atacando);
+		//actualizarOrientacionSegunMovimiento();
+		//actualizarSpriteVisual();
+		//bounds.setPosition(x, y);
 
 		actualizarInvencibilidad(delta);
 	}
@@ -67,6 +67,23 @@ public abstract class Jugador extends Entidad {
 			sprite.draw(Render.batch);
 		}
 	}
+
+    public void actualizarPosicion(float x, float y, float delta) {
+        guardarPosicionAnterior();
+
+        System.out.println(
+            "Posición aplicada: X=" + x + " Y=" + y
+        );
+
+        this.x = x;
+        this.y = y;
+
+        actualizarAnimacion(delta, x != xAnterior, atacando);
+        actualizarOrientacionSegunMovimiento();
+        actualizarSpriteVisual();
+
+        bounds.setPosition(x, y);
+    }
 
 	public Hud getHud() {
 		return hud;

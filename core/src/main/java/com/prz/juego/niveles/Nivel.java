@@ -21,7 +21,8 @@ public class Nivel {
     private Camara camara;
     private TiledMap mapa;
     private OrthogonalTiledMapRenderer mapRenderer;
-    private Jugador jugador;
+    private Jugador jugadorLocal;
+    private Jugador jugadorRemoto;
     private Colisiones colision;
     private final ArrayList<Entidad> entidades = new ArrayList<>();
     private ShapeRenderer shapeRenderer;
@@ -30,7 +31,7 @@ public class Nivel {
     public void cargar(String ruta, Jugador jugador) {
         camara = new Camara();
 
-        this.jugador = jugador;
+        this.jugadorLocal = jugador;
 
         entidades.add(jugador);
         entidades.add(new Bicho1(2000, 300, jugador));
@@ -82,12 +83,16 @@ public class Nivel {
             }
         }
 
-        if (jugador instanceof Pablo) {
-            ((Pablo) jugador).dibujarAtaque();
+        if (jugadorRemoto != null) {
+            jugadorRemoto.dibujar();
         }
 
-        if (jugador instanceof Walter) {
-            ((Walter) jugador).dibujarOrbes();
+        if (jugadorLocal instanceof Pablo) {
+            ((Pablo) jugadorLocal).dibujarAtaque();
+        }
+
+        if (jugadorLocal instanceof Walter) {
+            ((Walter) jugadorLocal).dibujarOrbes();
         }
     }
 
@@ -105,8 +110,8 @@ public class Nivel {
             entidad.dibujarHitbox(shapeRenderer);
         }
 
-        if (jugador instanceof Walter) {
-            ((Walter) jugador).dibujarOrbesHitbox(shapeRenderer);
+        if (jugadorLocal instanceof Walter) {
+            ((Walter) jugadorLocal).dibujarOrbesHitbox(shapeRenderer);
         }
 
         shapeRenderer.end();
@@ -136,8 +141,8 @@ public class Nivel {
 
         // Cámara
         camara.seguirPersonaje(
-            jugador.getX() + jugador.getAncho() / 2f,
-            jugador.getY() + jugador.getAlto() / 2f,
+            jugadorLocal.getX() + jugadorLocal.getAncho() / 2f,
+            jugadorLocal.getY() + jugadorLocal.getAlto() / 2f,
             delta
         );
 
@@ -146,7 +151,7 @@ public class Nivel {
             Debug.cambiarHitboxes();
         }
 
-        if (jugador.estaMuerto()) {
+        if (jugadorLocal.estaMuerto()) {
             gameOver = true;
         }
 
@@ -189,4 +194,9 @@ public class Nivel {
     }
 
     public boolean isGameOver(){return this.gameOver;}
+
+    public void setJugadorRemoto(Jugador jugadorRemoto)
+    {
+        this.jugadorRemoto = jugadorRemoto;
+    }
 }

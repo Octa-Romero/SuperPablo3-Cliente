@@ -8,6 +8,7 @@ import com.prz.juego.entidades.Jugador;
 import com.prz.juego.entidades.Personajes;
 import com.prz.juego.principal.Navegable;
 import com.prz.juego.niveles.Nivel;
+import com.prz.juego.red.Cliente;
 import com.prz.juego.utilidades.Entrada;
 import com.prz.juego.utilidades.Musica;
 import com.prz.juego.utilidades.Render;
@@ -15,23 +16,35 @@ import com.prz.juego.sistemas.Hud;
 
 public class PantallaJuego implements Screen {
 
+    private Cliente cliente;
     private final Navegable nav;
     private Jugador jugador;
+    private Jugador jugadorRemoto;
     private final Nivel nivel;
     private final Entrada entrada;
     private final MenuPausa menuPausa;
     private boolean pausado = false;
     private final Hud hud;
 
-    public PantallaJuego(Navegable nav, Personajes personajeElegido) {
+    private float tiempoMensaje = 0f;
+    private static final float INTERVALO_MENSAJE = 0.25f;
+
+    private String ultimoEstadoEnviado = "";
+
+    public PantallaJuego(Navegable nav, Personajes personajeElegido, Personajes personajeRemoto, Cliente cliente) {
         this.nav = nav;
         this.entrada = new Entrada();
         this.nivel = new Nivel();
         this.menuPausa = new MenuPausa(nav, this);
+        this.cliente = cliente;
 
         jugador = personajeElegido.crear(50, 150);
 
         jugador.setEntrada(entrada);
+
+        jugadorRemoto = personajeRemoto.crear(75, 150);
+
+        nivel.setJugadorRemoto(jugadorRemoto);
 
         nivel.cargar("Niveles/Niveles/Level1.tmx", jugador);
 
@@ -51,7 +64,6 @@ public class PantallaJuego implements Screen {
     @Override
     public void render(float delta) {
         Render.limpiarPantalla();
-
         if (entrada.aprietaEscape()) {
             pausado = !pausado;
             if (pausado) {
@@ -63,6 +75,10 @@ public class PantallaJuego implements Screen {
 
         if (!pausado) {
             nivel.update(delta, entrada);
+            actualizarEnvioEntrada(delta);
+            if(cliente.llegoPosicionRecibida()){
+                jugador.actualizarPosicion(cliente.getX(), cliente.getY(), delta);
+            }
         }
 
         if (pausado) {
@@ -91,6 +107,28 @@ public class PantallaJuego implements Screen {
             Musica.parar();
             nav.cambiarPantalla(new GameOver(nav));
         }
+    }
+
+    private void actualizarEnvioEntrada(float delta) {
+        tiempoMensaje += delta;
+
+        String estadoActual = obtenerEstadoEntrada();
+
+        if (!estadoActual.equals(ultimoEstadoEnviado)
+            || tiempoMensaje >= INTERVALO_MENSAJE) {
+
+            cliente.enviarMensaje(estadoActual);
+
+            ultimoEstadoEnviado = estadoActual;
+            tiempoMensaje = 0f;
+        }
+    }
+
+
+    private String obtenerEstadoEntrada() {
+        return "INPUT;" +
+            (entrada.mueveIzquierda() ? "IZQUIERDA" : "NOIZQUIERDA") + ";" +
+            (entrada.mueveDerecha() ? "DERECHA" : "NODERECHA");
     }
 
     @Override

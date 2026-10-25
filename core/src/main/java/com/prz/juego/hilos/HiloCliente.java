@@ -12,8 +12,11 @@ public class HiloCliente extends Thread{
     private DatagramSocket socket;
     private boolean fin = false;
     private volatile boolean conexionEstablecida = false;
+    private volatile String personajeRemoto;
     private InetAddress ipServer;
     private int puerto = 9990;
+    private float xRecibida, yRecibida;
+    private boolean posicionRecibida = false;
 
     public HiloCliente(Cliente cliente)
     {
@@ -55,13 +58,29 @@ public class HiloCliente extends Thread{
         }else if(msj.equals("Empieza juego"))
         {
             Global.empieza = true;
-            System.out.println("Global.empieza = true");
+        }else if(msj.equals("PABLO") || msj.equals("WALTER")) {
+            personajeRemoto = msj;
+        } else if (msj.startsWith("POS")) {
+            procesarPosicion(msj);
+        }
+    }
+
+    private void procesarPosicion(String msj)
+    {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            posicionRecibida = true;
+            xRecibida = Float.parseFloat(mensajeParametrizado[1]);
+            yRecibida = Float.parseFloat(mensajeParametrizado[2]);
+        } catch (NumberFormatException e) {
+            System.out.println("Posición recibida inválida");
         }
     }
 
     public void enviarMensaje(String msj)
     {
-        System.out.println("Enviado: " + msj);
+        //System.out.println("Enviado: " + msj);
         byte[] data = msj.getBytes();
         try {
             DatagramPacket dp = new DatagramPacket(data, data.length, ipServer, puerto);
@@ -81,5 +100,23 @@ public class HiloCliente extends Thread{
 
     public boolean isConexionEstablecida() {
         return conexionEstablecida;
+    }
+
+    public String getPersonajeRemoto()
+    {
+        return this.personajeRemoto;
+    }
+
+    public float getXRecibida() {
+        return xRecibida;
+    }
+
+    public float getYRecibida() {
+        return yRecibida;
+    }
+
+    public boolean isPosicionRecibida()
+    {
+        return this.posicionRecibida;
     }
 }

@@ -135,9 +135,19 @@ public class SeleccionPersonaje implements Screen {
         stage.draw();
 
         if (Global.empieza) {
+            String nombreRemoto = cliente.getPersonajeRemoto();
+
+            if (nombreRemoto == null) {
+                return;
+            }
+
             Global.empieza = false;
 
-            nav.cambiarPantalla(new PantallaJuego(nav, personajeSeleccionado));
+            Personajes personajeRemoto = Personajes.valueOf(nombreRemoto);
+
+            nav.cambiarPantalla(
+                new PantallaJuego(nav, personajeSeleccionado, personajeRemoto, cliente)
+            );
 
             return;
         }

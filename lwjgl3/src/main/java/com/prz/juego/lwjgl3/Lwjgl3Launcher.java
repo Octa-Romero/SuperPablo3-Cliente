@@ -9,8 +9,6 @@ import com.prz.juego.red.Cliente;
 /** Launches the desktop (LWJGL3) application. */
 public class Lwjgl3Launcher {
 
-    private static Cliente cliente;
-
     public static void main(String[] args) {
         if (StartupHelper.startNewJvmIfRequired()) return; // This handles macOS support and helps on Windows.
         createApplication();
