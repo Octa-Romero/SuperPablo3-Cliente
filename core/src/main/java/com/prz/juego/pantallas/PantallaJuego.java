@@ -29,7 +29,9 @@ public class PantallaJuego implements Screen {
     private float tiempoMensaje = 0f;
     private static final float INTERVALO_MENSAJE = 0.25f;
 
-    private String ultimoEstadoEnviado = "";
+    private String ultimoEstadoIzquierda = "";
+    private String ultimoEstadoDerecha = "";
+    private String ultimoEstadoArriba = "";
 
     public PantallaJuego(Navegable nav, Personajes personajeElegido, Personajes personajeRemoto, Cliente cliente) {
         this.nav = nav;
@@ -112,23 +114,53 @@ public class PantallaJuego implements Screen {
     private void actualizarEnvioEntrada(float delta) {
         tiempoMensaje += delta;
 
-        String estadoActual = obtenerEstadoEntrada();
+        String estadoIzquierda = obtenerEstadoIzquierda();
+        String estadoDerecha = obtenerEstadoDerecha();
+        String estadoArriba = obtenerEstadoArriba();
 
-        if (!estadoActual.equals(ultimoEstadoEnviado)
+        if (!estadoIzquierda.equals(ultimoEstadoIzquierda)
             || tiempoMensaje >= INTERVALO_MENSAJE) {
+            cliente.enviarMensaje(estadoIzquierda);
+            ultimoEstadoIzquierda = estadoIzquierda;
+        }
 
-            cliente.enviarMensaje(estadoActual);
+        if (!estadoDerecha.equals(ultimoEstadoDerecha)
+            || tiempoMensaje >= INTERVALO_MENSAJE) {
+            cliente.enviarMensaje(estadoDerecha);
+            ultimoEstadoDerecha = estadoDerecha;
+        }
 
-            ultimoEstadoEnviado = estadoActual;
+        if (!estadoArriba.equals(ultimoEstadoArriba)
+            || tiempoMensaje >= INTERVALO_MENSAJE) {
+            cliente.enviarMensaje(estadoArriba);
+            ultimoEstadoArriba = estadoArriba;
+        }
+
+        if (tiempoMensaje >= INTERVALO_MENSAJE) {
             tiempoMensaje = 0f;
         }
     }
 
 
-    private String obtenerEstadoEntrada() {
-        return "INPUT;" +
-            (entrada.mueveIzquierda() ? "IZQUIERDA" : "NOIZQUIERDA") + ";" +
-            (entrada.mueveDerecha() ? "DERECHA" : "NODERECHA");
+    private String obtenerEstadoIzquierda() {
+        if (entrada.mueveIzquierda()) {
+            return "INPUT;IZQUIERDA";
+        }
+        return "INPUT;NOIZQUIERDA";
+    }
+
+    private String obtenerEstadoDerecha() {
+        if (entrada.mueveDerecha()) {
+            return "INPUT;DERECHA";
+        }
+        return "INPUT;NODERECHA";
+    }
+
+    private String obtenerEstadoArriba() {
+        if (entrada.mueveArriba()) {
+            return "INPUT;ARRIBA";
+        }
+        return "INPUT;NOARRIBA";
     }
 
     @Override

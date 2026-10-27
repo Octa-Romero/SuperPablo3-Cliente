@@ -121,7 +121,7 @@ public class Nivel {
 
         // Actualizar entidades
         for (Entidad entidad : entidades) {
-            entidad.update(delta);
+            //entidad.update(delta);
             colision.chequearColision(entidad);
         }
 

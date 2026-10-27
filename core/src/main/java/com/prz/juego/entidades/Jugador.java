@@ -24,14 +24,6 @@ public abstract class Jugador extends Entidad {
 
 	@Override
 	public void update(float delta) {
-		//guardarPosicionAnterior();
-
-		if (entrada.mueveArriba() && enSuelo) {
-			saltar();
-		}
-
-		enSuelo = false;
-		actualizarFisica(delta);
 
 		if (y + alto < 0) {
 			restarVida(1);
@@ -39,22 +31,9 @@ public abstract class Jugador extends Entidad {
 			velocidadY = 0;
 		}
 
-		//if (entrada.mueveIzquierda()) {
-		//	x -= velocidadX * delta;
-		//}
-
-		//if (entrada.mueveDerecha()) {
-		//	x += velocidadX * delta;
-		//}
-
 		if (entrada.ataca()) {
 			atacar();
 		}
-
-		//actualizarAnimacion(delta, x != xAnterior, atacando);
-		//actualizarOrientacionSegunMovimiento();
-		//actualizarSpriteVisual();
-		//bounds.setPosition(x, y);
 
 		actualizarInvencibilidad(delta);
 	}
@@ -70,10 +49,6 @@ public abstract class Jugador extends Entidad {
 
     public void actualizarPosicion(float x, float y, float delta) {
         guardarPosicionAnterior();
-
-        System.out.println(
-            "Posición aplicada: X=" + x + " Y=" + y
-        );
 
         this.x = x;
         this.y = y;
