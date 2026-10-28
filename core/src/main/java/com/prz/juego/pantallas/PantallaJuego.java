@@ -32,6 +32,7 @@ public class PantallaJuego implements Screen {
     private String ultimoEstadoIzquierda = "";
     private String ultimoEstadoDerecha = "";
     private String ultimoEstadoArriba = "";
+    private String ultimoEstadoAtaque = "";
 
     public PantallaJuego(Navegable nav, Personajes personajeElegido, Personajes personajeRemoto, Cliente cliente) {
         this.nav = nav;
@@ -79,8 +80,9 @@ public class PantallaJuego implements Screen {
             nivel.update(delta, entrada);
             actualizarEnvioEntrada(delta);
             if(cliente.llegoPosicionRecibida()){
-                jugador.actualizarPosicion(cliente.getX(), cliente.getY(), delta);
+                jugador.actualizarPosicion(cliente.getX(), cliente.getY(), cliente.getDireccionRecibida());
             }
+            jugador.actualizarEstadoAtaque(cliente.getEstadoAtaque());
         }
 
         if (pausado) {
@@ -117,6 +119,7 @@ public class PantallaJuego implements Screen {
         String estadoIzquierda = obtenerEstadoIzquierda();
         String estadoDerecha = obtenerEstadoDerecha();
         String estadoArriba = obtenerEstadoArriba();
+        String estadoAtaque = obtenerEstadoAtaque();
 
         if (!estadoIzquierda.equals(ultimoEstadoIzquierda)
             || tiempoMensaje >= INTERVALO_MENSAJE) {
@@ -134,6 +137,12 @@ public class PantallaJuego implements Screen {
             || tiempoMensaje >= INTERVALO_MENSAJE) {
             cliente.enviarMensaje(estadoArriba);
             ultimoEstadoArriba = estadoArriba;
+        }
+
+        if (!estadoAtaque.equals(ultimoEstadoAtaque)
+            || tiempoMensaje >= INTERVALO_MENSAJE) {
+            cliente.enviarMensaje(estadoAtaque);
+            ultimoEstadoAtaque = estadoAtaque;
         }
 
         if (tiempoMensaje >= INTERVALO_MENSAJE) {
@@ -161,6 +170,13 @@ public class PantallaJuego implements Screen {
             return "INPUT;ARRIBA";
         }
         return "INPUT;NOARRIBA";
+    }
+
+    private String obtenerEstadoAtaque() {
+        if (entrada.ataca()) {
+            return "INPUT;ATACA";
+        }
+        return "INPUT;NOATACA";
     }
 
     @Override

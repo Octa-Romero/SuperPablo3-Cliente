@@ -13,7 +13,6 @@ public class Pablo extends Jugador {
 
     private float anchoAtaque = 100;
 	private float altoAtaque = 10;
-	private float direccion = 1; // 1 derecha, -1 izquierda
 	private float tiempoAtaque = 0;
 	private float duracionAtaque = 0.3f;
 	private float tiempoCooldown = 0.5f;
@@ -37,14 +36,6 @@ public class Pablo extends Jugador {
 
 	@Override
 	public void update(float delta) {
-		if (entrada != null) {
-			if (entrada.mueveDerecha()) {
-				direccion = 1;
-			}
-			if (entrada.mueveIzquierda()) {
-				direccion = -1;
-			}
-		}
 
 		super.update(delta);
 		actualizarOrientacionSprites();
@@ -110,8 +101,6 @@ public class Pablo extends Jugador {
 			}
 		}
 	}
-
-
 
 	private void actualizarOrientacionSprites() {
 		orientarSprite(sprite, direccion);

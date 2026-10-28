@@ -15,8 +15,9 @@ public class HiloCliente extends Thread{
     private volatile String personajeRemoto;
     private InetAddress ipServer;
     private int puerto = 9990;
-    private float xRecibida, yRecibida;
+    private float xRecibida, yRecibida, direccionRecibida;
     private boolean posicionRecibida = false;
+    private boolean estadoAtaque = false;
 
     public HiloCliente(Cliente cliente)
     {
@@ -48,7 +49,6 @@ public class HiloCliente extends Thread{
 
     private void procesarMensaje(DatagramPacket dp) {
         String msj = new String(dp.getData()).trim();
-        System.out.println(msj);
         if(msj.equals("Conexion recibida"))
         {
             ipServer = dp.getAddress();
@@ -62,6 +62,9 @@ public class HiloCliente extends Thread{
             personajeRemoto = msj;
         } else if (msj.startsWith("POS")) {
             procesarPosicion(msj);
+        } else if (msj.startsWith("ATAQUE"))
+        {
+            procesarEstadoAtaque(msj);
         }
     }
 
@@ -73,14 +76,25 @@ public class HiloCliente extends Thread{
             posicionRecibida = true;
             xRecibida = Float.parseFloat(mensajeParametrizado[1]);
             yRecibida = Float.parseFloat(mensajeParametrizado[2]);
+            direccionRecibida = Float.parseFloat(mensajeParametrizado[3]);
         } catch (NumberFormatException e) {
             System.out.println("Posición recibida inválida");
         }
     }
 
+    private void procesarEstadoAtaque(String msj)
+    {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            estadoAtaque = Boolean.parseBoolean(mensajeParametrizado[1]);
+        } catch (NumberFormatException e) {
+            System.out.println("Estado del ataque recibido invalido");
+        }
+    }
+
     public void enviarMensaje(String msj)
     {
-        //System.out.println("Enviado: " + msj);
         byte[] data = msj.getBytes();
         try {
             DatagramPacket dp = new DatagramPacket(data, data.length, ipServer, puerto);
@@ -113,6 +127,15 @@ public class HiloCliente extends Thread{
 
     public float getYRecibida() {
         return yRecibida;
+    }
+
+    public float getDireccionRecibida()
+    {
+        return direccionRecibida;
+    }
+
+    public boolean getEstadoAtaque() {
+        return estadoAtaque;
     }
 
     public boolean isPosicionRecibida()

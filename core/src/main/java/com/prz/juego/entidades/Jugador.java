@@ -11,6 +11,7 @@ public abstract class Jugador extends Entidad {
 	private final Texture TEXTURA_HUD;
 	protected Hud hud;
 	protected boolean atacando;
+    protected float direccion = 1;
     protected float respawnY = 1000;
 
 	protected Jugador(float x, float y, float ancho, float alto, int velocidadX, double vida, double danio, Texture textura, Texture TEXTURA_HUD) {
@@ -27,14 +28,13 @@ public abstract class Jugador extends Entidad {
 
 		if (y + alto < 0) {
 			restarVida(1);
-			setY(respawnY);
+            setY(respawnY);
 			velocidadY = 0;
 		}
 
-		if (entrada.ataca()) {
-			atacar();
-		}
-
+        actualizarAnimacion(delta, x != xAnterior, atacando);
+        actualizarOrientacionSegunMovimiento();
+        actualizarSpriteVisual();
 		actualizarInvencibilidad(delta);
 	}
 
@@ -47,17 +47,22 @@ public abstract class Jugador extends Entidad {
 		}
 	}
 
-    public void actualizarPosicion(float x, float y, float delta) {
+    public void actualizarPosicion(float x, float y, float direccion) {
         guardarPosicionAnterior();
 
         this.x = x;
         this.y = y;
-
-        actualizarAnimacion(delta, x != xAnterior, atacando);
-        actualizarOrientacionSegunMovimiento();
-        actualizarSpriteVisual();
+        this.direccion = direccion;
 
         bounds.setPosition(x, y);
+    }
+
+    public void actualizarEstadoAtaque(boolean valorAtaque)
+    {
+        if(valorAtaque)
+        {
+            atacar();
+        }
     }
 
 	public Hud getHud() {

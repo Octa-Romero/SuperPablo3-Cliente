@@ -48,6 +48,16 @@ public class Cliente {
         return hilo.getYRecibida();
     }
 
+    public float getDireccionRecibida()
+    {
+        return hilo.getDireccionRecibida();
+    }
+
+    public boolean getEstadoAtaque()
+    {
+        return hilo.getEstadoAtaque();
+    }
+
     public boolean llegoPosicionRecibida()
     {
         return hilo.isPosicionRecibida();
