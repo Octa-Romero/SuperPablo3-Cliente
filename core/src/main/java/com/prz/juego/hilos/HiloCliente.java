@@ -1,14 +1,16 @@
 package com.prz.juego.hilos;
 
+import com.prz.juego.entidades.TipoEnemigo;
 import com.prz.juego.red.Cliente;
+import com.prz.juego.red.EnemigoRed;
 import com.prz.juego.utilidades.Global;
 
 import java.io.IOException;
 import java.net.*;
+import java.util.ArrayList;
 
 public class HiloCliente extends Thread{
 
-    private Cliente cliente;
     private DatagramSocket socket;
     private boolean fin = false;
     private volatile boolean conexionEstablecida = false;
@@ -16,13 +18,16 @@ public class HiloCliente extends Thread{
     private InetAddress ipServer;
     private int puerto = 9990;
     private float xRecibida, yRecibida, direccionRecibida;
+    private double vidaRecibida;
     private boolean posicionRecibida = false;
     private boolean estadoAtaque = false;
+    private ArrayList<EnemigoRed> enemigosRecibidos = new ArrayList<>();
+    private ArrayList<EnemigoRed> estadoEnemigos = new ArrayList<>();
+    private ArrayList<Integer> idEnemigosEliminados = new ArrayList<>();
 
-    public HiloCliente(Cliente cliente)
+    public HiloCliente()
     {
         try {
-            this.cliente = cliente;
             socket = new DatagramSocket();
             ipServer = InetAddress.getByName("255.255.255.255");
             enviarMensaje("Conectar");
@@ -65,6 +70,18 @@ public class HiloCliente extends Thread{
         } else if (msj.startsWith("ATAQUE"))
         {
             procesarEstadoAtaque(msj);
+        } else if (msj.startsWith("VIDA"))
+        {
+            procesarEstadoVida(msj);
+        } else if (msj.startsWith("CREAR_ENEMIGO"))
+        {
+            procesarCreacionEnemigos(msj);
+        } else if (msj.startsWith("ESTADO_ENEMIGO"))
+        {
+            procesarEstadoEnemigos(msj);
+        } else if (msj.startsWith("ELIMINAR_ENEMIGO"))
+        {
+            procesarEliminacionEnemigos(msj);
         }
     }
 
@@ -92,6 +109,89 @@ public class HiloCliente extends Thread{
             System.out.println("Estado del ataque recibido invalido");
         }
     }
+
+    private void procesarEstadoVida(String msj)
+    {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            vidaRecibida = Double.parseDouble(mensajeParametrizado[1]);
+        } catch (NumberFormatException e) {
+            System.out.println("Valor de vida invalido");
+        }
+    }
+
+    private synchronized void procesarEstadoEnemigos(String msj)
+    {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            int id = Integer.parseInt(mensajeParametrizado[1]);
+            float x = Float.parseFloat(mensajeParametrizado[2]);
+            float y = Float.parseFloat(mensajeParametrizado[3]);
+            int direccion = Integer.parseInt(mensajeParametrizado[4]);
+            boolean estaAtacando = Boolean.parseBoolean(mensajeParametrizado[5]);
+            double vida = Double.parseDouble(mensajeParametrizado[6]);
+
+            EnemigoRed encontrado = buscarEnemigo(id);
+
+            if (encontrado != null)
+            {
+                encontrado.actualizarEstado(x, y, direccion, estaAtacando, vida);
+            }
+
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Estado del enemigo invalido");
+        }
+    }
+
+    private synchronized void procesarCreacionEnemigos(String msj)
+    {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            int id = Integer.parseInt(mensajeParametrizado[1]);
+            TipoEnemigo tipo = TipoEnemigo.valueOf(mensajeParametrizado[2]);
+            float x = Float.parseFloat(mensajeParametrizado[3]);
+            float y = Float.parseFloat(mensajeParametrizado[4]);
+            double vida = Double.parseDouble(mensajeParametrizado[5]);
+
+            EnemigoRed nuevoEnemigo = new EnemigoRed(id, tipo, x , y, vida);
+
+            enemigosRecibidos.add(nuevoEnemigo);
+
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Estado del enemigo invalido");
+        }
+    }
+
+    private synchronized void procesarEliminacionEnemigos(String msj) {
+        String[] parametros = msj.split(";");
+
+        try {
+            int id = Integer.parseInt(parametros[1]);
+            idEnemigosEliminados.add(id);
+
+            estadoEnemigos.removeIf(e -> e.getId() == id);
+
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("ID de enemigo eliminado inválido");
+        }
+    }
+
+
+    private EnemigoRed buscarEnemigo(int id)
+    {
+        for(EnemigoRed e : estadoEnemigos)
+        {
+            if(e.getId() == id)
+            {
+                return e;
+            }
+        }
+        return null;
+    }
+
 
     public void enviarMensaje(String msj)
     {
@@ -136,6 +236,31 @@ public class HiloCliente extends Thread{
 
     public boolean getEstadoAtaque() {
         return estadoAtaque;
+    }
+
+    public double getEstadoVida()
+    {
+        return this.vidaRecibida;
+    }
+
+    public synchronized ArrayList<EnemigoRed> getEnemigosRecibidos() {
+        ArrayList<EnemigoRed> copia = new ArrayList<>(enemigosRecibidos);
+        enemigosRecibidos.clear();
+        return copia;
+    }
+
+    public synchronized ArrayList<Integer> getEnemigosEliminados() {
+        ArrayList<Integer> copia = new ArrayList<>(idEnemigosEliminados);
+        idEnemigosEliminados.clear();
+        return copia;
+    }
+
+    public synchronized ArrayList<EnemigoRed> getEstadoEnemigos() {
+        return new ArrayList<>(estadoEnemigos);
+    }
+
+    public synchronized void registrarEstadoEnemigo(EnemigoRed enemigo) {
+        estadoEnemigos.add(enemigo);
     }
 
     public boolean isPosicionRecibida()

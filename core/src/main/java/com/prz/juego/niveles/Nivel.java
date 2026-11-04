@@ -1,6 +1,7 @@
 package com.prz.juego.niveles;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -9,6 +10,7 @@ import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.prz.juego.entidades.*;
+import com.prz.juego.red.EnemigoRed;
 import com.prz.juego.sistemas.Camara;
 import com.prz.juego.sistemas.Colisiones;
 import com.prz.juego.utilidades.Debug;
@@ -34,8 +36,6 @@ public class Nivel {
         this.jugadorLocal = jugador;
 
         entidades.add(jugador);
-        entidades.add(new Bicho1(2000, 300, jugador));
-        entidades.add(new Bicho1(2200, 300, jugador));
 
         shapeRenderer = new ShapeRenderer();
 
@@ -44,11 +44,11 @@ public class Nivel {
 
         colision = new Colisiones(mapa);
 
-        if(jugador instanceof Pablo){
+        /*if(jugador instanceof Pablo){
             ((Pablo) jugador).setEntidades(entidades);
         } else {
             ((Walter) jugador).configurarAtaque(entidades, colision);
-        }
+        }*/
 
         MapProperties props = mapa.getProperties();
 
@@ -122,7 +122,6 @@ public class Nivel {
         // Actualizar entidades
         for (Entidad entidad : entidades) {
             entidad.update(delta);
-            colision.chequearColision(entidad);
         }
 
         // Eliminar enemigos muertos
@@ -198,5 +197,50 @@ public class Nivel {
     public void setJugadorRemoto(Jugador jugadorRemoto)
     {
         this.jugadorRemoto = jugadorRemoto;
+    }
+
+    public void agregarEnemigos(EnemigoRed estadoRed) {
+        TipoEnemigo tipo = estadoRed.getTipo();
+        Enemigo enemigo = tipo.crear(estadoRed, jugadorLocal);
+
+        System.out.println("TIPO: " + tipo);
+        System.out.println("RESULTADO DE CREAR: " + enemigo);
+
+        if (enemigo != null) {
+            entidades.add(enemigo);
+            System.out.println("AGREGADO A ENTIDADES: " + enemigo.getId());
+        }
+    }
+
+    public void actualizarEstadoEnemigos(EnemigoRed estado) {
+        boolean encontrado = false;
+
+        for (Entidad e : entidades) {
+            if (!encontrado && e instanceof Enemigo enemigo) {
+
+                if (enemigo.getId() == estado.getId()) {
+                    enemigo.actualizarEstadoRed(
+                        estado.getX(),
+                        estado.getY(),
+                        estado.getDireccion(),
+                        estado.estaAtacando(),
+                        estado.getVida()
+                    );
+
+                    encontrado = true;
+                }
+            }
+        }
+    }
+
+    public void eliminarEnemigo(int id) {
+        for (int i = entidades.size() - 1; i >= 0; i--) {
+            Entidad entidad = entidades.get(i);
+
+            if (entidad instanceof Enemigo enemigo && enemigo.getId() == id) {
+                enemigo.dispose();
+                entidades.remove(i);
+            }
+        }
     }
 }

@@ -4,15 +4,19 @@ package com.prz.juego.pantallas;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
+import com.prz.juego.entidades.Enemigo;
 import com.prz.juego.entidades.Jugador;
 import com.prz.juego.entidades.Personajes;
 import com.prz.juego.principal.Navegable;
 import com.prz.juego.niveles.Nivel;
 import com.prz.juego.red.Cliente;
+import com.prz.juego.red.EnemigoRed;
 import com.prz.juego.utilidades.Entrada;
 import com.prz.juego.utilidades.Musica;
 import com.prz.juego.utilidades.Render;
 import com.prz.juego.sistemas.Hud;
+
+import java.util.ArrayList;
 
 public class PantallaJuego implements Screen {
 
@@ -79,10 +83,28 @@ public class PantallaJuego implements Screen {
         if (!pausado) {
             nivel.update(delta, entrada);
             actualizarEnvioEntrada(delta);
+
             if(cliente.llegoPosicionRecibida()){
                 jugador.actualizarPosicion(cliente.getX(), cliente.getY(), cliente.getDireccionRecibida());
             }
+
             jugador.actualizarEstadoAtaque(cliente.getEstadoAtaque());
+            jugador.actualizarEstadoVida(cliente.getEstadoVida());
+
+            for(EnemigoRed e : cliente.getEnemigosRecibidos())
+            {
+                nivel.agregarEnemigos(e);
+                cliente.registrarEstadoEnemigo(e);
+            }
+
+            for(EnemigoRed e : cliente.getEstadoEnemigos())
+            {
+                nivel.actualizarEstadoEnemigos(e);
+            }
+
+            for (Integer id : cliente.getEnemigosEliminados()) {
+                nivel.eliminarEnemigo(id);
+            }
         }
 
         if (pausado) {

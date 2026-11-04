@@ -312,18 +312,6 @@ public abstract class Entidad {
     public abstract void update(float delta);
 
 
-    protected void actualizarFisica(float delta) {
-
-        if (!enSuelo) {
-            velocidadY -= GRAVEDAD * delta;
-        }
-
-        y += velocidadY * delta;
-
-        bounds.setPosition(x, y);
-    }
-
-
     protected void actualizarInvencibilidad(float delta) {
 
         if (tiempoInvencibilidad > 0) {
@@ -345,7 +333,7 @@ public abstract class Entidad {
     }
 
 
-    public void restarVida(double cantidad) {
+    /*public void restarVida(double cantidad) {
 
         if (tiempoInvencibilidad > 0) {
             return;
@@ -358,6 +346,16 @@ public abstract class Entidad {
         spriteVisible = true;
 
         if (vida <= 0) {
+            vida = 0;
+            morir();
+        }
+    }*/
+
+    public void setVida(double cantidad)
+    {
+        this.vida = cantidad;
+        if(vida <= 0)
+        {
             vida = 0;
             morir();
         }
@@ -385,13 +383,6 @@ public abstract class Entidad {
         if (sprite.isFlipX() != debeInvertirse) {
             sprite.flip(true, false);
         }
-    }
-
-
-    public void saltar() {
-        velocidadY = 300;
-        enSuelo = false;
-        Sonido.SALTO.sonar();
     }
 
 
@@ -431,16 +422,6 @@ public abstract class Entidad {
     }
 
 
-    public float getXAnterior() {
-        return xAnterior;
-    }
-
-
-    public float getYAnterior() {
-        return yAnterior;
-    }
-
-
     public float getAncho() {
         return ancho;
     }
@@ -456,20 +437,9 @@ public abstract class Entidad {
     }
 
 
-    public int getVelocidadX() {
-        return velocidadX;
-    }
-
-
-    public float getVelocidadY() {
-        return velocidadY;
-    }
-
-
     public double getVida() {
         return vida;
     }
-
 
     public double getVidaMaxima() {
         return vidaMaxima;
@@ -479,51 +449,6 @@ public abstract class Entidad {
     public double getDanio() {
         return danio;
     }
-
-
-    public boolean estaEnSuelo() {
-        return enSuelo;
-    }
-
-
-    public boolean chocoPared() {
-        return chocoPared;
-    }
-
-
-    public void setChocoPared(boolean valor) {
-        chocoPared = valor;
-    }
-
-
-    public void setVelocidadX(int valor) {
-        velocidadX = valor;
-    }
-
-
-    public void setVelocidadY(float valor) {
-        velocidadY = valor;
-    }
-
-
-    public void setEnSuelo(boolean valor) {
-        enSuelo = valor;
-    }
-
-
-    public void setX(float x) {
-        this.x = x;
-        bounds.setX(x);
-        actualizarSpriteVisual();
-    }
-
-
-    public void setY(float y) {
-        this.y = y;
-        bounds.setY(y);
-        actualizarSpriteVisual();
-    }
-
 
     public void dispose() {
         sprite = null;

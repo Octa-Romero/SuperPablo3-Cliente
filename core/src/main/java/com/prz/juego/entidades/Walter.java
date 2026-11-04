@@ -50,6 +50,11 @@ public class Walter extends Jugador {
         actualizarOrbes(delta);
     }
 
+    @Override
+    public void actualizarEstadoAtaque(boolean estaAtacando) {
+
+    }
+
     private void actualizarOrbes(float delta) {
         for (int i = ORBES.size() - 1; i >= 0; i--) {
             OrbeMagica orbe = ORBES.get(i);
@@ -61,14 +66,14 @@ public class Walter extends Jugador {
         }
     }
 
-    @Override
+    /*@Override
     public void atacar() {
         if (!atacando && !cooldownAtaque) {
             atacando = true;
             tiempoAtaque = 0f;
             lanzarOrbe();
         }
-    }
+    }*/
 
     private void lanzarOrbe() {
         if (entidades == null || colision == null) {

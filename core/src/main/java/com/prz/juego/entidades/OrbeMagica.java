@@ -77,7 +77,7 @@ public class OrbeMagica {
             }
 
             if (chocaConEnemigo(enemigo)) {
-                enemigo.restarVida(walter.getDanio());
+                //enemigo.restarVida(walter.getDanio());
                 activa = false;
                 return;
             }
@@ -85,7 +85,7 @@ public class OrbeMagica {
     }
 
     private boolean chocaConPared() {
-        for (Rectangle pared : colision.getColisiones()) {
+        /*for (Rectangle pared : colision.getColisiones()) {
             float puntoX = Math.max(pared.x, Math.min(x, pared.x + pared.width));
             float puntoY = Math.max(pared.y, Math.min(y, pared.y + pared.height));
             float distanciaX = x - puntoX;
@@ -94,7 +94,7 @@ public class OrbeMagica {
             if (distanciaX * distanciaX + distanciaY * distanciaY <= RADIO * RADIO) {
                 return true;
             }
-        }
+        }*/
         return false;
     }
 

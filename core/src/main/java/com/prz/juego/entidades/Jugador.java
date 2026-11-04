@@ -12,7 +12,6 @@ public abstract class Jugador extends Entidad {
 	protected Hud hud;
 	protected boolean atacando;
     protected float direccion = 1;
-    protected float respawnY = 1000;
 
 	protected Jugador(float x, float y, float ancho, float alto, int velocidadX, double vida, double danio, Texture textura, Texture TEXTURA_HUD) {
 		super(x, y, ancho, alto, velocidadX, vida, danio, textura);
@@ -25,21 +24,11 @@ public abstract class Jugador extends Entidad {
 
 	@Override
 	public void update(float delta) {
-
-		if (y + alto < 0) {
-			restarVida(1);
-            setY(respawnY);
-			velocidadY = 0;
-		}
-
         actualizarAnimacion(delta, x != xAnterior, atacando);
         actualizarOrientacionSegunMovimiento();
         actualizarSpriteVisual();
 		actualizarInvencibilidad(delta);
 	}
-
-	public abstract void atacar();
-
 
 	public void dibujar() {
 		if (spriteVisible && sprite != null) {
@@ -57,12 +46,12 @@ public abstract class Jugador extends Entidad {
         bounds.setPosition(x, y);
     }
 
-    public void actualizarEstadoAtaque(boolean valorAtaque)
+    public abstract void actualizarEstadoAtaque(boolean estaAtacando);
+
+
+    public void actualizarEstadoVida(double cantidad)
     {
-        if(valorAtaque)
-        {
-            atacar();
-        }
+        setVida(cantidad);
     }
 
 	public Hud getHud() {

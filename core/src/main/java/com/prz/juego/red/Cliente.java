@@ -2,6 +2,7 @@ package com.prz.juego.red;
 
 import com.prz.juego.hilos.HiloCliente;
 
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Cliente {
@@ -10,7 +11,7 @@ public class Cliente {
 
     public void conectar() {
         if (hilo == null) {
-            hilo = new HiloCliente(this);
+            hilo = new HiloCliente();
             hilo.start();
         }
     }
@@ -58,8 +59,32 @@ public class Cliente {
         return hilo.getEstadoAtaque();
     }
 
+    public double getEstadoVida()
+    {
+        return hilo.getEstadoVida();
+    }
+
     public boolean llegoPosicionRecibida()
     {
         return hilo.isPosicionRecibida();
     }
+
+    public ArrayList<EnemigoRed> getEnemigosRecibidos() {
+        return hilo.getEnemigosRecibidos();
+    }
+
+    public ArrayList<EnemigoRed> getEstadoEnemigos() {
+        return hilo.getEstadoEnemigos();
+    }
+
+    public ArrayList<Integer> getEnemigosEliminados()
+    {
+        return hilo.getEnemigosEliminados();
+    }
+
+    public void registrarEstadoEnemigo(EnemigoRed estado)
+    {
+        hilo.registrarEstadoEnemigo(estado);
+    }
+
 }

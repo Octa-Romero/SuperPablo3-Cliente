@@ -11,6 +11,7 @@ import com.prz.juego.utilidades.Sonido;
 
 public abstract class Enemigo extends Entidad {
 
+    protected int id;
 	protected float anchoAtaque = 100;
 	protected float altoAtaque = 10;
 	protected float velocidad;
@@ -26,12 +27,12 @@ public abstract class Enemigo extends Entidad {
 	protected boolean atacando = false;
 	protected boolean cooldownAtaque = false;
 	protected boolean yaDanio = false;
-	protected boolean muerto = false;
 	protected Jugador jugador;
 	protected Sprite spriteAtaque;
 
-	protected Enemigo( float x, float y, float ancho, float alto, int velocidadX, double vida, double danio, Jugador jugador, Texture textura, Texture texturaAtaque) {
+	protected Enemigo(int id,  float x, float y, float ancho, float alto, int velocidadX, double vida, double danio, Jugador jugador, Texture textura, Texture texturaAtaque) {
 		super(x, y, ancho, alto, velocidadX, vida, danio, textura);
+        this.id = id;
 		this.jugador = jugador;
 		velocidad = velocidadX;
 		duracionInvencibilidad = 1f;
@@ -46,156 +47,13 @@ public abstract class Enemigo extends Entidad {
 			return;
 		}
 
-		guardarPosicionAnterior();
-
 		actualizarInvencibilidad(delta);
 
-		Rectangle boundsJugador = jugador.getBounds();
-
-		float distancia = calcularDistanciaHorizontal(boundsJugador);
-
-		if (atacando) {
-			actualizarAtaque(delta);
-		} else if (esperandoAtaque) {
-			tiempoEstado += delta;
-			if (tiempoEstado >= tiempoAntesDeAtacar) {
-				esperandoAtaque = false;
-				atacando = true;
-				tiempoEstado = 0;
-				yaDanio = false;
-				Sonido.ESPADA.sonar();
-			}
-		} else if (cooldownAtaque) {
-			tiempoEstado += delta;
-			if (tiempoEstado >= tiempoEntreAtaques) {
-				cooldownAtaque = false;
-				tiempoEstado = 0;
-			}
-
-			if (distancia <= distanciaDeteccion) {
-				perseguir(delta, boundsJugador);
-			} else {
-				patrullar(delta);
-			}
-		}
-
-		else {
-			if (distancia <= distanciaAtaque) {
-				actualizarDireccion(boundsJugador);
-				esperandoAtaque = true;
-				tiempoEstado = 0;
-			} else if (distancia <= distanciaDeteccion) {
-				perseguir(delta, boundsJugador);
-			} else {
-				patrullar(delta);
-			}
-		}
-
-		actualizarFisica(delta);
-
-		if (y + alto < 0) {
-			morir();
-			return;
-		}
-
 		actualizarAnimacion(delta, x != xAnterior, atacando);
-		actualizarOrientacionSprites();
 		actualizarSpriteVisual();
-		bounds.setPosition(x, y);
 		if (atacando) {
 			Rectangle ataque = getBoundsAtaque();
 			spriteAtaque.setPosition(ataque.x, ataque.y);
-		}
-	}
-
-	private float calcularDistanciaHorizontal(Rectangle boundsJugador) {
-		// Jugador a la derecha
-		if (boundsJugador.x > x + ancho) {
-			return boundsJugador.x - (x + ancho);
-		}
-
-		// Jugador a la izquierda
-		if (x > boundsJugador.x + boundsJugador.width) {
-			return x - (boundsJugador.x + boundsJugador.width);
-		}
-
-		// Se superponen
-		return 0;
-	}
-
-	private void actualizarDireccion(Rectangle boundsJugador) {
-		float centroJugador = boundsJugador.x + boundsJugador.width / 2f;
-		float centroEnemigo = x + ancho / 2f;
-		if (centroJugador > centroEnemigo) {
-			direccion = 1;
-		} else if (centroJugador < centroEnemigo) {
-			direccion = -1;
-		}
-	}
-
-	private void perseguir(float delta, Rectangle boundsJugador) {
-		float distancia = calcularDistanciaHorizontal(boundsJugador);
-		if (distancia <= distanciaAtaque) {
-			return;
-		}
-		float centroJugador = boundsJugador.x + boundsJugador.width / 2f;
-		float centroEnemigo = x + ancho / 2f;
-		float movimiento = velocidad * delta;
-
-		// Jugador a la derecha
-		if (centroJugador > centroEnemigo) {
-			direccion = 1;
-			if (distancia - movimiento < distanciaAtaque) {
-				movimiento = distancia - distanciaAtaque;
-			}
-			if (movimiento > 0) {
-				x += movimiento;
-			}
-		}
-
-		// Jugador a la izquierda
-		else if (centroJugador < centroEnemigo) {
-			direccion = -1;
-			if (distancia - movimiento < distanciaAtaque) {
-				movimiento = distancia - distanciaAtaque;
-			}
-			if (movimiento > 0) {
-				x -= movimiento;
-			}
-		}
-	}
-
-	private void patrullar(float delta) {
-		tiempoPatrulla += delta;
-		if (caminandoPatrulla) {
-			x += direccion * velocidad * delta;
-			if (tiempoPatrulla >= 2f) {
-				caminandoPatrulla = false;
-				tiempoPatrulla = 0;
-			}
-			return;
-		}
-
-		if (tiempoPatrulla >= 5f) {
-			tiempoPatrulla = 0;
-			if (Math.random() < 0.70) { // 70% cambia de dirección, 30% continúa
-				direccion *= -1;
-			}
-			caminandoPatrulla = true;
-		}
-	}
-
-	private void actualizarAtaque(float delta) {
-		tiempoEstado += delta;
-		if (!yaDanio && ataqueTocaJugador()) {
-			jugador.restarVida(danio);
-			yaDanio = true;
-		}
-
-		if (tiempoEstado >= 1f) {
-			atacando = false;
-			cooldownAtaque = true;
-			tiempoEstado = 0;
 		}
 	}
 
@@ -213,19 +71,29 @@ public abstract class Enemigo extends Entidad {
 		return new Rectangle(ataqueX, ataqueY, anchoAtaque, altoAtaque);
 	}
 
-	private boolean ataqueTocaJugador() {
-		Rectangle ataque = getBoundsAtaque();
-		return ataque.overlaps(jugador.getBounds());
-	}
+    public int getId()
+    {
+        return this.id;
+    }
 
 	private void actualizarOrientacionSprites() {
 		orientarSprite(sprite, direccion);
 		orientarSprite(spriteAtaque, direccion);
 	}
 
-	public boolean estaAtacando() {
-		return atacando;
-	}
+    public void actualizarEstadoRed(float x, float y, int direccion, boolean estaAtacando, double vida)
+    {
+        guardarPosicionAnterior();
+
+        this.x = x;
+        this.y = y;
+        this.direccion = direccion;
+        this.atacando = estaAtacando;
+        setVida(vida);
+
+        bounds.setPosition(x, y);
+        actualizarOrientacionSprites();
+    }
 
 	@Override
 	public void dibujar() {
@@ -257,13 +125,6 @@ public abstract class Enemigo extends Entidad {
         }
     }
 
-	public float getDireccion() {
-		return direccion;
-	}
-
-	public Rectangle getBoundsAtaquePublico() {
-		return getBoundsAtaque();
-	}
 
 	@Override
 	public void dispose() {
