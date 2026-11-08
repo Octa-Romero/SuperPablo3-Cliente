@@ -1,8 +1,8 @@
 package com.prz.juego.hilos;
 
 import com.prz.juego.entidades.TipoEnemigo;
-import com.prz.juego.red.Cliente;
 import com.prz.juego.red.EnemigoRed;
+import com.prz.juego.red.OrbeRed;
 import com.prz.juego.utilidades.Global;
 
 import java.io.IOException;
@@ -23,7 +23,10 @@ public class HiloCliente extends Thread{
     private boolean estadoAtaque = false;
     private ArrayList<EnemigoRed> enemigosRecibidos = new ArrayList<>();
     private ArrayList<EnemigoRed> estadoEnemigos = new ArrayList<>();
-    private ArrayList<Integer> idEnemigosEliminados = new ArrayList<>();
+    private ArrayList<Integer> enemigosEliminados = new ArrayList<>();
+    private ArrayList<OrbeRed> orbesNuevos = new ArrayList<>();
+    private ArrayList<OrbeRed> estadoOrbes = new ArrayList<>();
+    private ArrayList<Integer> orbesEliminados = new ArrayList<>();
 
     public HiloCliente()
     {
@@ -82,6 +85,15 @@ public class HiloCliente extends Thread{
         } else if (msj.startsWith("ELIMINAR_ENEMIGO"))
         {
             procesarEliminacionEnemigos(msj);
+        } else if (msj.startsWith("CREAR_ORBE"))
+        {
+            procesarCreacionOrbes(msj);
+        } else if (msj.startsWith("ESTADO_ORBE"))
+        {
+            procesarEstadoOrbes(msj);
+        } else if (msj.startsWith("ELIMINAR_ORBE"))
+        {
+            procesarEliminacionOrbes(msj);
         }
     }
 
@@ -161,21 +173,76 @@ public class HiloCliente extends Thread{
             enemigosRecibidos.add(nuevoEnemigo);
 
         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-            System.out.println("Estado del enemigo invalido");
+            System.out.println("Parametros de creacion del enemigo invalido");
         }
     }
 
     private synchronized void procesarEliminacionEnemigos(String msj) {
-        String[] parametros = msj.split(";");
+        String[] mensajeParametrizado = msj.split(";");
 
         try {
-            int id = Integer.parseInt(parametros[1]);
-            idEnemigosEliminados.add(id);
+            int id = Integer.parseInt(mensajeParametrizado[1]);
+            enemigosEliminados.add(id);
 
             estadoEnemigos.removeIf(e -> e.getId() == id);
 
         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
             System.out.println("ID de enemigo eliminado inválido");
+        }
+    }
+
+    private synchronized void procesarCreacionOrbes(String msj)
+    {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            int id = Integer.parseInt(mensajeParametrizado[1]);
+            float x = Float.parseFloat(mensajeParametrizado[2]);
+            float y = Float.parseFloat(mensajeParametrizado[3]);
+            int direccion = Integer.parseInt(mensajeParametrizado[4]);
+
+            OrbeRed nuevoOrbe = new OrbeRed(id, x, y, direccion);
+
+            orbesNuevos.add(nuevoOrbe);
+
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Parametros de creacion del orbe invalido.");
+        }
+    }
+
+    private synchronized void procesarEstadoOrbes(String msj)
+    {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            int id = Integer.parseInt(mensajeParametrizado[1]);
+            float x = Float.parseFloat(mensajeParametrizado[2]);
+            float y = Float.parseFloat(mensajeParametrizado[3]);
+
+            OrbeRed encontrado = buscarOrbe(id);
+
+            if (encontrado != null)
+            {
+                encontrado.actualizarEstado(x, y);
+            }
+
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Estado del orbe invalido");
+        }
+    }
+
+    private synchronized void procesarEliminacionOrbes(String msj)
+    {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            int id = Integer.parseInt(mensajeParametrizado[1]);
+            orbesEliminados.add(id);
+
+            estadoOrbes.removeIf(e -> e.getId() == id);
+
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("ID de orbe eliminado inválido");
         }
     }
 
@@ -187,6 +254,18 @@ public class HiloCliente extends Thread{
             if(e.getId() == id)
             {
                 return e;
+            }
+        }
+        return null;
+    }
+
+    private OrbeRed buscarOrbe(int id)
+    {
+        for(OrbeRed o : estadoOrbes)
+        {
+            if(o.getId() == id)
+            {
+                return o;
             }
         }
         return null;
@@ -250,8 +329,8 @@ public class HiloCliente extends Thread{
     }
 
     public synchronized ArrayList<Integer> getEnemigosEliminados() {
-        ArrayList<Integer> copia = new ArrayList<>(idEnemigosEliminados);
-        idEnemigosEliminados.clear();
+        ArrayList<Integer> copia = new ArrayList<>(enemigosEliminados);
+        enemigosEliminados.clear();
         return copia;
     }
 
@@ -259,8 +338,31 @@ public class HiloCliente extends Thread{
         return new ArrayList<>(estadoEnemigos);
     }
 
+    public synchronized ArrayList<OrbeRed> getOrbesRecibidos() {
+        ArrayList<OrbeRed> copia = new ArrayList<>(orbesNuevos);
+        orbesNuevos.clear();
+        return copia;
+    }
+
+    public synchronized ArrayList<Integer> getOrbesEliminados() {
+        ArrayList<Integer> copia = new ArrayList<>(orbesEliminados);
+        orbesEliminados.clear();
+        return copia;
+    }
+
+    public synchronized ArrayList<OrbeRed> getEstadoOrbes() {
+        return new ArrayList<>(estadoOrbes);
+    }
+
+
     public synchronized void registrarEstadoEnemigo(EnemigoRed enemigo) {
         estadoEnemigos.add(enemigo);
+    }
+
+    public synchronized void registrarEstadoOrbe(OrbeRed orbe) {
+        if (buscarOrbe(orbe.getId()) == null) {
+            estadoOrbes.add(orbe);
+        }
     }
 
     public boolean isPosicionRecibida()

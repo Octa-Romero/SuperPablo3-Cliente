@@ -11,6 +11,7 @@ import com.prz.juego.principal.Navegable;
 import com.prz.juego.niveles.Nivel;
 import com.prz.juego.red.Cliente;
 import com.prz.juego.red.EnemigoRed;
+import com.prz.juego.red.OrbeRed;
 import com.prz.juego.utilidades.Entrada;
 import com.prz.juego.utilidades.Musica;
 import com.prz.juego.utilidades.Render;
@@ -104,6 +105,21 @@ public class PantallaJuego implements Screen {
 
             for (Integer id : cliente.getEnemigosEliminados()) {
                 nivel.eliminarEnemigo(id);
+            }
+
+            for(OrbeRed o : cliente.getOrbesRecibidos())
+            {
+                nivel.agregarOrbes(o);
+                cliente.registrarEstadoOrbe(o);
+            }
+
+            for(OrbeRed o : cliente.getEstadoOrbes())
+            {
+                nivel.actualizarEstadoOrbes(o);
+            }
+
+            for (Integer id : cliente.getOrbesEliminados()) {
+                nivel.eliminarOrbes(id);
             }
         }
 

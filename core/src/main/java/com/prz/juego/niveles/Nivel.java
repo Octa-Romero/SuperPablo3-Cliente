@@ -1,7 +1,6 @@
 package com.prz.juego.niveles;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -11,6 +10,7 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.prz.juego.entidades.*;
 import com.prz.juego.red.EnemigoRed;
+import com.prz.juego.red.OrbeRed;
 import com.prz.juego.sistemas.Camara;
 import com.prz.juego.sistemas.Colisiones;
 import com.prz.juego.utilidades.Debug;
@@ -203,44 +203,60 @@ public class Nivel {
         TipoEnemigo tipo = estadoRed.getTipo();
         Enemigo enemigo = tipo.crear(estadoRed, jugadorLocal);
 
-        System.out.println("TIPO: " + tipo);
-        System.out.println("RESULTADO DE CREAR: " + enemigo);
-
         if (enemigo != null) {
             entidades.add(enemigo);
-            System.out.println("AGREGADO A ENTIDADES: " + enemigo.getId());
         }
     }
 
     public void actualizarEstadoEnemigos(EnemigoRed estado) {
-        boolean encontrado = false;
-
         for (Entidad e : entidades) {
-            if (!encontrado && e instanceof Enemigo enemigo) {
+            if (e instanceof Enemigo enemigo && enemigo.getId() == estado.getId()) {
+                enemigo.actualizarEstadoRed(
+                    estado.getX(),
+                    estado.getY(),
+                    estado.getDireccion(),
+                    estado.estaAtacando(),
+                    estado.getVida()
+                );
 
-                if (enemigo.getId() == estado.getId()) {
-                    enemigo.actualizarEstadoRed(
-                        estado.getX(),
-                        estado.getY(),
-                        estado.getDireccion(),
-                        estado.estaAtacando(),
-                        estado.getVida()
-                    );
-
-                    encontrado = true;
-                }
+                return;
             }
         }
     }
 
     public void eliminarEnemigo(int id) {
-        for (int i = entidades.size() - 1; i >= 0; i--) {
+        for (int i = 0; i < entidades.size(); i++) {
             Entidad entidad = entidades.get(i);
 
             if (entidad instanceof Enemigo enemigo && enemigo.getId() == id) {
                 enemigo.dispose();
                 entidades.remove(i);
+                return;
             }
+        }
+    }
+
+    public void agregarOrbes(OrbeRed estadoRed)
+    {
+        if(jugadorLocal instanceof Walter walter)
+        {
+            walter.agregarOrbes(estadoRed.getId(), estadoRed.getX(), estadoRed.getY(), estadoRed.getDireccion());
+        }
+    }
+
+    public void actualizarEstadoOrbes(OrbeRed estadoRed)
+    {
+        if(jugadorLocal instanceof Walter walter)
+        {
+            walter.actualizarEstadoOrbes(estadoRed.getId(), estadoRed.getX(), estadoRed.getY());
+        }
+    }
+
+    public void eliminarOrbes(int id)
+    {
+        if(jugadorLocal instanceof Walter walter)
+        {
+            walter.eliminarOrbe(id);
         }
     }
 }

@@ -87,4 +87,22 @@ public class Cliente {
         hilo.registrarEstadoEnemigo(estado);
     }
 
+    public ArrayList<OrbeRed> getOrbesRecibidos() {
+        return hilo.getOrbesRecibidos();
+    }
+
+    public ArrayList<OrbeRed> getEstadoOrbes() {
+        return hilo.getEstadoOrbes();
+    }
+
+    public ArrayList<Integer> getOrbesEliminados()
+    {
+        return hilo.getOrbesEliminados();
+    }
+
+    public void registrarEstadoOrbe(OrbeRed estado)
+    {
+        hilo.registrarEstadoOrbe(estado);
+    }
+
 }
