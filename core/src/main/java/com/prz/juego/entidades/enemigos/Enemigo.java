@@ -1,4 +1,4 @@
-package com.prz.juego.entidades;
+package com.prz.juego.entidades.enemigos;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
@@ -6,8 +6,9 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 
+import com.prz.juego.entidades.Entidad;
+import com.prz.juego.entidades.jugadores.Jugador;
 import com.prz.juego.utilidades.Render;
-import com.prz.juego.utilidades.Sonido;
 
 public abstract class Enemigo extends Entidad {
 

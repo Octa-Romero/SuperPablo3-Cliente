@@ -1,5 +1,7 @@
-package com.prz.juego.entidades;
+package com.prz.juego.entidades.enemigos;
 
+import com.prz.juego.entidades.enemigos.melee.Bicho1;
+import com.prz.juego.entidades.jugadores.Jugador;
 import com.prz.juego.red.EnemigoRed;
 
 public enum TipoEnemigo {

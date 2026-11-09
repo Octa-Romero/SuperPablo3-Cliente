@@ -9,7 +9,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.prz.juego.entidades.Jugador;
+import com.prz.juego.entidades.jugadores.Jugador;
 import com.prz.juego.recursos.GestorRecursos;
 
 import java.util.ArrayList;

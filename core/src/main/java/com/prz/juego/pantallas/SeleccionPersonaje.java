@@ -14,7 +14,7 @@ import com.prz.juego.red.Cliente;
 import com.prz.juego.utilidades.Config;
 import com.prz.juego.utilidades.Global;
 import com.prz.juego.utilidades.Render;
-import com.prz.juego.entidades.Personajes;
+import com.prz.juego.entidades.jugadores.Personajes;
 
 public class SeleccionPersonaje implements Screen {
 

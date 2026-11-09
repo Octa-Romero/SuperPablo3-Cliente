@@ -1,6 +1,7 @@
-package com.prz.juego.entidades;
+package com.prz.juego.entidades.jugadores;
 
 import com.badlogic.gdx.graphics.Texture;
+import com.prz.juego.entidades.Entidad;
 import com.prz.juego.red.JugadorEstadoRed;
 import com.prz.juego.utilidades.Entrada;
 import com.prz.juego.utilidades.Render;

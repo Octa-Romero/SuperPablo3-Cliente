@@ -1,4 +1,4 @@
-package com.prz.juego.entidades;
+package com.prz.juego.entidades.jugadores;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Sprite;

@@ -1,13 +1,9 @@
-package com.prz.juego.entidades;
-
-import java.util.ArrayList;
+package com.prz.juego.entidades.jugadores;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Circle;
-import com.badlogic.gdx.math.Rectangle;
 import com.prz.juego.recursos.GestorRecursos;
-import com.prz.juego.sistemas.Colisiones;
 import com.prz.juego.utilidades.Render;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 

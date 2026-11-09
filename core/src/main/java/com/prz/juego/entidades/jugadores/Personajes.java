@@ -1,4 +1,4 @@
-package com.prz.juego.entidades;
+package com.prz.juego.entidades.jugadores;
 
 public enum Personajes {
     PABLO,

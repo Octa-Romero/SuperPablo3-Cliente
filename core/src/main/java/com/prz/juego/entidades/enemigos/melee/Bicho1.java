@@ -1,5 +1,7 @@
-package com.prz.juego.entidades;
+package com.prz.juego.entidades.enemigos.melee;
 
+import com.prz.juego.entidades.enemigos.Enemigo;
+import com.prz.juego.entidades.jugadores.Jugador;
 import com.prz.juego.recursos.GestorRecursos;
 
 public class Bicho1 extends Enemigo {

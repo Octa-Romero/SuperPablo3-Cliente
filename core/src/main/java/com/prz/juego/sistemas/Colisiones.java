@@ -7,9 +7,6 @@ import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.math.Rectangle;
 
-import com.prz.juego.entidades.Entidad;
-import com.prz.juego.entidades.Enemigo;
-
 import java.util.ArrayList;
 
 public class Colisiones {

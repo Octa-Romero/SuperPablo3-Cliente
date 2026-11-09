@@ -1,9 +1,8 @@
-package com.prz.juego.entidades;
+package com.prz.juego.entidades.jugadores;
 
 import java.util.ArrayList;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.prz.juego.recursos.GestorRecursos;
-import com.prz.juego.sistemas.Colisiones;
 import com.prz.juego.utilidades.Sonido;
 
 public class Walter extends Jugador {

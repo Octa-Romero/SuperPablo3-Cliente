@@ -1,6 +1,6 @@
 package com.prz.juego.hilos;
 
-import com.prz.juego.entidades.TipoEnemigo;
+import com.prz.juego.entidades.enemigos.TipoEnemigo;
 import com.prz.juego.red.EnemigoRed;
 import com.prz.juego.red.JugadorEstadoRed;
 import com.prz.juego.red.OrbeRed;

@@ -1,6 +1,6 @@
 package com.prz.juego.red;
 
-import com.prz.juego.entidades.TipoEnemigo;
+import com.prz.juego.entidades.enemigos.TipoEnemigo;
 
 public class EnemigoRed {
 
