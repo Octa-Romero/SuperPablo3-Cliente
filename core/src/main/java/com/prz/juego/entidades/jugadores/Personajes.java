@@ -7,12 +7,13 @@ public enum Personajes {
     public Jugador crear(int x, int y) {
 
         switch (this) {
-
             case PABLO:
-                return new Pablo(x, y);
+                Pablo p = new Pablo(x, y);
+                return p;
 
             case WALTER:
-                return new Walter(x, y);
+                Walter w = new Walter(x, y);
+                return w;
 
             default:
                 throw new IllegalArgumentException("Personaje inválido");

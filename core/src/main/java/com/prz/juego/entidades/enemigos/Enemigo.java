@@ -2,85 +2,74 @@ package com.prz.juego.entidades.enemigos;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
-
 import com.prz.juego.entidades.Entidad;
 import com.prz.juego.entidades.jugadores.Jugador;
 import com.prz.juego.utilidades.Render;
+import com.prz.juego.utilidades.Sonido;
 
 public abstract class Enemigo extends Entidad {
 
     protected int id;
-	protected float anchoAtaque = 100;
-	protected float altoAtaque = 10;
-	protected float velocidad;
-	protected float distanciaDeteccion = 500;
-	protected float distanciaAtaque = 15;
-	protected float direccion = 1; // 1 derecha, -1 izquierda
-	protected float tiempoPatrulla = 0;
-	protected boolean caminandoPatrulla = false;
-	protected float tiempoEstado = 0;
-	protected float tiempoAntesDeAtacar = 0.3f;
-	protected float tiempoEntreAtaques = 2f;
-	protected boolean esperandoAtaque = false;
-	protected boolean atacando = false;
-	protected boolean cooldownAtaque = false;
-	protected boolean yaDanio = false;
-	protected Jugador jugador;
-	protected Sprite spriteAtaque;
+    protected float velocidad;
+    protected float distanciaDeteccion = 500;
+    protected float distanciaDeteccionVertical = 150;
+    protected float direccion = 1; // 1 derecha, -1 izquierda
+    protected float tiempoPatrulla = 0;
+    protected boolean caminandoPatrulla = false;
+    protected boolean atacando = false;
+    protected Jugador jugador;
+    protected boolean sueltaReliquia = false;
 
-	protected Enemigo(int id,  float x, float y, float ancho, float alto, int velocidadX, double vida, double danio, Jugador jugador, Texture textura, Texture texturaAtaque) {
-		super(x, y, ancho, alto, velocidadX, vida, danio, textura);
+    protected Enemigo(
+            int id,
+            float x,
+            float y,
+            float ancho,
+            float alto,
+            int velocidadX,
+            double vida,
+            double danio,
+            Jugador jugador,
+            Texture textura) {
+        super(x, y, ancho, alto, velocidadX, vida, danio, textura);
         this.id = id;
-		this.jugador = jugador;
-		velocidad = velocidadX;
-		duracionInvencibilidad = 1f;
-		spriteAtaque = new Sprite(texturaAtaque);
-		spriteAtaque.setSize(anchoAtaque, altoAtaque);
-		actualizarOrientacionSprites();
-	}
+        this.jugador = jugador;
+        velocidad = velocidadX;
+        duracionInvencibilidad = 1f;
+        orientarSprite(sprite, direccion);
+    }
 
-	@Override
-	public void update(float delta) {
-		if (muerto) {
-			return;
-		}
+    @Override
+    public void update(float delta) {
+        if (muerto) {
+            return;
+        }
 
 		actualizarInvencibilidad(delta);
 
-		actualizarAnimacion(delta, x != xAnterior, atacando);
+        actualizarComportamiento(delta, boundsJugador);
+
+        ANIMACION.actualizar(sprite, delta, x != xAnterior, !enSuelo, atacando);
 		actualizarSpriteVisual();
-		if (atacando) {
-			Rectangle ataque = getBoundsAtaque();
-			spriteAtaque.setPosition(ataque.x, ataque.y);
-		}
 	}
 
-	protected Rectangle getBoundsAtaque() {
-		float ataqueY =	y + (alto / 2f) - (altoAtaque / 2f);
-		float centroEnemigo = x + ancho / 2f;
-		float ataqueX;
+    protected abstract void actualizarComportamiento(float delta, Rectangle boundsJugador);
 
-		if (direccion > 0) {
-			ataqueX = centroEnemigo;
-		} else {
-			ataqueX = centroEnemigo - anchoAtaque;
-		}
-
-		return new Rectangle(ataqueX, ataqueY, anchoAtaque, altoAtaque);
-	}
 
     public int getId()
     {
         return this.id;
     }
 
-	private void actualizarOrientacionSprites() {
-		orientarSprite(sprite, direccion);
-		orientarSprite(spriteAtaque, direccion);
-	}
+    protected void actualizarOrientacionSprites() {
+        orientarSprite(sprite, direccion);
+    }
+
+    public boolean estaAtacando() {
+        return atacando;
+    }
 
     public void actualizarEstadoRed(float x, float y, int direccion, boolean estaAtacando, double vida)
     {
@@ -96,36 +85,34 @@ public abstract class Enemigo extends Entidad {
         actualizarOrientacionSprites();
     }
 
-	@Override
-	public void dibujar() {
-		if (spriteVisible) {
-			sprite.draw(Render.batch);
-		}
-	}
-
-	public void dibujarAtaque() {
-		if (!atacando) {
-			return;
-		}
-
-		Rectangle ataque = getBoundsAtaque();
-		spriteAtaque.setPosition(ataque.x, ataque.y);
-		spriteAtaque.draw(Render.batch);
-	}
+    public boolean puedeRecibirDanio() {
+        return true;
+    }
 
     @Override
-    public void dibujarHitbox(ShapeRenderer shapeRenderer) {
-
-        shapeRenderer.setColor(Color.YELLOW);
-        shapeRenderer.rect(bounds.x, bounds.y, bounds.width, bounds.height);
-
-        if (atacando) {
-            Rectangle ataque = getBoundsAtaque();
-            shapeRenderer.setColor(Color.RED);
-            shapeRenderer.rect(ataque.x, ataque.y, ataque.width, ataque.height);
+    public void dibujar() {
+        if (spriteVisible) {
+            sprite.draw(Render.batch);
         }
     }
 
+    @Override
+    public void dibujarHitbox(ShapeRenderer shapeRenderer) {
+        shapeRenderer.setColor(Color.YELLOW);
+        shapeRenderer.rect(bounds.x, bounds.y, bounds.width, bounds.height);
+    }
+
+    public float getDireccion() {
+        return direccion;
+    }
+
+    public void setSueltaReliquia(boolean valor) {
+        this.sueltaReliquia = valor;
+    }
+
+    public boolean sueltaReliquia() {
+        return sueltaReliquia;
+    }
 
 	@Override
 	public void dispose() {

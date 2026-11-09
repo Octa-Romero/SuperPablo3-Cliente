@@ -4,25 +4,31 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.prz.juego.entidades.jugadores.Personajes;
 import com.prz.juego.principal.Navegable;
 import com.prz.juego.red.Cliente;
+import com.prz.juego.recursos.Imagen;
 import com.prz.juego.utilidades.Config;
 import com.prz.juego.utilidades.Global;
+import com.prz.juego.utilidades.FuenteJuego;
 import com.prz.juego.utilidades.Render;
 import com.prz.juego.entidades.jugadores.Personajes;
+import com.prz.juego.utilidades.Sonido;
 
 public class SeleccionPersonaje implements Screen {
 
     private Cliente cliente;
-    private final Navegable nav;
+    private final Navegable NAV;
+    private final PantallaMenu PANTALLA_MENU;
     private Stage stage;
     private BitmapFont font;
-
+    private BitmapFont fontBoton;
+    private Imagen fondo;
     private Personajes personajeSeleccionado;
 
     private TextButton btnPablo;
@@ -32,19 +38,38 @@ public class SeleccionPersonaje implements Screen {
     private Label lblEstado;
     private boolean conexionLista = false;
 
-    public SeleccionPersonaje(Navegable nav, Cliente cliente) {
-        this.nav = nav;
+    public SeleccionPersonaje(Navegable NAV, Cliente cliente, PantallaMenu PANTALLA_MENU) {
+        this.NAV = NAV;
         this.cliente = cliente;
+        this.PANTALLA_MENU = PANTALLA_MENU;
     }
 
     @Override
     public void show() {
         stage = new Stage(new FitViewport(Config.ANCHO_BASE, Config.ALTO_BASE));
         Gdx.input.setInputProcessor(stage);
-
-        font = new BitmapFont();
+        inicializarFuentes();
+        inicializarFondo();
 
         crearInterfaz();
+    }
+
+    private void inicializarFuentes() {
+        font = FuenteJuego.generar(48);
+        fontBoton = FuenteJuego.generar(28);
+    }
+
+    private void inicializarFondo() {
+        fondo = new Imagen("Menu/seleccionPersonaje.png");
+        actualizarFondo();
+    }
+
+    private void actualizarFondo() {
+
+        float ancho = stage.getViewport().getWorldWidth();
+        float alto = stage.getViewport().getWorldHeight();
+        fondo.setSize(ancho, alto);
+        fondo.setPosition(0, 0);
     }
 
     private void crearInterfaz() {
@@ -55,21 +80,18 @@ public class SeleccionPersonaje implements Screen {
 
         table.defaults().pad(10);
 
-        Label titulo = new Label("SELECCIÓN DE PERSONAJE", new Label.LabelStyle(font, Color.WHITE));
-        titulo.setFontScale(2f);
-
-        lblEstado = new Label("Elegí tu personaje", new Label.LabelStyle(font, Color.WHITE));
+        Label titulo = new Label("Selección de personaje", new Label.LabelStyle(font, Color.WHITE));
 
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = font;
+        style.font = fontBoton;
         style.fontColor = Color.WHITE;
         style.overFontColor = Color.GOLD;
         style.downFontColor = Color.RED;
+        style.disabledFontColor = Color.GRAY;
 
-        btnPablo = new TextButton("PABLO", style);
-        btnWalter = new TextButton("WALTER", style);
-
-        btnComenzar = new TextButton("COMENZAR", style);
+        btnPablo = new TextButton("Pablo", style);
+        btnWalter = new TextButton("Walter", style);
+        TextButton btnCancelar = new TextButton("Cancelar", style);
 
         btnPablo.setVisible(false);
         btnWalter.setVisible(false);
@@ -77,6 +99,7 @@ public class SeleccionPersonaje implements Screen {
 
         btnPablo.setDisabled(true);
         btnWalter.setDisabled(true);
+        btnComenzar = new TextButton("Comenzar", style);
         btnComenzar.setDisabled(true);
 
         btnPablo.addListener(new ClickListener() {
@@ -117,12 +140,22 @@ public class SeleccionPersonaje implements Screen {
             }
         });
 
-        table.add(titulo).padBottom(40).row();
-        table.add(lblEstado).padTop(20).row();
-        table.add(btnPablo).width(250).height(60).padBottom(20).row();
-        table.add(btnWalter).width(250).height(60).padBottom(40).row();
+        btnCancelar.addListener(
+            new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    Sonido.CLICK.sonar();
+                    NAV.cambiarPantalla(PANTALLA_MENU);
+                }
+            });
 
-        table.add(btnComenzar).width(300).height(70);
+        table.add(titulo).colspan(2).center().padBottom(40).row();
+
+        table.add(btnPablo).width(250).height(60).padRight(255).padBottom(20);
+        table.add(btnWalter).width(250).height(60).padLeft(255).padBottom(20).row();
+
+        table.add(btnComenzar).colspan(2).center().width(300).height(70).padBottom(12).row();
+        table.add(btnCancelar).colspan(2).center().width(250).height(60);
 
         stage.addActor(table);
     }
@@ -130,7 +163,9 @@ public class SeleccionPersonaje implements Screen {
     @Override
     public void render(float delta) {
         Render.limpiarPantalla();
-
+        Render.begin(stage.getCamera());
+        fondo.dibujar(Render.batch);
+        Render.end();
         stage.act(delta);
         stage.draw();
 
@@ -145,8 +180,8 @@ public class SeleccionPersonaje implements Screen {
 
             Personajes personajeRemoto = Personajes.valueOf(nombreRemoto);
 
-            nav.cambiarPantalla(
-                new PantallaJuego(nav, personajeSeleccionado, personajeRemoto, cliente)
+            NAV.cambiarPantalla(
+                new PantallaJuego(NAV, personajeSeleccionado, personajeRemoto, cliente)
             );
 
             return;
@@ -169,8 +204,11 @@ public class SeleccionPersonaje implements Screen {
         stage.getViewport().update(width, height, true);
     }
 
-    @Override public void pause() {}
-    @Override public void resume() {}
+    @Override
+    public void pause() {}
+
+    @Override
+    public void resume() {}
 
     @Override
     public void hide() {
@@ -181,5 +219,7 @@ public class SeleccionPersonaje implements Screen {
     public void dispose() {
         stage.dispose();
         font.dispose();
+        fontBoton.dispose();
+        fondo.dispose();
     }
 }

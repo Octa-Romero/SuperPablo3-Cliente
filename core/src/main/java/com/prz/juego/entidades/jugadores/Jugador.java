@@ -5,6 +5,7 @@ import com.prz.juego.entidades.Entidad;
 import com.prz.juego.red.JugadorEstadoRed;
 import com.prz.juego.utilidades.Entrada;
 import com.prz.juego.utilidades.Render;
+import com.prz.juego.utilidades.Sonido;
 
 public abstract class Jugador extends Entidad {
 
@@ -13,15 +14,27 @@ public abstract class Jugador extends Entidad {
 	private final Texture TEXTURA_HUD;
 	protected boolean atacando;
     protected float direccion = 1;
+    private boolean trepando = false;
+    private boolean accionesHabilitadas = true;
 
-	protected Jugador(float x, float y, float ancho, float alto, int velocidadX, double vida, double danio, Texture textura, Texture TEXTURA_HUD) {
-		super(x, y, ancho, alto, velocidadX, vida, danio, textura);
-		this.TEXTURA_HUD = TEXTURA_HUD;
-	}
 
-	public void setEntrada(Entrada entrada) {
-		this.entrada = entrada;
-	}
+    protected Jugador(
+            float x,
+            float y,
+            float ancho,
+            float alto,
+            int velocidadX,
+            double vida,
+            double danio,
+            Texture textura,
+            Texture TEXTURA_HUD) {
+        super(x, y, ancho, alto, velocidadX, vida, danio, textura);
+        this.TEXTURA_HUD = TEXTURA_HUD;
+    }
+
+    public void setEntrada(Entrada entrada) {
+        this.entrada = entrada;
+    }
 
     public void setEstadoRed(JugadorEstadoRed estadoRed)
     {
@@ -31,17 +44,34 @@ public abstract class Jugador extends Entidad {
 	@Override
 	public void update(float delta) {
         actualizarEstadoRed();
-        actualizarAnimacion(delta, x != xAnterior, atacando);
-        actualizarOrientacionSegunMovimiento();
+        ANIMACION.actualizar(
+            sprite,
+            delta,
+            x != xAnterior || (trepando && y != yAnterior),
+            !enSuelo && !trepando,
+            atacando);        actualizarOrientacionSegunMovimiento();
         actualizarSpriteVisual();
 		actualizarInvencibilidad(delta);
 	}
 
-	public void dibujar() {
-		if (spriteVisible && sprite != null) {
-			sprite.draw(Render.batch);
-		}
-	}
+    public abstract void atacar();
+
+    public void setAccionesHabilitadas(boolean habilitadas) {
+        accionesHabilitadas = habilitadas;
+        if (!habilitadas) {
+            atacando = false;
+        }
+    }
+
+    protected boolean accionesHabilitadas() {
+        return accionesHabilitadas;
+    }
+
+    public void dibujar() {
+        if (spriteVisible && sprite != null) {
+            sprite.draw(Render.batch);
+        }
+    }
 
     protected void actualizarEstadoRed() {
         if (estadoRed == null) {

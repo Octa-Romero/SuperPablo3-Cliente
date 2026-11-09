@@ -4,8 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -16,6 +16,7 @@ import com.prz.juego.principal.Navegable;
 import com.prz.juego.recursos.Imagen;
 import com.prz.juego.red.Cliente;
 import com.prz.juego.utilidades.Config;
+import com.prz.juego.utilidades.FuenteJuego;
 import com.prz.juego.utilidades.Musica;
 import com.prz.juego.utilidades.Render;
 import com.prz.juego.utilidades.Sonido;
@@ -28,10 +29,10 @@ public class PantallaMenu implements Screen {
     private BitmapFont fontTitulo;
     private BitmapFont fontSubtitulo;
     private BitmapFont fontBoton;
-    private final Navegable nav;
+    private final Navegable NAV;
 
-    public PantallaMenu(Navegable nav, Cliente cliente) {
-        this.nav = nav;
+    public PantallaMenu(Navegable NAV, Cliente cliente) {
+        this.NAV = NAV;
         this.cliente = cliente;
     }
 
@@ -65,20 +66,16 @@ public class PantallaMenu implements Screen {
     }
 
     private void inicializarFuentes() {
-        fontTitulo = new BitmapFont();
-        fontTitulo.getData().setScale(5f);
-
-        fontSubtitulo = new BitmapFont();
-        fontSubtitulo.getData().setScale(3f);
-
-        fontBoton = new BitmapFont();
-        fontBoton.getData().setScale(2f);
+        fontTitulo = FuenteJuego.generar(64);
+        fontSubtitulo = FuenteJuego.generar(36);
+        fontBoton = FuenteJuego.generar(28);
     }
 
     private void crearInterfaz() {
 
-        Label titulo = new Label("SUPER PABLO 3", new Label.LabelStyle(fontTitulo, Color.GOLD));
-        Label subtitulo = new Label("~ LA ÚLTIMA BATALLA ~", new Label.LabelStyle(fontSubtitulo, Color.RED));
+        Label titulo = new Label("Super Pablo 3", new Label.LabelStyle(fontTitulo, Color.GOLD));
+        Label subtitulo =
+            new Label("~ La Última Batalla ~", new Label.LabelStyle(fontSubtitulo, Color.RED));
 
         TextButton.TextButtonStyle estiloBoton = new TextButton.TextButtonStyle();
 
@@ -87,10 +84,10 @@ public class PantallaMenu implements Screen {
         estiloBoton.overFontColor = Color.GOLD;
         estiloBoton.downFontColor = Color.RED;
 
-        TextButton btnJugar = new TextButton("JUGAR", estiloBoton);
-        TextButton btnOpciones = new TextButton("OPCIONES", estiloBoton);
-        TextButton btnComoJugar = new TextButton("CÓMO JUGAR", estiloBoton);
-        TextButton btnSalir = new TextButton("SALIR", estiloBoton);
+        TextButton btnJugar = new TextButton("Jugar", estiloBoton);
+        TextButton btnOpciones = new TextButton("Opciones", estiloBoton);
+        TextButton btnComoJugar = new TextButton("Cómo jugar", estiloBoton);
+        TextButton btnSalir = new TextButton("Salir", estiloBoton);
 
         btnJugar.addListener(
             new ClickListener() {
@@ -98,27 +95,26 @@ public class PantallaMenu implements Screen {
                 public void clicked(InputEvent event, float x, float y) {
                     cliente.conectar();
                     Sonido.CLICK.sonar();
-                    nav.cambiarPantalla(new SeleccionPersonaje(nav, cliente));
+                    NAV.cambiarPantalla(new SeleccionPersonaje(NAV, PantallaMenu.this));
                 }
-            }
-        );
+            });
 
         btnOpciones.addListener(
             new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     Sonido.CLICK.sonar();
-                    nav.cambiarPantalla(new PantallaOpciones(nav, cliente, PantallaMenu.this, false));
+                    NAV.cambiarPantalla(new PantallaOpciones(NAV, PantallaMenu.this, false));
                 }
-            }
-        );
+            });
 
-        btnComoJugar.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                nav.cambiarPantalla(new ComoJugar(nav));
-            }
-        });
+        btnComoJugar.addListener(
+            new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    NAV.cambiarPantalla(new ComoJugar(NAV));
+                }
+            });
 
         btnSalir.addListener(
             new ClickListener() {
@@ -127,8 +123,7 @@ public class PantallaMenu implements Screen {
                     Sonido.CLICK.sonar();
                     Gdx.app.exit();
                 }
-            }
-        );
+            });
 
         Table contenedor = new Table();
         contenedor.setFillParent(true);
@@ -164,12 +159,10 @@ public class PantallaMenu implements Screen {
     }
 
     @Override
-    public void pause() {
-    }
+    public void pause() {}
 
     @Override
-    public void resume() {
-    }
+    public void resume() {}
 
     @Override
     public void hide() {

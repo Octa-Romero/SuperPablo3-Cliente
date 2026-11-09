@@ -2,12 +2,11 @@ package com.prz.juego.entidades;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
-import com.prz.juego.utilidades.Sonido;
+import com.prz.juego.utilidades.Animacion;
 
 public abstract class Entidad {
 
@@ -32,16 +31,17 @@ public abstract class Entidad {
     protected float tiempoParpadeo = 0;
     protected boolean spriteVisible = true;
     protected boolean mirandoDerecha = true;
+    protected final Animacion ANIMACION;
 
-    private TextureRegion regionReposo;
-    private Animation<TextureRegion> animacionReposo;
-    private Animation<TextureRegion> animacionCaminar;
-    private Animation<TextureRegion> animacionAtaque;
-    private Animation<TextureRegion> animacionActual;
-    private float tiempoAnimacion;
-
-
-    protected Entidad(float x, float y, float ancho, float alto, int velocidadX, double vida, double danio, Texture textura) {
+    protected Entidad(
+            float x,
+            float y,
+            float ancho,
+            float alto,
+            int velocidadX,
+            double vida,
+            double danio,
+            Texture textura) {
         this.x = x;
         this.y = y;
         this.ancho = ancho;
@@ -56,12 +56,11 @@ public abstract class Entidad {
         yAnterior = y;
         bounds = new Rectangle(x, y, ancho, alto);
         sprite = new Sprite(textura);
-        regionReposo = new TextureRegion(textura);
+        ANIMACION = new Animacion(textura);
         actualizarSpriteVisual();
     }
 
-
-    protected final void configurarSpriteVisual(float anchoSprite, float altoSprite) {
+    protected void configurarSpriteVisual(float anchoSprite, float altoSprite) {
         validarTamanoSprite(anchoSprite, altoSprite);
 
         this.anchoSprite = anchoSprite;
@@ -73,9 +72,12 @@ public abstract class Entidad {
         actualizarSpriteVisual();
     }
 
-
-    protected final void configurarSpriteVisual(float anchoSprite, float altoSprite,
-                                                float offsetDerecha, float offsetIzquierda, float offsetY) {
+    protected void configurarSpriteVisual(
+            float anchoSprite,
+            float altoSprite,
+            float offsetDerecha,
+            float offsetIzquierda,
+            float offsetY) {
 
         validarTamanoSprite(anchoSprite, altoSprite);
 
@@ -88,6 +90,29 @@ public abstract class Entidad {
         actualizarSpriteVisual();
     }
 
+    public void escalarSpriteVisual(float escala) {
+        if (escala <= 0) {
+            throw new IllegalArgumentException("La escala visual debe ser positiva");
+        }
+
+        configurarSpriteVisual(
+                anchoSprite * escala,
+                altoSprite * escala,
+                offsetSpriteXDerecha * escala,
+                offsetSpriteXIzquierda * escala,
+                offsetSpriteY * escala);
+    }
+
+    public void escalar(float escala) {
+        if (escala <= 0) {
+            throw new IllegalArgumentException("La escala debe ser positiva");
+        }
+
+        ancho *= escala;
+        alto *= escala;
+        bounds.setSize(ancho, alto);
+        escalarSpriteVisual(escala);
+    }
 
     private void validarTamanoSprite(float anchoSprite, float altoSprite) {
         if (anchoSprite <= 0 || altoSprite <= 0) {
@@ -95,222 +120,32 @@ public abstract class Entidad {
         }
     }
 
-
-    protected final void actualizarSpriteVisual() {
+    protected void actualizarSpriteVisual() {
         if (sprite != null) {
             sprite.setSize(anchoSprite, altoSprite);
 
-            float offsetX = sprite.isFlipX()
-                ? offsetSpriteXIzquierda
-                : offsetSpriteXDerecha;
+            float offsetX = sprite.isFlipX() ? offsetSpriteXIzquierda : offsetSpriteXDerecha;
 
-            sprite.setPosition(
-                x + offsetX,
-                y + offsetSpriteY
-            );
+            sprite.setPosition(x + offsetX, y + offsetSpriteY);
         }
     }
-
-
-    protected final void configurarAnimaciones(Texture spritesheet, int anchoFrame, int altoFrame, int framesReposo, int framesCaminar, float duracionFrame) {
-
-        int[] indicesReposo = crearIndices(0, framesReposo);
-        int[] indicesCaminar = crearIndices(framesReposo, framesCaminar);
-
-        configurarAnimaciones(
-            spritesheet,
-            anchoFrame,
-            altoFrame,
-            indicesReposo,
-            indicesCaminar,
-            null,
-            duracionFrame
-        );
-    }
-
-
-    protected final void configurarAnimaciones(Texture spritesheet, int anchoFrame, int altoFrame, int[] indicesReposo, int[] indicesCaminar, int[] indicesAtaque, float duracionFrame) {
-
-        validarConfiguracionAnimaciones(
-            spritesheet,
-            anchoFrame,
-            altoFrame,
-            indicesCaminar,
-            duracionFrame
-        );
-
-        TextureRegion[][] grilla = TextureRegion.split(
-            spritesheet,
-            anchoFrame,
-            altoFrame
-        );
-
-        TextureRegion[] frames = aplanar(grilla);
-
-        validarIndices(
-            frames.length,
-            indicesReposo,
-            indicesCaminar,
-            indicesAtaque
-        );
-
-        if (indicesReposo != null && indicesReposo.length > 0) {
-            animacionReposo = crearAnimacion(
-                frames,
-                indicesReposo,
-                duracionFrame,
-                Animation.PlayMode.LOOP
-            );
-        }
-
-        animacionCaminar = crearAnimacion(
-            frames,
-            indicesCaminar,
-            duracionFrame,
-            Animation.PlayMode.LOOP
-        );
-
-        if (indicesAtaque != null && indicesAtaque.length > 0) {
-            animacionAtaque = crearAnimacion(
-                frames,
-                indicesAtaque,
-                duracionFrame,
-                Animation.PlayMode.NORMAL
-            );
-        }
-
-        animacionActual = null;
-        tiempoAnimacion = 0f;
-    }
-
-
-    private void validarConfiguracionAnimaciones(Texture spritesheet, int anchoFrame, int altoFrame,
-                                                 int[] indicesCaminar, float duracionFrame) {
-
-        if (spritesheet == null ||
-            anchoFrame <= 0 ||
-            altoFrame <= 0 ||
-            duracionFrame <= 0 ||
-            indicesCaminar == null ||
-            indicesCaminar.length == 0 ||
-            spritesheet.getWidth() % anchoFrame != 0 ||
-            spritesheet.getHeight() % altoFrame != 0) {
-
-            throw new IllegalArgumentException("Spritesheet o configuracion de frames invalida");
-        }
-    }
-
-
-    private Animation<TextureRegion> crearAnimacion(TextureRegion[] frames, int[] indices,
-                                                    float duracionFrame, Animation.PlayMode modo) {
-
-        TextureRegion[] regiones = new TextureRegion[indices.length];
-
-        for (int i = 0; i < indices.length; i++) {
-            regiones[i] = frames[indices[i]];
-        }
-
-        Animation<TextureRegion> animacion = new Animation<>(
-            duracionFrame,
-            regiones
-        );
-
-        animacion.setPlayMode(modo);
-
-        return animacion;
-    }
-
-
-    private int[] crearIndices(int desde, int cantidad) {
-        if (cantidad < 0) {
-            throw new IllegalArgumentException("La cantidad de frames no puede ser negativa");
-        }
-
-        int[] indices = new int[cantidad];
-
-        for (int i = 0; i < cantidad; i++) {
-            indices[i] = desde + i;
-        }
-
-        return indices;
-    }
-
-
-    private void validarIndices(int totalFrames, int[]... grupos) {
-        for (int[] grupo : grupos) {
-            if (grupo == null) {
-                continue;
-            }
-
-            for (int indice : grupo) {
-                if (indice < 0 || indice >= totalFrames) {
-                    throw new IllegalArgumentException("El spritesheet no contiene el frame " + indice);
-                }
-            }
-        }
-    }
-
-
-    private TextureRegion[] aplanar(TextureRegion[][] grilla) {
-        int cantidad = 0;
-
-        for (TextureRegion[] fila : grilla) {
-            cantidad += fila.length;
-        }
-
-        TextureRegion[] frames = new TextureRegion[cantidad];
-
-        int indice = 0;
-
-        for (TextureRegion[] fila : grilla) {
-            for (TextureRegion frame : fila) {
-                frames[indice++] = frame;
-            }
-        }
-
-        return frames;
-    }
-
-
-    protected final void actualizarAnimacion(float delta, boolean caminando) {
-        actualizarAnimacion(delta, caminando, false);
-    }
-
-
-    protected final void actualizarAnimacion(float delta, boolean caminando, boolean atacando) {
-
-        Animation<TextureRegion> siguiente;
-
-        if (atacando && animacionAtaque != null) {
-            siguiente = animacionAtaque;
-        } else if (caminando) {
-            siguiente = animacionCaminar;
-        } else {
-            siguiente = animacionReposo;
-        }
-
-        if (siguiente == null) {
-            if (!caminando && regionReposo != null) {
-                sprite.setRegion(regionReposo);
-            }
-            return;
-        }
-
-        if (animacionActual != siguiente) {
-            animacionActual = siguiente;
-            tiempoAnimacion = 0f;
-        } else {
-            tiempoAnimacion += delta;
-        }
-
-        sprite.setRegion(
-            animacionActual.getKeyFrame(tiempoAnimacion)
-        );
-    }
-
 
     public abstract void update(float delta);
 
+    public boolean debeVerificarColisionesMapa() {
+        return true;
+    }
+
+    protected void actualizarFisica(float delta) {
+
+        if (!enSuelo) {
+            velocidadY -= GRAVEDAD * delta;
+        }
+
+        y += velocidadY * delta;
+
+        bounds.setPosition(x, y);
+    }
 
     protected void actualizarInvencibilidad(float delta) {
 
@@ -367,6 +202,22 @@ public abstract class Entidad {
         yAnterior = y;
     }
 
+    public void limitarMovimientoHorizontal(float limiteIzquierdo, float limiteDerecho) {
+        float maximoX = limiteDerecho - bounds.width;
+        if (maximoX < limiteIzquierdo) {
+            maximoX = limiteIzquierdo;
+        }
+
+        float xLimitado = MathUtils.clamp(x, limiteIzquierdo, maximoX);
+        chocoPared =
+            chocoPared
+                || xLimitado != x
+                || xLimitado <= limiteIzquierdo
+                || xLimitado >= maximoX;
+        x = xLimitado;
+        bounds.setPosition(x, y);
+        actualizarSpriteVisual();
+    }
 
     protected void orientarSprite(Sprite sprite, float direccion) {
 
@@ -390,7 +241,9 @@ public abstract class Entidad {
         orientarSprite(sprite, x - xAnterior);
     }
 
-    protected void morir() {muerto = true;}
+    protected void morir() {
+        muerto = true;
+    }
 
     public boolean estaMuerto() {
         return muerto;
@@ -403,12 +256,7 @@ public abstract class Entidad {
 
         shapeRenderer.setColor(Color.GREEN);
 
-        shapeRenderer.rect(
-            bounds.x,
-            bounds.y,
-            bounds.width,
-            bounds.height
-        );
+        shapeRenderer.rect(bounds.x, bounds.y, bounds.width, bounds.height);
     }
 
 
@@ -421,6 +269,13 @@ public abstract class Entidad {
         return y;
     }
 
+    public float getXAnterior() {
+        return xAnterior;
+    }
+
+    public float getYAnterior() {
+        return yAnterior;
+    }
 
     public float getAncho() {
         return ancho;
@@ -436,6 +291,13 @@ public abstract class Entidad {
         return bounds;
     }
 
+    public int getVelocidadX() {
+        return velocidadX;
+    }
+
+    public float getVelocidadY() {
+        return velocidadY;
+    }
 
     public double getVida() {
         return vida;
@@ -445,18 +307,11 @@ public abstract class Entidad {
         return vidaMaxima;
     }
 
-
     public double getDanio() {
         return danio;
     }
 
     public void dispose() {
         sprite = null;
-        regionReposo = null;
-
-        animacionReposo = null;
-        animacionCaminar = null;
-        animacionAtaque = null;
-        animacionActual = null;
     }
 }

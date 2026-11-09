@@ -1,17 +1,35 @@
 package com.prz.juego.entidades.jugadores;
 
-import java.util.ArrayList;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.prz.juego.entidades.Lanzable;
 import com.prz.juego.recursos.GestorRecursos;
 import com.prz.juego.utilidades.Sonido;
 
+import java.util.ArrayList;
+
 public class Walter extends Jugador {
 
-    private final ArrayList<OrbeMagica> ORBES = new ArrayList<>();
+    private ArrayList<Lanzable> proyectiles;
 
     public Walter(float x, float y) {
-        super(x, y, 50, 80, 140, 5, 0.5, GestorRecursos.obtenerTextura("Personajes/Walter/walter.png"), GestorRecursos.obtenerTextura("Hud/walter_hud.png"));
-        configurarAnimaciones(GestorRecursos.obtenerTextura("Personajes/Walter/walter_spritesheet2.png"), 540, 450, new int[]{0}, new int[]{2, 3, 4, 5, 6, 7}, new int[]{1}, 0.12f);
+        super(
+                x,
+                y,
+                50,
+                80,
+                140,
+                5,
+                0.5,
+                GestorRecursos.obtenerTextura("Personajes/Walter/walter.png"),
+                GestorRecursos.obtenerTextura("Hud/walter_hud.png"));
+        ANIMACION.configurar(
+                GestorRecursos.obtenerTextura("Personajes/Walter/walter_spritesheet.png"),
+                540,
+                450,
+                new int[] {0},
+                new int[] {1, 2, 3, 4, 5, 3},
+                null,
+                new int[] {6},
+                0.12f);
         configurarSpriteVisual(96f, 80f, 0f, -46f, 0f);
     }
 
