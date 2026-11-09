@@ -4,7 +4,6 @@ package com.prz.juego.pantallas;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
-import com.prz.juego.entidades.Enemigo;
 import com.prz.juego.entidades.Jugador;
 import com.prz.juego.entidades.Personajes;
 import com.prz.juego.principal.Navegable;
@@ -17,13 +16,11 @@ import com.prz.juego.utilidades.Musica;
 import com.prz.juego.utilidades.Render;
 import com.prz.juego.sistemas.Hud;
 
-import java.util.ArrayList;
-
 public class PantallaJuego implements Screen {
 
     private Cliente cliente;
     private final Navegable nav;
-    private Jugador jugador;
+    private Jugador jugadorLocal;
     private Jugador jugadorRemoto;
     private final Nivel nivel;
     private final Entrada entrada;
@@ -46,17 +43,16 @@ public class PantallaJuego implements Screen {
         this.menuPausa = new MenuPausa(nav, this);
         this.cliente = cliente;
 
-        jugador = personajeElegido.crear(50, 150);
-
-        jugador.setEntrada(entrada);
+        jugadorLocal = personajeElegido.crear(50, 150);
+        jugadorLocal.setEntrada(entrada);
+        jugadorLocal.setEstadoRed(cliente.getEstadoLocal());
 
         jugadorRemoto = personajeRemoto.crear(75, 150);
+        jugadorRemoto.setEstadoRed(cliente.getEstadoRemoto());
 
-        nivel.setJugadorRemoto(jugadorRemoto);
+        nivel.cargar("Niveles/Niveles/Level1.tmx", jugadorLocal, jugadorRemoto);
 
-        nivel.cargar("Niveles/Niveles/Level1.tmx", jugador);
-
-        hud = new Hud(jugador, Render.batch);
+        hud = new Hud(jugadorLocal, Render.batch);
     }
 
     @Override
@@ -84,13 +80,6 @@ public class PantallaJuego implements Screen {
         if (!pausado) {
             nivel.update(delta, entrada);
             actualizarEnvioEntrada(delta);
-
-            if(cliente.llegoPosicionRecibida()){
-                jugador.actualizarPosicion(cliente.getX(), cliente.getY(), cliente.getDireccionRecibida());
-            }
-
-            jugador.actualizarEstadoAtaque(cliente.getEstadoAtaque());
-            jugador.actualizarEstadoVida(cliente.getEstadoVida());
 
             for(EnemigoRed e : cliente.getEnemigosRecibidos())
             {

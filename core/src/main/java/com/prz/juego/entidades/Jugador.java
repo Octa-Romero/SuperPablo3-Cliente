@@ -1,15 +1,15 @@
 package com.prz.juego.entidades;
 
 import com.badlogic.gdx.graphics.Texture;
-import com.prz.juego.sistemas.Hud;
+import com.prz.juego.red.JugadorEstadoRed;
 import com.prz.juego.utilidades.Entrada;
 import com.prz.juego.utilidades.Render;
 
 public abstract class Jugador extends Entidad {
 
 	protected Entrada entrada;
+    protected JugadorEstadoRed estadoRed;
 	private final Texture TEXTURA_HUD;
-	protected Hud hud;
 	protected boolean atacando;
     protected float direccion = 1;
 
@@ -22,8 +22,14 @@ public abstract class Jugador extends Entidad {
 		this.entrada = entrada;
 	}
 
+    public void setEstadoRed(JugadorEstadoRed estadoRed)
+    {
+        this.estadoRed = estadoRed;
+    }
+
 	@Override
 	public void update(float delta) {
+        actualizarEstadoRed();
         actualizarAnimacion(delta, x != xAnterior, atacando);
         actualizarOrientacionSegunMovimiento();
         actualizarSpriteVisual();
@@ -36,7 +42,29 @@ public abstract class Jugador extends Entidad {
 		}
 	}
 
-    public void actualizarPosicion(float x, float y, float direccion) {
+    protected void actualizarEstadoRed() {
+        if (estadoRed == null) {
+            return;
+        }
+
+        if (estadoRed.recibioPosicion()) {
+            actualizarPosicion(
+                estadoRed.getX(),
+                estadoRed.getY(),
+                estadoRed.getDireccion()
+            );
+        }
+
+        if (estadoRed.recibioEstadoAtaque()) {
+            actualizarEstadoAtaque(estadoRed.estaAtacando());
+        }
+
+        if (estadoRed.recibioVida()) {
+            actualizarEstadoVida(estadoRed.getVida());
+        }
+    }
+
+    protected void actualizarPosicion(float x, float y, float direccion) {
         guardarPosicionAnterior();
 
         this.x = x;
@@ -46,7 +74,7 @@ public abstract class Jugador extends Entidad {
         bounds.setPosition(x, y);
     }
 
-    public abstract void actualizarEstadoAtaque(boolean estaAtacando);
+    protected abstract void actualizarEstadoAtaque(boolean estaAtacando);
 
 
     public void actualizarEstadoVida(double cantidad)
@@ -54,15 +82,7 @@ public abstract class Jugador extends Entidad {
         setVida(cantidad);
     }
 
-	public Hud getHud() {
-		return hud;
-	}
-
 	public Texture getTEXTURA_HUD() {
 		return TEXTURA_HUD;
-	}
-
-	public boolean estaAtacando() {
-		return atacando;
 	}
 }

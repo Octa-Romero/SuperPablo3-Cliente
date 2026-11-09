@@ -39,34 +39,14 @@ public class Cliente {
         return hilo.getPersonajeRemoto();
     }
 
-    public float getX()
+    public JugadorEstadoRed getEstadoLocal()
     {
-        return hilo.getXRecibida();
+        return hilo.getEstadoLocal();
     }
 
-    public float getY()
+    public JugadorEstadoRed getEstadoRemoto()
     {
-        return hilo.getYRecibida();
-    }
-
-    public float getDireccionRecibida()
-    {
-        return hilo.getDireccionRecibida();
-    }
-
-    public boolean getEstadoAtaque()
-    {
-        return hilo.getEstadoAtaque();
-    }
-
-    public double getEstadoVida()
-    {
-        return hilo.getEstadoVida();
-    }
-
-    public boolean llegoPosicionRecibida()
-    {
-        return hilo.isPosicionRecibida();
+        return hilo.getEstadoRemoto();
     }
 
     public ArrayList<EnemigoRed> getEnemigosRecibidos() {

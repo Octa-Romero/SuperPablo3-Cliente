@@ -25,17 +25,31 @@ public class Nivel {
     private OrthogonalTiledMapRenderer mapRenderer;
     private Jugador jugadorLocal;
     private Jugador jugadorRemoto;
+    private Pablo pablo;
+    private Walter walter;
     private Colisiones colision;
     private final ArrayList<Entidad> entidades = new ArrayList<>();
     private ShapeRenderer shapeRenderer;
     private boolean gameOver = false;
 
-    public void cargar(String ruta, Jugador jugador) {
+    public void cargar(String ruta, Jugador jugadorLocal, Jugador jugadorRemoto) {
         camara = new Camara();
 
-        this.jugadorLocal = jugador;
+        this.jugadorLocal = jugadorLocal;
+        this.jugadorRemoto = jugadorRemoto;
 
-        entidades.add(jugador);
+        entidades.add(jugadorLocal);
+        entidades.add(jugadorRemoto);
+
+        Jugador[] jugadores = new Jugador[]{jugadorLocal, jugadorRemoto};
+
+        for (Jugador jugador : jugadores) {
+            if (jugador instanceof Pablo p) {
+                pablo = p;
+            } else if (jugador instanceof Walter w) {
+                walter = w;
+            }
+        }
 
         shapeRenderer = new ShapeRenderer();
 
@@ -44,11 +58,6 @@ public class Nivel {
 
         colision = new Colisiones(mapa);
 
-        /*if(jugador instanceof Pablo){
-            ((Pablo) jugador).setEntidades(entidades);
-        } else {
-            ((Walter) jugador).configurarAtaque(entidades, colision);
-        }*/
 
         MapProperties props = mapa.getProperties();
 
@@ -83,17 +92,9 @@ public class Nivel {
             }
         }
 
-        if (jugadorRemoto != null) {
-            jugadorRemoto.dibujar();
-        }
+        pablo.dibujarAtaque();
 
-        if (jugadorLocal instanceof Pablo) {
-            ((Pablo) jugadorLocal).dibujarAtaque();
-        }
-
-        if (jugadorLocal instanceof Walter) {
-            ((Walter) jugadorLocal).dibujarOrbes();
-        }
+        walter.dibujarOrbes();
     }
 
     public void renderDebug() {
@@ -110,9 +111,7 @@ public class Nivel {
             entidad.dibujarHitbox(shapeRenderer);
         }
 
-        if (jugadorLocal instanceof Walter) {
-            ((Walter) jugadorLocal).dibujarOrbesHitbox(shapeRenderer);
-        }
+        walter.dibujarOrbesHitbox(shapeRenderer);
 
         shapeRenderer.end();
     }
@@ -194,11 +193,6 @@ public class Nivel {
 
     public boolean isGameOver(){return this.gameOver;}
 
-    public void setJugadorRemoto(Jugador jugadorRemoto)
-    {
-        this.jugadorRemoto = jugadorRemoto;
-    }
-
     public void agregarEnemigos(EnemigoRed estadoRed) {
         TipoEnemigo tipo = estadoRed.getTipo();
         Enemigo enemigo = tipo.crear(estadoRed, jugadorLocal);
@@ -238,25 +232,16 @@ public class Nivel {
 
     public void agregarOrbes(OrbeRed estadoRed)
     {
-        if(jugadorLocal instanceof Walter walter)
-        {
-            walter.agregarOrbes(estadoRed.getId(), estadoRed.getX(), estadoRed.getY(), estadoRed.getDireccion());
-        }
+        walter.agregarOrbes(estadoRed.getId(), estadoRed.getX(), estadoRed.getY(), estadoRed.getDireccion());
     }
 
     public void actualizarEstadoOrbes(OrbeRed estadoRed)
     {
-        if(jugadorLocal instanceof Walter walter)
-        {
-            walter.actualizarEstadoOrbes(estadoRed.getId(), estadoRed.getX(), estadoRed.getY());
-        }
+        walter.actualizarEstadoOrbes(estadoRed.getId(), estadoRed.getX(), estadoRed.getY());
     }
 
     public void eliminarOrbes(int id)
     {
-        if(jugadorLocal instanceof Walter walter)
-        {
-            walter.eliminarOrbe(id);
-        }
+        walter.eliminarOrbe(id);
     }
 }

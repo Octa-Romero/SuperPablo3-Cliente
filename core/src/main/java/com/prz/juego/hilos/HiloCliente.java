@@ -2,6 +2,7 @@ package com.prz.juego.hilos;
 
 import com.prz.juego.entidades.TipoEnemigo;
 import com.prz.juego.red.EnemigoRed;
+import com.prz.juego.red.JugadorEstadoRed;
 import com.prz.juego.red.OrbeRed;
 import com.prz.juego.utilidades.Global;
 
@@ -17,10 +18,8 @@ public class HiloCliente extends Thread{
     private volatile String personajeRemoto;
     private InetAddress ipServer;
     private int puerto = 9990;
-    private float xRecibida, yRecibida, direccionRecibida;
-    private double vidaRecibida;
-    private boolean posicionRecibida = false;
-    private boolean estadoAtaque = false;
+    private JugadorEstadoRed estadoLocal = new JugadorEstadoRed();
+    private JugadorEstadoRed estadoRemoto = new JugadorEstadoRed();
     private ArrayList<EnemigoRed> enemigosRecibidos = new ArrayList<>();
     private ArrayList<EnemigoRed> estadoEnemigos = new ArrayList<>();
     private ArrayList<Integer> enemigosEliminados = new ArrayList<>();
@@ -97,15 +96,18 @@ public class HiloCliente extends Thread{
         }
     }
 
-    private void procesarPosicion(String msj)
-    {
-        String[] mensajeParametrizado = msj.split(";");
+    private void procesarPosicion(String msj) {
+        String[] partes = msj.split(";");
 
         try {
-            posicionRecibida = true;
-            xRecibida = Float.parseFloat(mensajeParametrizado[1]);
-            yRecibida = Float.parseFloat(mensajeParametrizado[2]);
-            direccionRecibida = Float.parseFloat(mensajeParametrizado[3]);
+            String personaje = partes[1];
+            float x = Float.parseFloat(partes[2]);
+            float y = Float.parseFloat(partes[3]);
+            int direccion = Integer.parseInt(partes[4]);
+
+            JugadorEstadoRed estado = obtenerEstadoJugador(personaje);
+
+            estado.actualizarPosicion(x, y, direccion);
         } catch (NumberFormatException e) {
             System.out.println("Posición recibida inválida");
         }
@@ -116,7 +118,12 @@ public class HiloCliente extends Thread{
         String[] mensajeParametrizado = msj.split(";");
 
         try {
-            estadoAtaque = Boolean.parseBoolean(mensajeParametrizado[1]);
+            String personaje = mensajeParametrizado[1];
+            boolean estadoAtaque = Boolean.parseBoolean(mensajeParametrizado[2]);
+
+            JugadorEstadoRed estado = obtenerEstadoJugador(personaje);
+
+            estado.actualizarAtaque(estadoAtaque);
         } catch (NumberFormatException e) {
             System.out.println("Estado del ataque recibido invalido");
         }
@@ -127,7 +134,12 @@ public class HiloCliente extends Thread{
         String[] mensajeParametrizado = msj.split(";");
 
         try {
-            vidaRecibida = Double.parseDouble(mensajeParametrizado[1]);
+            String personaje = mensajeParametrizado[1];
+            double vidaRecibida = Double.parseDouble(mensajeParametrizado[2]);
+
+            JugadorEstadoRed estado = obtenerEstadoJugador(personaje);
+
+            estado.actualizarVida(vidaRecibida);
         } catch (NumberFormatException e) {
             System.out.println("Valor de vida invalido");
         }
@@ -271,6 +283,15 @@ public class HiloCliente extends Thread{
         return null;
     }
 
+    private JugadorEstadoRed obtenerEstadoJugador(String personaje) {
+        if(personaje.equals(personajeRemoto))
+        {
+            return estadoRemoto;
+        } else
+        {
+            return estadoLocal;
+        }
+    }
 
     public void enviarMensaje(String msj)
     {
@@ -300,26 +321,12 @@ public class HiloCliente extends Thread{
         return this.personajeRemoto;
     }
 
-    public float getXRecibida() {
-        return xRecibida;
+    public JugadorEstadoRed getEstadoLocal() {
+        return estadoLocal;
     }
 
-    public float getYRecibida() {
-        return yRecibida;
-    }
-
-    public float getDireccionRecibida()
-    {
-        return direccionRecibida;
-    }
-
-    public boolean getEstadoAtaque() {
-        return estadoAtaque;
-    }
-
-    public double getEstadoVida()
-    {
-        return this.vidaRecibida;
+    public JugadorEstadoRed getEstadoRemoto() {
+        return estadoRemoto;
     }
 
     public synchronized ArrayList<EnemigoRed> getEnemigosRecibidos() {
@@ -363,10 +370,5 @@ public class HiloCliente extends Thread{
         if (buscarOrbe(orbe.getId()) == null) {
             estadoOrbes.add(orbe);
         }
-    }
-
-    public boolean isPosicionRecibida()
-    {
-        return this.posicionRecibida;
     }
 }
