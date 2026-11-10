@@ -287,7 +287,7 @@ public class PantallaFinal implements Screen {
                 Actions.delay(18f),
                 Actions.fadeOut(3f),
                 Actions.run(() -> {
-                    NAV.cambiarPantalla(new PantallaMenu(NAV));
+                    NAV.volverAMenu();
                 })
             )
         );
@@ -316,7 +316,7 @@ public class PantallaFinal implements Screen {
         actualizarFondo();
         posicionarEncabezado();
 
-        if (texto.getText().length() > 0) {
+        if (!texto.getText().isEmpty()) {
             actualizarTexto();
         }
     }

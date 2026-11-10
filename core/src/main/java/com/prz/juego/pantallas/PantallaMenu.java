@@ -11,7 +11,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
-import com.prz.juego.hilos.HiloCliente;
 import com.prz.juego.principal.Navegable;
 import com.prz.juego.recursos.Imagen;
 import com.prz.juego.red.Cliente;
@@ -95,7 +94,7 @@ public class PantallaMenu implements Screen {
                 public void clicked(InputEvent event, float x, float y) {
                     cliente.conectar();
                     Sonido.CLICK.sonar();
-                    NAV.cambiarPantalla(new SeleccionPersonaje(NAV, PantallaMenu.this));
+                    NAV.cambiarPantalla(new SeleccionPersonaje(NAV, cliente, PantallaMenu.this));
                 }
             });
 

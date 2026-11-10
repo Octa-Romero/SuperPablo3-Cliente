@@ -24,7 +24,7 @@ public class Nivel7 extends Nivel {
         return RUTA;
     }
 
-    @Override
+    /*@Override
     protected void configurarContenidoEspecifico(Jugador jugador) {
         jefe = new Retumbar(CENTRO_MAPA, SUELO, jugador, 0, ANCHO_MAPA);
         agregarEntidadAlFondo(jefe);
@@ -32,6 +32,8 @@ public class Nivel7 extends Nivel {
         agregarEntidad(jefe.getManoDerecha());
         agregarEntidad(jefe.getFuegoSuelo());
     }
+
+     */
 
     @Override
     protected void configurarEntornoEspecifico(float ancho, float alto) {

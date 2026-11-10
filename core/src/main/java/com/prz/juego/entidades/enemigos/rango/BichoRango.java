@@ -8,8 +8,9 @@ public class BichoRango extends EnemigoRango {
 
     private static final float DURACION_FRAME_IDLE = 0.12f;
 
-    public BichoRango(float x, float y, Jugador jugador, Modo modo) {
+    public BichoRango(int id, float x, float y, Jugador jugador, Modo modo) {
         super(
+                id,
                 x,
                 y,
                 70,
@@ -35,6 +36,5 @@ public class BichoRango extends EnemigoRango {
                 null,
                 DURACION_FRAME_IDLE);
         ANIMACION.actualizar(sprite, 0f, false, false, false);
-        vidaProyectil = 0.5;
     }
 }

@@ -216,7 +216,7 @@ public class AtaquesExtraRetumbar {
                 tiempoEntreMeteoritos = 0f;
                 break;
             case BICHOS:
-                invocarBichos();
+    //            invocarBichos();
                 terminarAtaque();
                 break;
             case RAYOS:
@@ -300,7 +300,7 @@ public class AtaquesExtraRetumbar {
                         TEXTURA_METEORITO,
                         ANIMACION_FUEGO));
     }
-
+/*
     private void invocarBichos() {
         float anchoBicho = 70f;
         BichoRango izquierdo =
@@ -311,14 +311,16 @@ public class AtaquesExtraRetumbar {
                         ALTO_MAPA + 30f,
                         JUGADOR,
                         EnemigoRango.Modo.MOVIL);
-        izquierdo.configurarRetrasoInicialAntesDeAtacar(1f);
-        derecho.configurarRetrasoInicialAntesDeAtacar(1f);
+        //izquierdo.configurarRetrasoInicialAntesDeAtacar(1f);
+        //derecho.configurarRetrasoInicialAntesDeAtacar(1f);
         derecho.configurarDireccionInicial(-1f);
         BICHOS_INVOCADOS.add(izquierdo);
         BICHOS_INVOCADOS.add(derecho);
         AGREGAR_ENTIDAD.accept(izquierdo);
         AGREGAR_ENTIDAD.accept(derecho);
     }
+    */
+
 
     public void cancelarAtaques() {
         ataqueActual = TipoAtaque.NINGUNO;
@@ -480,7 +482,7 @@ public class AtaquesExtraRetumbar {
                             ANCHO_LASER,
                             alturaLaser);
             if (boundsJugador.overlaps(boundsLaser)) {
-                JUGADOR.restarVida(DANIO);
+    //            JUGADOR.restarVida(DANIO);
             }
         }
         Sonido.RELAMPAGO.sonar();
@@ -523,7 +525,7 @@ public class AtaquesExtraRetumbar {
             Rectangle boundsRayo =
                     new Rectangle(x - ANCHO_RAYO / 2f, SUELO_Y, ANCHO_RAYO, alturaRayo);
             if (boundsJugador.overlaps(boundsRayo)) {
-                JUGADOR.restarVida(DANIO);
+        //        JUGADOR.restarVida(DANIO);
             }
         }
         Sonido.RELAMPAGO.sonar();

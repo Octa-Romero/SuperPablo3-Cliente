@@ -4,4 +4,10 @@ import com.badlogic.gdx.Screen;
 
 public interface Navegable {
     void cambiarPantalla(Screen screen);
+
+    void iniciarJuego(String rutaNivel);
+
+    void volverAMenu();
+
+    void volverAHub();
 }

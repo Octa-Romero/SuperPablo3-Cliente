@@ -81,7 +81,7 @@ public class Reliquia {
 
         velocidadY -= GRAVEDAD * delta;
         float nuevoY = bounds.y + velocidadY * delta;
-
+/*
         if (velocidadY <= 0f) {
             float yAnteriorInferior = yAnterior;
             float yNuevoInferior = nuevoY;
@@ -105,7 +105,7 @@ public class Reliquia {
                     break;
                 }
             }
-        }
+        }*/
 
         bounds.y = nuevoY;
         sprite.setPosition(bounds.x, bounds.y);

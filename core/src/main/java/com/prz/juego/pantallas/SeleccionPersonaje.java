@@ -82,6 +82,8 @@ public class SeleccionPersonaje implements Screen {
 
         Label titulo = new Label("Selección de personaje", new Label.LabelStyle(font, Color.WHITE));
 
+        lblEstado = new Label("Elegí tu personaje", new Label.LabelStyle(font, Color.WHITE));
+
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
         style.font = fontBoton;
         style.fontColor = Color.WHITE;
@@ -95,7 +97,6 @@ public class SeleccionPersonaje implements Screen {
 
         btnPablo.setVisible(false);
         btnWalter.setVisible(false);
-        btnComenzar.setVisible(false);
 
         btnPablo.setDisabled(true);
         btnWalter.setDisabled(true);
@@ -136,6 +137,7 @@ public class SeleccionPersonaje implements Screen {
 
                 lblEstado.setText("Esperando al otro jugador...");
 
+                cliente.setPersonsajeLocal(personajeSeleccionado);
                 cliente.enviarMensaje(personajeSeleccionado.name());
             }
         });
@@ -170,20 +172,15 @@ public class SeleccionPersonaje implements Screen {
         stage.draw();
 
         if (Global.empieza) {
-            String nombreRemoto = cliente.getPersonajeRemoto();
+            Personajes nombreRemoto = cliente.getPersonajeRemoto();
 
             if (nombreRemoto == null) {
                 return;
             }
-
             Global.empieza = false;
-
-            Personajes personajeRemoto = Personajes.valueOf(nombreRemoto);
-
             NAV.cambiarPantalla(
-                new PantallaJuego(NAV, personajeSeleccionado, personajeRemoto, cliente)
+                new PantallaJuego(NAV, cliente, null)
             );
-
             return;
         }
 

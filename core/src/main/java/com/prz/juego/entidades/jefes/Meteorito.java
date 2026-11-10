@@ -80,7 +80,7 @@ public class Meteorito {
                         ANCHO_BOUNDS_FUEGO,
                         ALTO_BOUNDS_FUEGO);
             } else if (BOUNDS.overlaps(JUGADOR.getBounds())) {
-                JUGADOR.restarVida(DANIO);
+    //            JUGADOR.restarVida(DANIO);
             }
             return true;
         }
@@ -92,7 +92,7 @@ public class Meteorito {
         SPRITE.setPosition(X - ANCHO_FUEGO / 2f, SUELO_Y);
 
         if (BOUNDS.overlaps(JUGADOR.getBounds())) {
-            JUGADOR.restarVida(DANIO);
+    //        JUGADOR.restarVida(DANIO);
         }
         return tiempoFuego < DURACION_FUEGO;
     }

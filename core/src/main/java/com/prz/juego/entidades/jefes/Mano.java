@@ -106,8 +106,9 @@ public class Mano extends Enemigo {
     private float tiempoMovimientoIdle;
     private float desfaseMovimientoVertical;
 
-    public Mano(Retumbar RETUMBAR, Lado LADO, Jugador jugador) {
+    public Mano(int id, Retumbar RETUMBAR, Lado LADO, Jugador jugador) {
         super(
+            id,
             0,
             RETUMBAR.getY(),
             ANCHO,
@@ -173,7 +174,7 @@ public class Mano extends Enemigo {
         guardarPosicionAnterior();
         actualizarInvencibilidad(delta);
         tiempoMovimientoIdle += delta;
-        actualizarComportamiento(delta, jugador.getBounds());
+    //    actualizarComportamiento(delta, jugador.getBounds());
         if (estadoAtaque == EstadoAtaque.NINGUNO) {
             actualizarDesfaseMovimientoVertical();
             y = RETUMBAR.getY() + ALTURA_REPOSO + desfaseMovimientoVertical;
@@ -200,14 +201,14 @@ public class Mano extends Enemigo {
         sprite.setAlpha(visible ? 1f : 0f);
     }
 
-    @Override
+    /*@Override
     protected void actualizarComportamiento(float delta, Rectangle boundsJugador) {
         if (estadoAtaque == EstadoAtaque.NINGUNO) {
             seguirJefe();
         } else {
             ejecutarAtaque(delta);
         }
-    }
+    }*/
 
     private void actualizarDesfaseMovimientoVertical() {
         desfaseMovimientoVertical =
@@ -481,7 +482,7 @@ public class Mano extends Enemigo {
             tiempoHitboxExtendida > 0
                 && BOUNDS_FUEGO_GOLPE.overlaps(jugador.getBounds());
         if (golpeaConMano || golpeaConFuego) {
-            jugador.restarVida(danio);
+    //        jugador.restarVida(danio);
         }
     }
 
@@ -521,7 +522,7 @@ public class Mano extends Enemigo {
         BOUNDS_FUEGO_GOLPE.set(0f, 0f, 0f, 0f);
     }
 
-    @Override
+/*    @Override
     public void restarVida(double cantidad) {
         if (!visible) {
             return;
@@ -531,6 +532,7 @@ public class Mano extends Enemigo {
         }
         super.restarVida(cantidad);
     }
+ */
 
     public void iniciarLevantarBajar() {
         if (muerto) {
@@ -599,9 +601,10 @@ public class Mano extends Enemigo {
         return !muerto && estadoAtaque != EstadoAtaque.NINGUNO;
     }
 
-    @Override
+    /*@Override
     public void saltar() {
     }
+     */
 
     @Override
     protected void morir() {

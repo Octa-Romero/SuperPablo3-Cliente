@@ -11,8 +11,4 @@ public class Nivel3 extends Nivel {
         return RUTA;
     }
 
-    @Override
-    protected void configurarContenidoEspecifico(Jugador jugador) {
-        // Este mapa todavía no define entidades propias del nivel.
-    }
 }

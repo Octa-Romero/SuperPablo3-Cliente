@@ -4,8 +4,6 @@ package com.prz.juego.pantallas;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.math.Vector3;
 import com.prz.juego.entidades.jugadores.Jugador;
 import com.prz.juego.entidades.jugadores.Personajes;
 import com.prz.juego.principal.Navegable;
@@ -13,11 +11,9 @@ import com.prz.juego.niveles.Hub;
 import com.prz.juego.niveles.Nivel;
 import com.prz.juego.red.Cliente;
 import com.prz.juego.red.EnemigoRed;
-import com.prz.juego.red.OrbeRed;
-import com.prz.juego.principal.Navegable;
+import com.prz.juego.red.BolaFuegoRed;
 import com.prz.juego.sistemas.Hud;
 import com.prz.juego.utilidades.Entrada;
-import com.prz.juego.utilidades.Musica;
 import com.prz.juego.utilidades.Render;
 import com.prz.juego.utilidades.Sonido;
 
@@ -27,6 +23,7 @@ public class PantallaJuego implements Screen {
     private final Navegable NAV;
     private Jugador jugadorLocal;
     private Jugador jugadorRemoto;
+
     private final Nivel NIVEL;
     private final Entrada ENTRADA;
     private final MenuPausa MENU_PAUSA;
@@ -40,21 +37,22 @@ public class PantallaJuego implements Screen {
     private String ultimoEstadoIzquierda = "";
     private String ultimoEstadoDerecha = "";
     private String ultimoEstadoArriba = "";
+    private String ultimoEstadoAbajo = "";
     private String ultimoEstadoAtaque = "";
+    private String ultimoEstadoE = "";
 
-    public PantallaJuego(Navegable NAV, Personajes PERSONAJE_ELEGIDO) {
-        this(NAV, PERSONAJE_ELEGIDO, null);
-    }
-
-    public PantallaJuego(Navegable nav, Personajes personajeElegido, Personajes personajeRemoto, Cliente cliente, String rutaNivel) {
-        this.NAV = nav;
+    public PantallaJuego(Navegable NAV, Cliente cliente, String rutaNivel) {
+        this.NAV = NAV;
         this.ENTRADA = new Entrada();
-        this.NIVEL = new Nivel();
-        this.MENU_PAUSA = new MenuPausa(nav, this);
+        this.NIVEL = rutaNivel == null ? null : Nivel.crear(rutaNivel);
+        this.MENU_PAUSA = new MenuPausa(NAV, this);
         this.cliente = cliente;
 
+        Personajes personajeElegido = cliente.getPersonajeLocal();
+        Personajes personajeRemoto = cliente.getPersonajeRemoto();
+
         jugadorLocal = personajeElegido.crear(50, 150);
-        jugadorLocal.setEntrada(entrada);
+        jugadorLocal.setEntrada(ENTRADA);
         jugadorLocal.setEstadoRed(cliente.getEstadoLocal());
 
         jugadorRemoto = personajeRemoto.crear(75, 150);
@@ -62,13 +60,13 @@ public class PantallaJuego implements Screen {
 
         if (rutaNivel == null) {
             hub = new Hub();
-            hub.cargar("Niveles/Niveles/Hub.tmx", jugador);
+            hub.cargar("Niveles/Niveles/Hub.tmx", jugadorLocal, jugadorRemoto);
         } else {
             hub = null;
-            NIVEL.cargar(jugador);
+            NIVEL.cargar(jugadorLocal, jugadorRemoto);
         }
 
-        HUD = new Hud(jugador, Render.batch);
+        HUD = new Hud(jugadorLocal, Render.batch);
 
         if (NIVEL != null) {
             HUD.setJefe(NIVEL.getJefe());
@@ -77,7 +75,7 @@ public class PantallaJuego implements Screen {
 
     @Override
     public void show() {
-        Gdx.input.setCursorCatched(!pausado);
+        //Gdx.input.setCursorCatched(!pausado);
 
         InputMultiplexer mux = new InputMultiplexer();
 
@@ -102,12 +100,12 @@ public class PantallaJuego implements Screen {
         }
 
         if (!pausado) {
+            actualizarEnvioEntrada(delta);
+
             if (hub != null) {
                 hub.update(delta, ENTRADA);
             } else {
                 NIVEL.update(delta, ENTRADA);
-
-                actualizarEnvioEntrada(delta);
 
                 for (EnemigoRed e : cliente.getEnemigosRecibidos()) {
                     NIVEL.agregarEnemigos(e);
@@ -122,12 +120,12 @@ public class PantallaJuego implements Screen {
                     NIVEL.eliminarEnemigo(id);
                 }
 
-                for (OrbeRed o : cliente.getOrbesRecibidos()) {
+                for (BolaFuegoRed o : cliente.getOrbesRecibidos()) {
                     NIVEL.agregarOrbes(o);
                     cliente.registrarEstadoOrbe(o);
                 }
 
-                for (OrbeRed o : cliente.getEstadoOrbes()) {
+                for (BolaFuegoRed o : cliente.getEstadoOrbes()) {
                     NIVEL.actualizarEstadoOrbes(o);
                 }
 
@@ -144,11 +142,11 @@ public class PantallaJuego implements Screen {
 
         // Ir a la seleccion de niveles desde el Hub
         if (!pausado && hub != null && hub.estaEnCentroHub() && ENTRADA.aprietaE()) {
-
-            guardarPosicionCamara();
+            cliente.enviarMensaje("SELECCIONAR_NIVEL;" + hub.estaEnCentroHub());
+            /*guardarPosicionCamara();
             ENTRADA.limpiar();
-            NAV.cambiarPantalla(new SeleccionNivel(NAV, PERSONAJE_ELEGIDO, this));
-            return;
+            NAV.cambiarPantalla(new SeleccionNivel(NAV, cliente,this));
+            return;*/
         }
 
         // Dibujar el Hub o el NIVEL seleccionado
@@ -170,7 +168,7 @@ public class PantallaJuego implements Screen {
             NIVEL.renderDebug();
 
             if (NIVEL.isGameOver()) {
-                NAV.cambiarPantalla(new GameOver(NAV, PERSONAJE_ELEGIDO));
+                NAV.cambiarPantalla(new GameOver(NAV));
                 return;
             }
         }
@@ -184,6 +182,101 @@ public class PantallaJuego implements Screen {
             MENU_PAUSA.update(delta);
             MENU_PAUSA.render();
         }
+    }
+
+    private void actualizarEnvioEntrada(float delta) {
+        tiempoMensaje += delta;
+
+        String estadoIzquierda = obtenerEstadoIzquierda();
+        String estadoDerecha = obtenerEstadoDerecha();
+        String estadoArriba = obtenerEstadoArriba();
+        String estadoAtaque = obtenerEstadoAtaque();
+        String estadoAbajo = obtenerEstadoAbajo();
+        String estadoE = obtenerEstadoE();
+
+        if (!estadoIzquierda.equals(ultimoEstadoIzquierda)
+            || tiempoMensaje >= INTERVALO_MENSAJE) {
+            cliente.enviarMensaje(estadoIzquierda);
+            ultimoEstadoIzquierda = estadoIzquierda;
+        }
+
+        if (!estadoDerecha.equals(ultimoEstadoDerecha)
+            || tiempoMensaje >= INTERVALO_MENSAJE) {
+            cliente.enviarMensaje(estadoDerecha);
+            ultimoEstadoDerecha = estadoDerecha;
+        }
+
+        if (!estadoArriba.equals(ultimoEstadoArriba)
+            || tiempoMensaje >= INTERVALO_MENSAJE) {
+            cliente.enviarMensaje(estadoArriba);
+            ultimoEstadoArriba = estadoArriba;
+        }
+
+        if (!estadoAbajo.equals(ultimoEstadoAbajo)
+            || tiempoMensaje >= INTERVALO_MENSAJE) {
+
+            cliente.enviarMensaje(estadoAbajo);
+            ultimoEstadoAbajo = estadoAbajo;
+        }
+
+        if (!estadoAtaque.equals(ultimoEstadoAtaque)
+            || tiempoMensaje >= INTERVALO_MENSAJE) {
+            cliente.enviarMensaje(estadoAtaque);
+            ultimoEstadoAtaque = estadoAtaque;
+        }
+
+        if (!estadoE.equals(ultimoEstadoE)
+            || tiempoMensaje >= INTERVALO_MENSAJE) {
+            cliente.enviarMensaje(estadoE);
+            ultimoEstadoE = estadoE;
+        }
+
+        if (tiempoMensaje >= INTERVALO_MENSAJE) {
+            tiempoMensaje = 0f;
+        }
+    }
+
+
+    private String obtenerEstadoIzquierda() {
+        if (ENTRADA.mueveIzquierda()) {
+            return "INPUT;IZQUIERDA";
+        }
+        return "INPUT;NOIZQUIERDA";
+    }
+
+    private String obtenerEstadoDerecha() {
+        if (ENTRADA.mueveDerecha()) {
+            return "INPUT;DERECHA";
+        }
+        return "INPUT;NODERECHA";
+    }
+
+    private String obtenerEstadoArriba() {
+        if (ENTRADA.mueveArriba()) {
+            return "INPUT;ARRIBA";
+        }
+        return "INPUT;NOARRIBA";
+    }
+
+    private String obtenerEstadoAbajo() {
+        if (ENTRADA.mueveAbajo()) {
+            return "INPUT;ABAJO";
+        }
+        return "INPUT;NOABAJO";
+    }
+
+    private String obtenerEstadoAtaque() {
+        if (ENTRADA.ataca()) {
+            return "INPUT;ATACA";
+        }
+        return "INPUT;NOATACA";
+    }
+
+    private String obtenerEstadoE() {
+        if (ENTRADA.ataca()) {
+            return "INPUT;E";
+        }
+        return "INPUT;NOE";
     }
 
     @Override
@@ -214,11 +307,6 @@ public class PantallaJuego implements Screen {
 
     public boolean estaEnHub() {
         return NIVEL == null;
-    }
-
-    public void volverAlHub() {
-        Musica.MENU.sonar();
-        NAV.cambiarPantalla(new PantallaJuego(NAV, PERSONAJE_ELEGIDO));
     }
 
     public void restaurarPosicionCamara() {

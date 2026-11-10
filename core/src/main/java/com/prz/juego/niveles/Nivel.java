@@ -1,5 +1,5 @@
-
 package com.prz.juego.niveles;
+
 
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -7,20 +7,17 @@ import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
-import com.prz.juego.entidades.*;
+
 import com.prz.juego.entidades.Entidad;
 import com.prz.juego.entidades.Lanzable;
 import com.prz.juego.entidades.Reliquia;
 import com.prz.juego.entidades.enemigos.Enemigo;
 import com.prz.juego.entidades.enemigos.TipoEnemigo;
-import com.prz.juego.entidades.jugadores.Jugador;
-import com.prz.juego.entidades.jugadores.Pablo;
-import com.prz.juego.entidades.jugadores.Walter;
-import com.prz.juego.red.EnemigoRed;
-import com.prz.juego.red.OrbeRed;
-import com.prz.juego.entidades.enemigos.rango.EnemigoRango;
 import com.prz.juego.entidades.jefes.Retumbar;
 import com.prz.juego.entidades.jugadores.*;
+
+import com.prz.juego.red.EnemigoRed;
+import com.prz.juego.red.BolaFuegoRed;
 import com.prz.juego.sistemas.Camara;
 import com.prz.juego.sistemas.Colisiones;
 import com.prz.juego.utilidades.Debug;
@@ -35,22 +32,26 @@ public abstract class Nivel {
     private Camara camara;
     private TiledMap mapa;
     private OrthogonalTiledMapRenderer mapRenderer;
+
     private Jugador jugadorLocal;
     private Jugador jugadorRemoto;
+
     private Pablo pablo;
     private Walter walter;
+
     private Colisiones colision;
-    private boolean enemigoReliquiaDerrotado = false;
+    private ShapeRenderer shapeRenderer;
+
     private final ArrayList<Entidad> ENTIDADES = new ArrayList<>();
     private final ArrayList<Entidad> ENTIDADES_PENDIENTES = new ArrayList<>();
     private final ArrayList<Entidad> ENTIDADES_PENDIENTES_ELIMINAR = new ArrayList<>();
     private final ArrayList<Lanzable> PROYECTILES = new ArrayList<>();
     private final ArrayList<Reliquia> RELIQUIAS = new ArrayList<>();
 
-    private ShapeRenderer shapeRenderer;
+    private boolean enemigoReliquiaDerrotado = false;
     private boolean gameOver = false;
     private boolean tieneReliquia = false;
-    private float anchoMapa;
+
     protected Musica musica = Musica.NIVEL;
 
     public static Nivel crear(String ruta) {
@@ -85,7 +86,7 @@ public abstract class Nivel {
         ENTIDADES.add(jugadorLocal);
         ENTIDADES.add(jugadorRemoto);
 
-        Jugador[] jugadores = new Jugador[]{jugadorLocal, jugadorRemoto};
+        Jugador[] jugadores = {jugadorLocal, jugadorRemoto};
 
         for (Jugador jugador : jugadores) {
             if (jugador instanceof Pablo p) {
@@ -102,7 +103,8 @@ public abstract class Nivel {
 
         colision = new Colisiones(mapa);
 
-        configurarContenidoEspecifico(jugador);
+        // No generar enemigos locales.
+        // Los enemigos llegarán mediante los mensajes del servidor.
 
         MapProperties props = mapa.getProperties();
 
@@ -114,8 +116,8 @@ public abstract class Nivel {
         float mapTotalWidth = tileWidth * mapWidthTiles;
         float mapTotalHeight = tileHeight * mapHeightTiles;
 
-        anchoMapa = mapTotalWidth;
         camara.setLimitesMapa(mapTotalWidth, mapTotalHeight);
+
         configurarEntornoEspecifico(mapTotalWidth, mapTotalHeight);
 
         mapRenderer = new OrthogonalTiledMapRenderer(mapa, 1f);
@@ -124,8 +126,6 @@ public abstract class Nivel {
     }
 
     protected abstract String getRutaMapa();
-
-    protected abstract void configurarContenidoEspecifico(Jugador jugador);
 
     protected float getPosicionInicialX() {
         return 50;
@@ -136,44 +136,26 @@ public abstract class Nivel {
     }
 
     protected void agregarEntidad(Entidad entidad) {
-        if (entidad instanceof EnemigoRango) {
-            ((EnemigoRango) entidad).configurarDisparo(
-                colision, PROYECTILES
-            );
-        }
-
         ENTIDADES.add(entidad);
     }
 
     protected void agregarEntidadDiferida(Entidad entidad) {
-        if (entidad instanceof EnemigoRango) {
-            ((EnemigoRango) entidad).configurarDisparo(colision, PROYECTILES);
-        }
-
         ENTIDADES_PENDIENTES.add(entidad);
     }
 
     protected void eliminarEntidadDiferida(Entidad entidad) {
-        if (entidad instanceof EnemigoRango) {
-            ((EnemigoRango) entidad).cancelarAtaques();
-        }
-
         if (!ENTIDADES_PENDIENTES_ELIMINAR.contains(entidad)) {
             ENTIDADES_PENDIENTES_ELIMINAR.add(entidad);
         }
     }
 
     protected void agregarEntidadAlFondo(Entidad entidad) {
-        if (entidad instanceof EnemigoRango) {
-            ((EnemigoRango) entidad).configurarDisparo(colision, PROYECTILES);
-        }
-
         ENTIDADES.add(0, entidad);
     }
 
-    protected void configurarEntornoEspecifico(float ancho, float alto) {}
+    protected void configurarEntornoEspecifico(float ancho, float alto) {
+    }
 
-    // Por el momento los niveles no tienen jefe, solo Nivel7 lo sobrescribe
     public Retumbar getJefe() {
         return null;
     }
@@ -185,26 +167,28 @@ public abstract class Nivel {
 
     public void render() {
         Render.batch.setProjectionMatrix(camara.getCamera().combined);
-        boolean dibujarJugadorAlFrente = getJefe() != null;
+
+        boolean dibujarJugadoresAlFrente = getJefe() != null;
 
         for (Entidad entidad : ENTIDADES) {
-            if (dibujarJugadorAlFrente && entidad == jugador) {
+            if (dibujarJugadoresAlFrente
+                && (entidad == pablo || entidad == walter)) {
                 continue;
             }
 
             entidad.dibujar();
         }
 
-        if (dibujarJugadorAlFrente) {
+        if (dibujarJugadoresAlFrente) {
             getJefe().dibujarAtaquesExtra();
-            jugador.dibujar();
+            pablo.dibujar();
+            walter.dibujar();
         }
 
         for (Lanzable proyectil : PROYECTILES) {
             proyectil.dibujar();
         }
 
-        // Dibujar las reliquias dentro del mundo del juego.
         for (Reliquia reliquia : RELIQUIAS) {
             reliquia.dibujar();
         }
@@ -237,21 +221,24 @@ public abstract class Nivel {
 
     public void update(float delta, Entrada entrada) {
 
-        // Actualizar entidades
+        // Actualización visual de las entidades.
         for (Entidad entidad : ENTIDADES) {
             entidad.update(delta);
         }
+
         for (Entidad entidad : ENTIDADES_PENDIENTES_ELIMINAR) {
             if (ENTIDADES.remove(entidad)) {
                 entidad.dispose();
             }
             ENTIDADES_PENDIENTES.remove(entidad);
         }
+
         ENTIDADES_PENDIENTES_ELIMINAR.clear();
+
         ENTIDADES.addAll(ENTIDADES_PENDIENTES);
         ENTIDADES_PENDIENTES.clear();
 
-        // Actualizar proyectiles.
+        // Actualización visual de proyectiles.
         for (int i = PROYECTILES.size() - 1; i >= 0; i--) {
             Lanzable proyectil = PROYECTILES.get(i);
             proyectil.update(delta);
@@ -261,65 +248,13 @@ public abstract class Nivel {
             }
         }
 
-        // Eliminar enemigos muertos y generar la reliquia si corresponde.
-        for (int i = ENTIDADES.size() - 1; i >= 0; i--) {
-            Entidad entidad = ENTIDADES.get(i);
-
-            if (entidad instanceof Enemigo) {
-                Enemigo enemigo = (Enemigo) entidad;
-
-                if (enemigo.estaMuerto()) {
-
-                    if (enemigo.sueltaReliquia()) {
-                        enemigoReliquiaDerrotado = true;
-                        System.out.println(
-                            "[RELIQUIA] ¡El enemigo marcado murió!"
-                        );
-
-                        float xReliquia = enemigo.getX()
-                            + (enemigo.getAncho() - 32f) / 2f;
-
-                        float yReliquia = enemigo.getY();
-
-                        System.out.println(
-                            "[RELIQUIA] Posición: X="
-                                + xReliquia + ", Y=" + yReliquia
-                        );
-
-                        RELIQUIAS.add(
-                            new Reliquia(xReliquia, yReliquia, colision)
-                        );
-
-                        System.out.println(
-                            "[RELIQUIA] Reliquia creada. Total: "
-                                + RELIQUIAS.size()
-                        );
-                    }
-
-                    enemigo.dispose();
-                    ENTIDADES.remove(i);
-                }
-            }
-        }
-
-        // Actualizar reliquias.
-        for (int i = RELIQUIAS.size() - 1; i >= 0; i--) {
-            Reliquia reliquia = RELIQUIAS.get(i);
-            if (reliquia.actualizar(jugador, delta)) {
-                tieneReliquia = true;
-                reliquia.dispose();
-                RELIQUIAS.remove(i);
-            }
-        }
-
-        // Actualizar cámara.
+        // La cámara sigue al jugador local.
         camara.seguirPersonaje(
             jugadorLocal.getX() + jugadorLocal.getAncho() / 2f,
             jugadorLocal.getY() + jugadorLocal.getAlto() / 2f,
             delta
         );
 
-        // Alternar hitboxes.
         if (entrada.aprietaF1()) {
             Debug.cambiarHitboxes();
         }
@@ -327,11 +262,104 @@ public abstract class Nivel {
         if (jugadorLocal.estaMuerto()) {
             gameOver = true;
         }
+    }
 
+    public void agregarEnemigos(EnemigoRed estadoRed) {
+        TipoEnemigo tipo = estadoRed.getTipo();
+
+        Enemigo enemigo = tipo.crear(estadoRed, jugadorLocal);
+
+        if (enemigo != null) {
+            for (Entidad entidad : ENTIDADES) {
+                if (entidad instanceof Enemigo existente
+                    && existente.getId() == enemigo.getId()) {
+                    return;
+                }
+            }
+
+            ENTIDADES.add(enemigo);
+        }
+    }
+
+    public void actualizarEstadoEnemigos(EnemigoRed estado) {
+        for (Entidad entidad : ENTIDADES) {
+            if (entidad instanceof Enemigo enemigo
+                && enemigo.getId() == estado.getId()) {
+
+                enemigo.actualizarEstadoRed(
+                    estado.getX(),
+                    estado.getY(),
+                    estado.getDireccion(),
+                    estado.estaAtacando(),
+                    estado.getVida()
+                );
+
+                return;
+            }
+        }
+    }
+
+    public void eliminarEnemigo(int id) {
+        for (int i = 0; i < ENTIDADES.size(); i++) {
+            Entidad entidad = ENTIDADES.get(i);
+
+            if (entidad instanceof Enemigo enemigo
+                && enemigo.getId() == id) {
+
+                enemigo.dispose();
+                ENTIDADES.remove(i);
+                return;
+            }
+        }
+    }
+
+    public void agregarOrbes(BolaFuegoRed estadoRed) {
+        walter.agregarBola(
+            estadoRed.getId(),
+            estadoRed.getX(),
+            estadoRed.getY(),
+            estadoRed.getDireccion()
+        );
+    }
+
+    public void actualizarEstadoOrbes(BolaFuegoRed estadoRed) {
+        walter.actualizarEstadoBola(
+            estadoRed.getId(),
+            estadoRed.getX(),
+            estadoRed.getY()
+        );
+    }
+
+    public void eliminarOrbes(int id) {
+        walter.eliminarBola(id);
     }
 
     public void resize(int width, int height) {
         camara.actualizarTamano(width, height);
+    }
+
+    public Camera getCamara() {
+        return camara.getCamera();
+    }
+
+    public void guardarPosicionCamara() {
+        camara.guardarPosicion();
+    }
+
+    public void restaurarPosicionCamara() {
+        camara.restaurarPosicion();
+    }
+
+    public boolean isGameOver() {
+        return gameOver;
+    }
+
+    public boolean tieneReliquia() {
+        return tieneReliquia;
+    }
+
+    public boolean enemigoReliquiaDerrotado() {
+        return enemigoReliquiaDerrotado;
     }
 
     public void dispose() {
@@ -362,73 +390,4 @@ public abstract class Nivel {
 
         RELIQUIAS.clear();
     }
-
-    public Camera getCamara() {
-        return camara.getCamera();
-    }
-
-    public void guardarPosicionCamara() {
-        camara.guardarPosicion();
-    }
-
-    public void restaurarPosicionCamara() {
-        camara.restaurarPosicion();
-    }
-
-    public boolean isGameOver(){return this.gameOver;}
-
-    public void agregarEnemigos(EnemigoRed estadoRed) {
-        TipoEnemigo tipo = estadoRed.getTipo();
-        Enemigo enemigo = tipo.crear(estadoRed, jugadorLocal);
-
-        if (enemigo != null) {
-            entidades.add(enemigo);
-        }
-    }
-
-    public void actualizarEstadoEnemigos(EnemigoRed estado) {
-        for (Entidad e : entidades) {
-            if (e instanceof Enemigo enemigo && enemigo.getId() == estado.getId()) {
-                enemigo.actualizarEstadoRed(
-                    estado.getX(),
-                    estado.getY(),
-                    estado.getDireccion(),
-                    estado.estaAtacando(),
-                    estado.getVida()
-                );
-
-                return;
-            }
-        }
-    }
-
-    public void eliminarEnemigo(int id) {
-        for (int i = 0; i < entidades.size(); i++) {
-            Entidad entidad = entidades.get(i);
-
-            if (entidad instanceof Enemigo enemigo && enemigo.getId() == id) {
-                enemigo.dispose();
-                entidades.remove(i);
-                return;
-            }
-        }
-    }
-
-    public void agregarOrbes(OrbeRed estadoRed)
-    {
-        walter.agregarOrbes(estadoRed.getId(), estadoRed.getX(), estadoRed.getY(), estadoRed.getDireccion());
-    }
-
-    public void actualizarEstadoOrbes(OrbeRed estadoRed)
-    {
-        walter.actualizarEstadoOrbes(estadoRed.getId(), estadoRed.getX(), estadoRed.getY());
-    public boolean tieneReliquia() {
-        return tieneReliquia;
-    }
-
-    public void eliminarOrbes(int id)
-    {
-        walter.eliminarOrbe(id);
-    }
-    public boolean enemigoReliquiaDerrotado(){return enemigoReliquiaDerrotado;}
 }

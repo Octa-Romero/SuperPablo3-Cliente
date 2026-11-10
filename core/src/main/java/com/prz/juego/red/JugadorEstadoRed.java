@@ -11,11 +11,15 @@ public class JugadorEstadoRed {
     private boolean posicionRecibida = false;
     private boolean vidaRecibida = false;
     private boolean estadoAtaqueRecibida = false;
+    private boolean estaEnSuelo;
+    private boolean estaTrepando;
 
-    public void actualizarPosicion(float x, float y, int direccion) {
+    public void actualizarPosicion(float x, float y, int direccion, boolean estaEnSuelo, boolean estaTrepando) {
         this.x = x;
         this.y = y;
         this.direccion = direccion;
+        this.estaEnSuelo = estaEnSuelo;
+        this.estaTrepando = estaTrepando;
         this.posicionRecibida = true;
     }
 
@@ -39,6 +43,16 @@ public class JugadorEstadoRed {
 
     public float getDireccion() {
         return direccion;
+    }
+
+    public boolean estaEnSuelo()
+    {
+        return this.estaEnSuelo;
+    }
+
+    public boolean estaTrepando()
+    {
+        return this.estaTrepando;
     }
 
     public double getVida() {

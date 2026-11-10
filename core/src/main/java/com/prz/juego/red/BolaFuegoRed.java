@@ -1,12 +1,12 @@
 package com.prz.juego.red;
 
-public class OrbeRed {
+public class BolaFuegoRed {
 
     private int id;
     private float x, y;
     private int direccion;
 
-    public OrbeRed(int id, float x, float y, int direccion)
+    public BolaFuegoRed(int id, float x, float y, int direccion)
     {
         this.id = id;
         this.x = x;

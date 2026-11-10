@@ -92,7 +92,7 @@ public class MeteoritoGrande {
                 return updateOlaFuego(0f);
             } else if (BOUNDS.overlaps(JUGADOR.getBounds())) {
                 if (!danioAplicado) {
-                    JUGADOR.restarVida(DANIO);
+        //            JUGADOR.restarVida(DANIO);
                     danioAplicado = true;
                 }
             }
@@ -176,7 +176,7 @@ public class MeteoritoGrande {
             tiempo += delta;
             actualizarBounds();
             if (!danioAplicado && bounds.overlaps(JUGADOR.getBounds())) {
-                JUGADOR.restarVida(DANIO);
+    //            JUGADOR.restarVida(DANIO);
                 danioAplicado = true;
             }
             return tiempo < DURACION_FUEGO_OLA;

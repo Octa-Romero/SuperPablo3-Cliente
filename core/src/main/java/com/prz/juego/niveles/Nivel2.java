@@ -12,15 +12,4 @@ public class Nivel2 extends Nivel {
     protected String getRutaMapa() {
         return RUTA;
     }
-
-    @Override
-    protected float getPosicionInicialX() {
-        return 500;
-    }
-
-    @Override
-    protected void configurarContenidoEspecifico(Jugador jugador) {
-        agregarEntidad(new BichoRango(2650, 650, jugador, EnemigoRango.Modo.ESTATICO));
-        agregarEntidad(new BichoRango(5000, 260, jugador, EnemigoRango.Modo.MOVIL));
-    }
 }

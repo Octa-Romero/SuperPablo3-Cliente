@@ -28,7 +28,6 @@ import com.prz.juego.utilidades.Sonido;
 
 public class PantallaOpciones implements Screen {
 
-    private Cliente cliente;
     private Stage stage;
     private Imagen fondo;
     private BitmapFont fontTitulo;
@@ -51,9 +50,8 @@ public class PantallaOpciones implements Screen {
     private Texture texturaSlider;
     private Texture texturaKnob;
 
-    public PantallaOpciones(Navegable NAV, Cliente cliente, Screen PANTALLA_ANTERIOR, boolean VENIA_DE_JUEGO) {
+    public PantallaOpciones(Navegable NAV, Screen PANTALLA_ANTERIOR, boolean VENIA_DE_JUEGO) {
         this.NAV = NAV;
-        this.cliente = cliente;
         this.PANTALLA_ANTERIOR = PANTALLA_ANTERIOR;
         this.VENIA_DE_JUEGO = VENIA_DE_JUEGO;
     }
@@ -197,7 +195,7 @@ public class PantallaOpciones implements Screen {
                             pantallaJuego.restaurarPosicionCamara();
                             pantallaJuego.setPausa(true);
                         } else {
-                            NAV.cambiarPantalla(new PantallaMenu(NAV));
+                            NAV.volverAMenu();
                         }
                     }
                 });

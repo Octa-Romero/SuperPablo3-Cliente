@@ -34,8 +34,9 @@ public class FuegoSuelo extends Enemigo {
     private float tiempoRestante = 0f;
     private float tiempoBajada = 0f;
 
-    public FuegoSuelo(float xMin, float xMax, float ySuelo, Jugador jugador) {
+    public FuegoSuelo(int id, float xMin, float xMax, float ySuelo, Jugador jugador) {
         super(
+            id,
             xMin,
             ySuelo,
             xMax - xMin,
@@ -73,12 +74,12 @@ public class FuegoSuelo extends Enemigo {
             return;
         }
 
-        actualizarComportamiento(delta, jugador.getBounds());
+     //   actualizarComportamiento(delta, jugador.getBounds());
         ANIMACION.actualizar(sprite, delta, false, false, false);
         sprite.setAlpha(activa ? 1f : 0f);
     }
 
-    @Override
+    /*@Override
     protected void actualizarComportamiento(float delta, Rectangle boundsJugador) {
         if (bajando) {
             tiempoBajada += delta;
@@ -112,6 +113,8 @@ public class FuegoSuelo extends Enemigo {
             tiempoBajada = 0f;
         }
     }
+    */
+
 
     public void activar(float duracion) {
         activa = true;
@@ -184,9 +187,11 @@ public class FuegoSuelo extends Enemigo {
         return false;
     }
 
-    @Override
+    /*@Override
     public void restarVida(double cantidad) {}
 
     @Override
     public void saltar() {}
+    */
+
 }

@@ -43,19 +43,24 @@ public abstract class Enemigo extends Entidad {
 
     @Override
     public void update(float delta) {
-        if (muerto) {
-            return;
-        }
+        if (muerto) return;
 
-		actualizarInvencibilidad(delta);
+        actualizarInvencibilidad(delta);
 
-        actualizarComportamiento(delta, boundsJugador);
+        ANIMACION.actualizar(
+            sprite,
+            delta,
+            x != xAnterior,
+            !enSuelo,
+            atacando
+        );
 
-        ANIMACION.actualizar(sprite, delta, x != xAnterior, !enSuelo, atacando);
-		actualizarSpriteVisual();
-	}
+        actualizarSpriteVisual();
 
-    protected abstract void actualizarComportamiento(float delta, Rectangle boundsJugador);
+        guardarPosicionAnterior();
+    }
+
+    //protected abstract void actualizarComportamiento(float delta, Rectangle boundsJugador);
 
 
     public int getId()
@@ -73,8 +78,6 @@ public abstract class Enemigo extends Entidad {
 
     public void actualizarEstadoRed(float x, float y, int direccion, boolean estaAtacando, double vida)
     {
-        guardarPosicionAnterior();
-
         this.x = x;
         this.y = y;
         this.direccion = direccion;

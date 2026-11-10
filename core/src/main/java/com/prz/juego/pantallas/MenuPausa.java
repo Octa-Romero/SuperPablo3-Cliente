@@ -92,7 +92,7 @@ public class MenuPausa {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
                         Sonido.CLICK.sonar();
-                        PANTALLA_JUEGO.volverAlHub();
+                        NAV.volverAHub();
                     }
                 });
 
@@ -101,7 +101,7 @@ public class MenuPausa {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
                         Sonido.CLICK.sonar();
-                        NAV.cambiarPantalla(new PantallaMenu(NAV));
+                        NAV.volverAMenu();
                     }
                 });
 

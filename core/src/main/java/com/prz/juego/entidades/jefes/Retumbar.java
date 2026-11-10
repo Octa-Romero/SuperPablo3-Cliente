@@ -177,6 +177,7 @@ public class Retumbar extends Enemigo {
         float sueloXMax
     ) {
         super(
+            1,
             centroX - ANCHO / 2f,
             y,
             ANCHO,
@@ -225,9 +226,9 @@ public class Retumbar extends Enemigo {
         ANIMACION_FUEGUITO = new Animation<>(0.08f, framesFueguito);
         ANIMACION_FUEGUITO.setPlayMode(Animation.PlayMode.LOOP);
 
-        MANO_IZQUIERDA = new Mano(this, Mano.Lado.IZQUIERDA, jugador);
-        MANO_DERECHA = new Mano(this, Mano.Lado.DERECHA, jugador);
-        FUEGO_SUELO = new FuegoSuelo(sueloXMin, sueloXMax, y, jugador);
+        MANO_IZQUIERDA = new Mano(1,this, Mano.Lado.IZQUIERDA, jugador);
+        MANO_DERECHA = new Mano(2,this, Mano.Lado.DERECHA, jugador);
+        FUEGO_SUELO = new FuegoSuelo(1, sueloXMin, sueloXMax, y, jugador);
     }
 
     @Override
@@ -278,7 +279,7 @@ public class Retumbar extends Enemigo {
 
         guardarPosicionAnterior();
         actualizarInvencibilidad(delta);
-        actualizarComportamiento(delta, jugador.getBounds());
+        //actualizarComportamiento(delta, jugador.getBounds());
 
         if (ataquesExtra != null) {
             ataquesExtra.update(delta, false);
@@ -625,7 +626,7 @@ public class Retumbar extends Enemigo {
         HITBOX_JUGADOR_LASER.setPosition(boundsJugador.x, boundsJugador.y);
 
         if (Intersector.overlapConvexPolygons(HITBOX_LASER, HITBOX_JUGADOR_LASER)) {
-            jugador.restarVida(DANIO);
+        //    jugador.restarVida(DANIO);
             laserDaniadoJugador = true;
         }
     }
@@ -795,7 +796,7 @@ public class Retumbar extends Enemigo {
         Sonido.TP2.sonar();
     }
 
-    @Override
+    /*@Override
     protected void actualizarComportamiento(float delta, Rectangle boundsJugador) {
         if (!atacando) {
             tiempoAtaque += delta;
@@ -814,6 +815,8 @@ public class Retumbar extends Enemigo {
         }
     }
 
+     */
+
     private void moverBoss(float delta) {
         x += direccion * velocidad * delta;
 
@@ -825,6 +828,7 @@ public class Retumbar extends Enemigo {
             direccion = 1;
         }
     }
+
 
     private void iniciarAtaqueAleatorio() {
         boolean izquierdaViva = !MANO_IZQUIERDA.estaMuerto();
@@ -1047,7 +1051,7 @@ public class Retumbar extends Enemigo {
             && faseEspecial == FaseEspecial.COMPLETADA;
     }
 
-    @Override
+   /* @Override
     public void restarVida(double cantidad) {
         if (puedeRecibirDanio()) {
             Sonido.RETUMBAR_GOLPE_RECIBIDO.sonar();
@@ -1058,6 +1062,8 @@ public class Retumbar extends Enemigo {
     @Override
     public void saltar() {
     }
+
+    */
 
     public Mano getManoIzquierda() {
         return MANO_IZQUIERDA;

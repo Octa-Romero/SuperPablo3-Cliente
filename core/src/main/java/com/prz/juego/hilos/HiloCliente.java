@@ -1,9 +1,10 @@
 package com.prz.juego.hilos;
 
 import com.prz.juego.entidades.enemigos.TipoEnemigo;
+import com.prz.juego.entidades.jugadores.Personajes;
 import com.prz.juego.red.EnemigoRed;
 import com.prz.juego.red.JugadorEstadoRed;
-import com.prz.juego.red.OrbeRed;
+import com.prz.juego.red.BolaFuegoRed;
 import com.prz.juego.utilidades.Global;
 
 import java.io.IOException;
@@ -23,8 +24,8 @@ public class HiloCliente extends Thread{
     private ArrayList<EnemigoRed> enemigosRecibidos = new ArrayList<>();
     private ArrayList<EnemigoRed> estadoEnemigos = new ArrayList<>();
     private ArrayList<Integer> enemigosEliminados = new ArrayList<>();
-    private ArrayList<OrbeRed> orbesNuevos = new ArrayList<>();
-    private ArrayList<OrbeRed> estadoOrbes = new ArrayList<>();
+    private ArrayList<BolaFuegoRed> orbesNuevos = new ArrayList<>();
+    private ArrayList<BolaFuegoRed> estadoOrbes = new ArrayList<>();
     private ArrayList<Integer> orbesEliminados = new ArrayList<>();
 
     public HiloCliente()
@@ -97,17 +98,19 @@ public class HiloCliente extends Thread{
     }
 
     private void procesarPosicion(String msj) {
-        String[] partes = msj.split(";");
+        String[] mensajeParametrizado = msj.split(";");
 
         try {
-            String personaje = partes[1];
-            float x = Float.parseFloat(partes[2]);
-            float y = Float.parseFloat(partes[3]);
-            int direccion = Integer.parseInt(partes[4]);
+            String personaje = mensajeParametrizado[1];
+            float x = Float.parseFloat(mensajeParametrizado[2]);
+            float y = Float.parseFloat(mensajeParametrizado[3]);
+            int direccion = Integer.parseInt(mensajeParametrizado[4]);
+            boolean estaEnSuelo = Boolean.parseBoolean(mensajeParametrizado[5]);
+            boolean estaTrepando = Boolean.parseBoolean(mensajeParametrizado[6]);
 
             JugadorEstadoRed estado = obtenerEstadoJugador(personaje);
 
-            estado.actualizarPosicion(x, y, direccion);
+            estado.actualizarPosicion(x, y, direccion, estaEnSuelo, estaTrepando);
         } catch (NumberFormatException e) {
             System.out.println("Posición recibida inválida");
         }
@@ -213,7 +216,7 @@ public class HiloCliente extends Thread{
             float y = Float.parseFloat(mensajeParametrizado[3]);
             int direccion = Integer.parseInt(mensajeParametrizado[4]);
 
-            OrbeRed nuevoOrbe = new OrbeRed(id, x, y, direccion);
+            BolaFuegoRed nuevoOrbe = new BolaFuegoRed(id, x, y, direccion);
 
             orbesNuevos.add(nuevoOrbe);
 
@@ -231,7 +234,7 @@ public class HiloCliente extends Thread{
             float x = Float.parseFloat(mensajeParametrizado[2]);
             float y = Float.parseFloat(mensajeParametrizado[3]);
 
-            OrbeRed encontrado = buscarOrbe(id);
+            BolaFuegoRed encontrado = buscarOrbe(id);
 
             if (encontrado != null)
             {
@@ -271,9 +274,9 @@ public class HiloCliente extends Thread{
         return null;
     }
 
-    private OrbeRed buscarOrbe(int id)
+    private BolaFuegoRed buscarOrbe(int id)
     {
-        for(OrbeRed o : estadoOrbes)
+        for(BolaFuegoRed o : estadoOrbes)
         {
             if(o.getId() == id)
             {
@@ -316,9 +319,9 @@ public class HiloCliente extends Thread{
         return conexionEstablecida;
     }
 
-    public String getPersonajeRemoto()
+    public Personajes getPersonajeRemoto()
     {
-        return this.personajeRemoto;
+        return Personajes.valueOf(personajeRemoto);
     }
 
     public JugadorEstadoRed getEstadoLocal() {
@@ -345,8 +348,8 @@ public class HiloCliente extends Thread{
         return new ArrayList<>(estadoEnemigos);
     }
 
-    public synchronized ArrayList<OrbeRed> getOrbesRecibidos() {
-        ArrayList<OrbeRed> copia = new ArrayList<>(orbesNuevos);
+    public synchronized ArrayList<BolaFuegoRed> getOrbesRecibidos() {
+        ArrayList<BolaFuegoRed> copia = new ArrayList<>(orbesNuevos);
         orbesNuevos.clear();
         return copia;
     }
@@ -357,7 +360,7 @@ public class HiloCliente extends Thread{
         return copia;
     }
 
-    public synchronized ArrayList<OrbeRed> getEstadoOrbes() {
+    public synchronized ArrayList<BolaFuegoRed> getEstadoOrbes() {
         return new ArrayList<>(estadoOrbes);
     }
 
@@ -366,7 +369,7 @@ public class HiloCliente extends Thread{
         estadoEnemigos.add(enemigo);
     }
 
-    public synchronized void registrarEstadoOrbe(OrbeRed orbe) {
+    public synchronized void registrarEstadoOrbe(BolaFuegoRed orbe) {
         if (buscarOrbe(orbe.getId()) == null) {
             estadoOrbes.add(orbe);
         }

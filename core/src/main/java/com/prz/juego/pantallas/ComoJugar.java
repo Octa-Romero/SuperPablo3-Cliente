@@ -103,7 +103,7 @@ public class ComoJugar implements Screen {
                 new ClickListener() {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
-                        NAV.cambiarPantalla(new PantallaMenu(NAV));
+                        NAV.volverAMenu();
                     }
                 });
 

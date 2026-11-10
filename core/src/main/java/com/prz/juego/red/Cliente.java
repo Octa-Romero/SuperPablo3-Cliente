@@ -1,13 +1,14 @@
 package com.prz.juego.red;
 
+import com.prz.juego.entidades.jugadores.Personajes;
 import com.prz.juego.hilos.HiloCliente;
 
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class Cliente {
 
     private HiloCliente hilo;
+    private Personajes personajeLocal;
 
     public void conectar() {
         if (hilo == null) {
@@ -34,7 +35,16 @@ public class Cliente {
         }
     }
 
-    public String getPersonajeRemoto()
+    public void setPersonsajeLocal(Personajes personajeLocal)
+    {
+        this.personajeLocal = personajeLocal;
+    }
+
+    public Personajes getPersonajeLocal() {
+        return personajeLocal;
+    }
+
+    public Personajes getPersonajeRemoto()
     {
         return hilo.getPersonajeRemoto();
     }
@@ -67,11 +77,11 @@ public class Cliente {
         hilo.registrarEstadoEnemigo(estado);
     }
 
-    public ArrayList<OrbeRed> getOrbesRecibidos() {
+    public ArrayList<BolaFuegoRed> getOrbesRecibidos() {
         return hilo.getOrbesRecibidos();
     }
 
-    public ArrayList<OrbeRed> getEstadoOrbes() {
+    public ArrayList<BolaFuegoRed> getEstadoOrbes() {
         return hilo.getEstadoOrbes();
     }
 
@@ -80,7 +90,7 @@ public class Cliente {
         return hilo.getOrbesEliminados();
     }
 
-    public void registrarEstadoOrbe(OrbeRed estado)
+    public void registrarEstadoOrbe(BolaFuegoRed estado)
     {
         hilo.registrarEstadoOrbe(estado);
     }

@@ -1,6 +1,6 @@
 package com.prz.juego.entidades.jugadores;
 
-import com.prz.juego.entidades.Lanzable;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.prz.juego.recursos.GestorRecursos;
 import com.prz.juego.utilidades.Sonido;
 
@@ -8,28 +8,26 @@ import java.util.ArrayList;
 
 public class Walter extends Jugador {
 
-    private ArrayList<Lanzable> proyectiles;
+    private final ArrayList<BolaFuego> BOLAS_FUEGO = new ArrayList<>();
 
     public Walter(float x, float y) {
         super(
-                x,
-                y,
-                50,
-                80,
-                140,
-                5,
-                0.5,
-                GestorRecursos.obtenerTextura("Personajes/Walter/walter.png"),
-                GestorRecursos.obtenerTextura("Hud/walter_hud.png"));
+            x, y, 50, 80, 140, 5, 0.5,
+            GestorRecursos.obtenerTextura("Personajes/Walter/walter.png"),
+            GestorRecursos.obtenerTextura("Hud/walter_hud.png")
+        );
+
         ANIMACION.configurar(
-                GestorRecursos.obtenerTextura("Personajes/Walter/walter_spritesheet.png"),
-                540,
-                450,
-                new int[] {0},
-                new int[] {1, 2, 3, 4, 5, 3},
-                null,
-                new int[] {6},
-                0.12f);
+            GestorRecursos.obtenerTextura("Personajes/Walter/walter_spritesheet.png"),
+            540,
+            450,
+            new int[]{0},
+            new int[]{1, 2, 3, 4, 5, 3},
+            null,
+            new int[]{6},
+            0.12f
+        );
+
         configurarSpriteVisual(96f, 80f, 0f, -46f, 0f);
     }
 
@@ -47,49 +45,43 @@ public class Walter extends Jugador {
         this.atacando = estaAtacando;
     }
 
-    public void agregarOrbes(int id, float x, float y, int direccion)
-    {
-        ORBES.add(new OrbeMagica(id, x, y, direccion));
+    public void agregarBola(int id, float x, float y, int direccion) {
+        BOLAS_FUEGO.add(new BolaFuego(id, x, y, direccion));
     }
 
-    public void actualizarEstadoOrbes(int id, float x, float y)
-    {
-        for(OrbeMagica o : ORBES)
-        {
-            if(o.getId() == id)
-            {
-                o.actualizarEstado(x, y);
+    public void actualizarEstadoBola(int id, float x, float y) {
+        for (BolaFuego bola : BOLAS_FUEGO) {
+            if (bola.getId() == id) {
+                bola.actualizarEstado(x, y);
                 return;
             }
         }
     }
 
-    public void eliminarOrbe(int id) {
-        for (int i = 0; i < ORBES.size(); i++) {
-            OrbeMagica orbe = ORBES.get(i);
-
-            if (orbe.getId() == id) {
-                ORBES.remove(i);
+    public void eliminarBola(int id) {
+        for (int i = 0; i < BOLAS_FUEGO.size(); i++) {
+            if (BOLAS_FUEGO.get(i).getId() == id) {
+                BOLAS_FUEGO.remove(i);
                 return;
             }
         }
     }
 
     public void dibujarOrbes() {
-        for (OrbeMagica orbe : ORBES) {
-            orbe.dibujar();
+        for (BolaFuego bola : BOLAS_FUEGO) {
+            bola.dibujar();
         }
     }
 
     public void dibujarOrbesHitbox(ShapeRenderer shapeRenderer) {
-        for (OrbeMagica orbe : ORBES) {
-            orbe.dibujarHitbox(shapeRenderer);
+        for (BolaFuego bola : BOLAS_FUEGO) {
+            bola.dibujarHitbox(shapeRenderer);
         }
     }
 
     @Override
     public void dispose() {
         super.dispose();
-        ORBES.clear();
+        BOLAS_FUEGO.clear();
     }
 }

@@ -54,8 +54,6 @@ public abstract class Jugador extends Entidad {
 		actualizarInvencibilidad(delta);
 	}
 
-    public abstract void atacar();
-
     public void setAccionesHabilitadas(boolean habilitadas) {
         accionesHabilitadas = habilitadas;
         if (!habilitadas) {
@@ -82,7 +80,9 @@ public abstract class Jugador extends Entidad {
             actualizarPosicion(
                 estadoRed.getX(),
                 estadoRed.getY(),
-                estadoRed.getDireccion()
+                estadoRed.getDireccion(),
+                estadoRed.estaEnSuelo(),
+                estadoRed.estaTrepando()
             );
         }
 
@@ -95,12 +95,14 @@ public abstract class Jugador extends Entidad {
         }
     }
 
-    protected void actualizarPosicion(float x, float y, float direccion) {
+    protected void actualizarPosicion(float x, float y, float direccion, boolean estaEnSuelo, boolean estaTrepando) {
         guardarPosicionAnterior();
 
         this.x = x;
         this.y = y;
         this.direccion = direccion;
+        this.enSuelo = estaEnSuelo;
+        this.trepando = estaTrepando;
 
         bounds.setPosition(x, y);
     }

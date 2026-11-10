@@ -117,7 +117,7 @@ public class Fueguito {
         }
 
         if (Intersector.overlaps(HITBOX, JUGADOR.getBounds())) {
-            JUGADOR.restarVida(DANIO);
+    //        JUGADOR.restarVida(DANIO);
             return false;
         }
         return true;
@@ -129,7 +129,7 @@ public class Fueguito {
         actualizarPosicionRadial();
 
         if (Intersector.overlaps(HITBOX, JUGADOR.getBounds())) {
-            JUGADOR.restarVida(DANIO);
+    //        JUGADOR.restarVida(DANIO);
             return false;
         }
 

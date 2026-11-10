@@ -10,9 +10,4 @@ public class Nivel4 extends Nivel {
     protected String getRutaMapa() {
         return RUTA;
     }
-
-    @Override
-    protected void configurarContenidoEspecifico(Jugador jugador) {
-        // Este mapa todavía no define entidades propias del nivel.
-    }
 }
