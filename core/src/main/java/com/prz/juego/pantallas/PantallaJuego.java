@@ -12,6 +12,7 @@ import com.prz.juego.niveles.Nivel;
 import com.prz.juego.red.Cliente;
 import com.prz.juego.red.EnemigoRed;
 import com.prz.juego.red.BolaFuegoRed;
+import com.prz.juego.red.JugadorEstadoRed;
 import com.prz.juego.sistemas.Hud;
 import com.prz.juego.utilidades.Entrada;
 import com.prz.juego.utilidades.Render;
@@ -22,6 +23,7 @@ public class PantallaJuego implements Screen {
     private Cliente cliente;
     private final Navegable NAV;
     private Jugador jugadorLocal;
+    private JugadorEstadoRed estadoRedLocal;
     private Jugador jugadorRemoto;
 
     private final Nivel NIVEL;
@@ -54,6 +56,8 @@ public class PantallaJuego implements Screen {
         jugadorLocal = personajeElegido.crear(50, 150);
         jugadorLocal.setEntrada(ENTRADA);
         jugadorLocal.setEstadoRed(cliente.getEstadoLocal());
+
+        this.estadoRedLocal = jugadorLocal.getEstadoRed();
 
         jugadorRemoto = personajeRemoto.crear(75, 150);
         jugadorRemoto.setEstadoRed(cliente.getEstadoRemoto());
@@ -104,6 +108,31 @@ public class PantallaJuego implements Screen {
 
             if (hub != null) {
                 hub.update(delta, ENTRADA);
+
+                if (ENTRADA.aprietaE()) {
+
+                    if (estadoRedLocal.estaEsperandoSeleccion()) {
+
+                        cliente.enviarMensaje("SELECCION_NIVEL;false");
+
+                    } else if (hub.puedeInteractuarPancrasio()) {
+
+                        hub.interactuarPancrasio();
+
+                    } else if (estadoRedLocal.estaEnCentroHub()) {
+
+                        cliente.enviarMensaje("SELECCION_NIVEL;true");
+                    }
+                }
+
+                if (cliente.sePuedeSeleccionarNivel()) {
+
+                    guardarPosicionCamara();
+                    ENTRADA.limpiar();
+
+                    NAV.cambiarPantalla(new SeleccionNivel(NAV, cliente, this));
+                    return;
+                }
             } else {
                 NIVEL.update(delta, ENTRADA);
 
@@ -140,22 +169,13 @@ public class PantallaJuego implements Screen {
             }
         }
 
-        // Ir a la seleccion de niveles desde el Hub
-        if (!pausado && hub != null && hub.estaEnCentroHub() && ENTRADA.aprietaE()) {
-            cliente.enviarMensaje("SELECCIONAR_NIVEL;" + hub.estaEnCentroHub());
-            /*guardarPosicionCamara();
-            ENTRADA.limpiar();
-            NAV.cambiarPantalla(new SeleccionNivel(NAV, cliente,this));
-            return;*/
-        }
-
         // Dibujar el Hub o el NIVEL seleccionado
         if (hub != null) {
             hub.renderMapa();
 
             Render.begin(hub.getCamara());
             hub.render();
-            hub.dibujarAlertaCentro();
+            hub.dibujarAlertaCentro(estadoRedLocal.estaEnCentroHub(), estadoRedLocal.estaEsperandoSeleccion());
             Render.end();
 
         } else {

@@ -115,6 +115,11 @@ public abstract class Jugador extends Entidad {
         setVida(cantidad);
     }
 
+    public JugadorEstadoRed getEstadoRed()
+    {
+        return this.estadoRed;
+    }
+
 	public Texture getTEXTURA_HUD() {
 		return TEXTURA_HUD;
 	}

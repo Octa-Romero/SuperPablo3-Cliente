@@ -13,6 +13,9 @@ public class JugadorEstadoRed {
     private boolean estadoAtaqueRecibida = false;
     private boolean estaEnSuelo;
     private boolean estaTrepando;
+    private volatile boolean enCentroHub;
+    private volatile boolean esperandoSeleccion;
+
 
     public void actualizarPosicion(float x, float y, int direccion, boolean estaEnSuelo, boolean estaTrepando) {
         this.x = x;
@@ -75,5 +78,21 @@ public class JugadorEstadoRed {
     public boolean recibioEstadoAtaque()
     {
         return this.estadoAtaqueRecibida;
+    }
+
+    public void actualizarCentroHub(boolean valor) {
+        this.enCentroHub = valor;
+    }
+
+    public void actualizarEstadoSeleccion(boolean valor) {
+        this.esperandoSeleccion = valor;
+    }
+
+    public boolean estaEnCentroHub() {
+        return this.enCentroHub;
+    }
+
+    public boolean estaEsperandoSeleccion() {
+        return this.esperandoSeleccion;
     }
 }

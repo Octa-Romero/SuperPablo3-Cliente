@@ -16,6 +16,10 @@ public class HiloCliente extends Thread{
     private DatagramSocket socket;
     private boolean fin = false;
     private volatile boolean conexionEstablecida = false;
+    private volatile boolean seleccionarNivel = false;
+    private volatile int votoLocalNivel = 0;
+    private volatile int votoRemotoNivel = 0;
+    private volatile int nivelParaIniciar;
     private volatile String personajeRemoto;
     private InetAddress ipServer;
     private int puerto = 9990;
@@ -94,6 +98,20 @@ public class HiloCliente extends Thread{
         } else if (msj.startsWith("ELIMINAR_ORBE"))
         {
             procesarEliminacionOrbes(msj);
+        } else if (msj.startsWith("CENTRO_HUB"))
+        {
+            procesarEstaEnCentroHub(msj);
+        } else if (msj.startsWith("ESTADO_SELECCION"))
+        {
+            procesarEstadoSeleccion(msj);
+        } else if (msj.equals("ABRIR_SELECCION_NIVEL"))
+        {
+            seleccionarNivel = true;
+        } else if (msj.startsWith("VOTOS_NIVEL;")) {
+            procesarVotosNivel(msj);
+        } else if (msj.startsWith("INICIAR_NIVEL"))
+        {
+            procesarInicioNivel(msj);
         }
     }
 
@@ -261,6 +279,53 @@ public class HiloCliente extends Thread{
         }
     }
 
+    public void procesarEstaEnCentroHub(String msj)
+    {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            boolean estaEnCentro = Boolean.parseBoolean(mensajeParametrizado[1]);
+
+            estadoLocal.actualizarCentroHub(estaEnCentro);
+        } catch (NumberFormatException e) {
+            System.out.println("Estado del centro Hub invalido");
+        }
+    }
+
+    public void procesarEstadoSeleccion(String msj)
+    {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            boolean estadoSeleccion = Boolean.parseBoolean(mensajeParametrizado[1]);
+
+            estadoLocal.actualizarEstadoSeleccion(estadoSeleccion);
+        } catch (NumberFormatException e) {
+            System.out.println("Estado del centro Hub invalido");
+        }
+    }
+
+    private void procesarVotosNivel(String msj) {
+        String[] datos = msj.split(";");
+
+        try {
+            votoLocalNivel = Integer.parseInt(datos[1]);
+            votoRemotoNivel = Integer.parseInt(datos[2]);
+        } catch (NumberFormatException e) {
+            System.out.println("Votos de nivel inválidos");
+        }
+    }
+
+    private void procesarInicioNivel(String msj)
+    {
+        String[] datos = msj.split(";");
+
+        try {
+            nivelParaIniciar = Integer.parseInt(datos[1]);
+        } catch (NumberFormatException e) {
+            System.out.println("Votos de nivel inválidos");
+        }
+    }
 
     private EnemigoRed buscarEnemigo(int id)
     {
@@ -317,6 +382,29 @@ public class HiloCliente extends Thread{
 
     public boolean isConexionEstablecida() {
         return conexionEstablecida;
+    }
+
+    public synchronized boolean sePuedeSeleccionarNivel()
+    {
+        if (seleccionarNivel) {
+            seleccionarNivel = false;
+            return true;
+        }
+        return false;
+    }
+
+    public int getMiVotoNivel() {
+        return votoLocalNivel;
+    }
+
+    public int getVotoRemotoNivel() {
+        return votoRemotoNivel;
+    }
+
+    public synchronized int getNivelParaIniciar() {
+        int nivel = nivelParaIniciar;
+        nivelParaIniciar = 0;
+        return nivel;
     }
 
     public Personajes getPersonajeRemoto()

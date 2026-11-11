@@ -28,11 +28,24 @@ public class Cliente {
         return hilo.isConexionEstablecida();
     }
 
-    public void cerrar()
+    public boolean sePuedeSeleccionarNivel()
     {
-        if(hilo != null) {
-            hilo.cerrar();
-        }
+        return hilo.sePuedeSeleccionarNivel();
+    }
+
+    public int getVotoLocal()
+    {
+        return hilo.getMiVotoNivel();
+    }
+
+    public int getVotoRemoto()
+    {
+        return hilo.getVotoRemotoNivel();
+    }
+
+    public int getNivelIniciado()
+    {
+        return hilo.getNivelParaIniciar();
     }
 
     public void setPersonsajeLocal(Personajes personajeLocal)
@@ -95,4 +108,10 @@ public class Cliente {
         hilo.registrarEstadoOrbe(estado);
     }
 
+    public void cerrar()
+    {
+        if(hilo != null) {
+            hilo.cerrar();
+        }
+    }
 }

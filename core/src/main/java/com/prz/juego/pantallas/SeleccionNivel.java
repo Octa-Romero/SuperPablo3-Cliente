@@ -36,6 +36,7 @@ public class SeleccionNivel implements Screen {
     private BitmapFont font;
     private Imagen fondo;
 
+    private ImageButton[] portales = new ImageButton[7];
     private Texture texturaPortal1;
     private Texture texturaPortal2;
     private Texture texturaPortal3;
@@ -101,40 +102,46 @@ public class SeleccionNivel implements Screen {
                 new ClickListener() {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
+                        Sonido.CLICK.sonar();
 
-                        String rutaNivel;
-
-                        switch (NUMERO_NIVEL) {
-                            case 1:
-                                rutaNivel = "Niveles/Niveles/Level1.tmx";
-                                break;
-                            case 2:
-                                rutaNivel = "Niveles/Niveles/Nivel2.1.tmx";
-                                break;
-                            case 3:
-                                rutaNivel = "Niveles/Niveles/Nivel3.tmx";
-                                break;
-                            case 4:
-                                rutaNivel = "Niveles/Niveles/nivel4.tmx";
-                                break;
-                            case 5:
-                                rutaNivel = "Niveles/Niveles/Nivel5.tmx";
-                                break;
-                            case 6:
-                                rutaNivel = "Niveles/Niveles/Nivel6.tmx";
-                                break;
-                            case 7:
-                                rutaNivel = "Niveles/Niveles/Nivel7.tmx";
-                                break;
-                            default:
-                                return;
-                        }
-
-                        NAV.iniciarJuego(rutaNivel);
+                        cliente.enviarMensaje("VOTAR_NIVEL;" + NUMERO_NIVEL);
                     }
                 });
 
         return portal;
+    }
+
+    private void iniciarNivel(int numeroNivel) {
+
+        String rutaNivel;
+
+        switch (numeroNivel) {
+            case 1:
+                rutaNivel = "Niveles/Niveles/Level1.tmx";
+                break;
+            case 2:
+                rutaNivel = "Niveles/Niveles/Nivel2.1.tmx";
+                break;
+            case 3:
+                rutaNivel = "Niveles/Niveles/Nivel3.tmx";
+                break;
+            case 4:
+                rutaNivel = "Niveles/Niveles/nivel4.tmx";
+                break;
+            case 5:
+                rutaNivel = "Niveles/Niveles/Nivel5.tmx";
+                break;
+            case 6:
+                rutaNivel = "Niveles/Niveles/Nivel6.tmx";
+                break;
+            case 7:
+                rutaNivel = "Niveles/Niveles/Nivel7.tmx";
+                break;
+            default:
+                return;
+        }
+
+        NAV.iniciarJuego(rutaNivel);
     }
 
     private void animarPortal(ImageButton portal, float retraso) {
@@ -163,6 +170,13 @@ public class SeleccionNivel implements Screen {
         ImageButton portal6 = crearPortal(texturaPortal6, 6);
         ImageButton portal7 = crearPortal(texturaPortal7, 7);
 
+        portales[0] = portal1;
+        portales[1] = portal2;
+        portales[2] = portal3;
+        portales[3] = portal4;
+        portales[4] = portal5;
+        portales[5] = portal6;
+        portales[6] = portal7;
 
         TextButton.TextButtonStyle estiloCancelar = new TextButton.TextButtonStyle();
         estiloCancelar.font = font;
@@ -177,8 +191,7 @@ public class SeleccionNivel implements Screen {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
                         Sonido.CLICK.sonar();
-                        PANTALLA_HUB.restaurarPosicionCamara();
-                        NAV.cambiarPantalla(PANTALLA_HUB);
+                        cliente.enviarMensaje("VOTAR_NIVEL;0");
                     }
                 });
 
@@ -204,10 +217,47 @@ public class SeleccionNivel implements Screen {
         stage.addActor(principal);
     }
 
+    private void actualizarColoresPortales() {
+
+        int miVoto = cliente.getVotoLocal();
+        int votoRemoto = cliente.getVotoRemoto();
+
+        for (int i = 0; i < portales.length; i++) {
+
+            int nivel = i + 1;
+            ImageButton portal = portales[i];
+
+            Color color = Color.WHITE;
+
+            if (nivel == miVoto && nivel == votoRemoto) {
+                color = Color.GREEN;
+
+            } else if (nivel == miVoto) {
+                color = Color.CYAN;
+
+            } else if (nivel == votoRemoto) {
+                color = Color.GOLD;
+            }
+
+            // Conservamos la transparencia de la animación fadeIn.
+            float alpha = portal.getColor().a;
+
+            portal.setColor(color.r, color.g, color.b, alpha);
+        }
+    }
+
     @Override
     public void render(float delta) {
 
         Render.limpiarPantalla();
+
+        int nivel = cliente.getNivelIniciado();
+
+        if(nivel != 0)
+        {
+            iniciarNivel(nivel);
+            return;
+        }
 
         // Dibujar el fondo.
         Render.begin(stage.getCamera());
@@ -216,6 +266,7 @@ public class SeleccionNivel implements Screen {
 
         // Actualizar y dibujar las animaciones de la interfaz.
         stage.act(delta);
+        actualizarColoresPortales();
         stage.draw();
     }
 

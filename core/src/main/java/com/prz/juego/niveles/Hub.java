@@ -163,9 +163,6 @@ public class Hub {
     }
 
     public void update(float delta, Entrada entrada) {
-
-        // Solo actualización visual.
-        // El servidor controla movimiento y colisiones.
         jugadorLocal.update(delta);
         jugadorRemoto.update(delta);
 
@@ -174,44 +171,50 @@ public class Hub {
             jugadorLocal.getY() + jugadorLocal.getAlto() / 2f,
             delta
         );
+    }
 
-        // Interacción local con Pancrasio.
-        if ((cuadroDialogo.estaVisible()
-            || estaCercaPancrasio())
-            && entrada.aprietaE()) {
+    public boolean puedeInteractuarPancrasio() {
+        return cuadroDialogo.estaVisible()
+            || estaCercaPancrasio();
+    }
 
-            if (cuadroDialogo.estaVisible()) {
-                dialogoPancrasio.avanzar();
+    public void interactuarPancrasio() {
 
-                if (dialogoPancrasio.estaActivo()) {
-                    cuadroDialogo.mostrar(
-                        dialogoPancrasio.getMensajeActual()
-                    );
-                } else {
-                    cuadroDialogo.ocultar();
-                }
+        if (cuadroDialogo.estaVisible()) {
 
-            } else if (estaCercaPancrasio()) {
-                dialogoPancrasio.iniciar();
+            dialogoPancrasio.avanzar();
 
+            if (dialogoPancrasio.estaActivo()) {
                 cuadroDialogo.mostrar(
                     dialogoPancrasio.getMensajeActual()
                 );
+            } else {
+                cuadroDialogo.ocultar();
             }
+
+        } else if (estaCercaPancrasio()) {
+
+            dialogoPancrasio.iniciar();
+
+            cuadroDialogo.mostrar(
+                dialogoPancrasio.getMensajeActual()
+            );
         }
     }
 
-    public boolean estaEnCentroHub() {
-        return centroHub != null
-            && centroHub.overlaps(jugadorLocal.getBounds());
-    }
+    public void dibujarAlertaCentro(boolean enCentroHub, boolean esperandoSeleccion) {
 
-    public void dibujarAlertaCentro() {
-        if (!estaEnCentroHub()) {
+        if (!enCentroHub && !esperandoSeleccion) {
             return;
         }
 
-        String mensaje = "Presioná E para elegir nivel";
+        String mensaje;
+
+        if (esperandoSeleccion) {
+            mensaje = "Esperando al otro jugador... E para cancelar";
+        } else {
+            mensaje = "Presioná E para elegir nivel";
+        }
 
         GlyphLayout layout =
             new GlyphLayout(fontAlerta, mensaje);
