@@ -15,7 +15,6 @@ public abstract class Enemigo extends Entidad {
     protected float velocidad;
     protected float distanciaDeteccion = 500;
     protected float distanciaDeteccionVertical = 150;
-    protected float direccion = 1; // 1 derecha, -1 izquierda
     protected float tiempoPatrulla = 0;
     protected boolean caminandoPatrulla = false;
     protected boolean atacando = false;

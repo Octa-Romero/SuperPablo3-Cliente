@@ -44,7 +44,7 @@ public class JugadorEstadoRed {
         return y;
     }
 
-    public float getDireccion() {
+    public int getDireccion() {
         return direccion;
     }
 

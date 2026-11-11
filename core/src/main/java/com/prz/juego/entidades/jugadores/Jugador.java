@@ -13,7 +13,6 @@ public abstract class Jugador extends Entidad {
     protected JugadorEstadoRed estadoRed;
 	private final Texture TEXTURA_HUD;
 	protected boolean atacando;
-    protected float direccion = 1;
     private boolean trepando = false;
     private boolean accionesHabilitadas = true;
 
@@ -49,7 +48,8 @@ public abstract class Jugador extends Entidad {
             delta,
             x != xAnterior || (trepando && y != yAnterior),
             !enSuelo && !trepando,
-            atacando);        actualizarOrientacionSegunMovimiento();
+            atacando);
+        actualizarOrientacionSegunMovimiento();
         actualizarSpriteVisual();
 		actualizarInvencibilidad(delta);
 	}
@@ -95,7 +95,7 @@ public abstract class Jugador extends Entidad {
         }
     }
 
-    protected void actualizarPosicion(float x, float y, float direccion, boolean estaEnSuelo, boolean estaTrepando) {
+    protected void actualizarPosicion(float x, float y, int direccion, boolean estaEnSuelo, boolean estaTrepando) {
         guardarPosicionAnterior();
 
         this.x = x;

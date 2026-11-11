@@ -16,6 +16,7 @@ public abstract class Entidad {
     protected float anchoSprite, altoSprite;
     protected float offsetSpriteXDerecha, offsetSpriteXIzquierda, offsetSpriteY;
     protected float xAnterior, yAnterior;
+    protected int direccion = 1;
     protected int velocidadX;
     protected float velocidadY = 0;
     protected final float GRAVEDAD = 400;
@@ -219,26 +220,18 @@ public abstract class Entidad {
         actualizarSpriteVisual();
     }
 
-    protected void orientarSprite(Sprite sprite, float direccion) {
+    protected void orientarSprite(Sprite sprite, int direccion) {
+        if (sprite == null) return;
 
-        if (sprite == null) {
-            return;
-        }
+        boolean invertir = direccion < 0;
 
-        if (direccion != 0) {
-            mirandoDerecha = direccion > 0;
-        }
-
-        boolean debeInvertirse = !mirandoDerecha;
-
-        if (sprite.isFlipX() != debeInvertirse) {
+        if (sprite.isFlipX() != invertir) {
             sprite.flip(true, false);
         }
     }
 
-
     protected void actualizarOrientacionSegunMovimiento() {
-        orientarSprite(sprite, x - xAnterior);
+        orientarSprite(sprite, direccion);
     }
 
     protected void morir() {

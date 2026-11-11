@@ -56,7 +56,7 @@ public abstract class EnemigoRango extends Enemigo {
             );
         }
 
-        this.direccion = Math.signum(direccion);
+        this.direccion = (int)Math.signum(direccion);
         orientarSprite(sprite, this.direccion);
     }
 
