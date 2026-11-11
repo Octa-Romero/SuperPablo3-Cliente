@@ -239,10 +239,7 @@ public class SeleccionNivel implements Screen {
                 color = Color.GOLD;
             }
 
-            // Conservamos la transparencia de la animación fadeIn.
-            float alpha = portal.getColor().a;
-
-            portal.setColor(color.r, color.g, color.b, alpha);
+            portal.getImage().setColor(color);
         }
     }
 
