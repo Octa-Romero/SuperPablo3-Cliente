@@ -90,22 +90,22 @@ public class Cliente {
         hilo.registrarEstadoEnemigo(estado);
     }
 
-    public ArrayList<BolaFuegoRed> getOrbesRecibidos() {
-        return hilo.getOrbesRecibidos();
+    public ArrayList<ProyectilRed> getProyectilesNuevos() {
+        return hilo.getProyectilesNuevos();
     }
 
-    public ArrayList<BolaFuegoRed> getEstadoOrbes() {
-        return hilo.getEstadoOrbes();
+    public ArrayList<ProyectilRed> getEstadoProyectiles() {
+        return hilo.getEstadoProyectiles();
     }
 
-    public ArrayList<Integer> getOrbesEliminados()
+    public ArrayList<Integer> getProyectilesEliminados()
     {
-        return hilo.getOrbesEliminados();
+        return hilo.getProyectilesEliminados();
     }
 
-    public void registrarEstadoOrbe(BolaFuegoRed estado)
+    public void registrarEstadoProyectil(ProyectilRed estado)
     {
-        hilo.registrarEstadoOrbe(estado);
+        hilo.registrarEstadoProyectil(estado);
     }
 
     public void cerrar()

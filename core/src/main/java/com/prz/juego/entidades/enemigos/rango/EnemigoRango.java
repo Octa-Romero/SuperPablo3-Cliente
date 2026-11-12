@@ -17,13 +17,6 @@ import com.prz.juego.entidades.jugadores.Jugador;
 
 public abstract class EnemigoRango extends Enemigo {
 
-    public enum Modo {
-        ESTATICO,
-        MOVIL
-    }
-
-    private final Modo MODO;
-
     protected EnemigoRango(
         int id,
         float x,
@@ -34,33 +27,13 @@ public abstract class EnemigoRango extends Enemigo {
         double vida,
         double danio,
         Jugador jugador,
-        Texture textura,
-        Texture texturaProyectil,
-        float anchoProyectil,
-        float altoProyectil,
-        Modo modo) {
+        Texture textura) {
 
         super(
             id, x, y, ancho, alto,
             velocidadX, vida, danio,
             jugador, textura
         );
-
-        this.MODO = modo;
     }
 
-    public void configurarDireccionInicial(float direccion) {
-        if (direccion == 0f) {
-            throw new IllegalArgumentException(
-                "La direccion inicial no puede ser cero"
-            );
-        }
-
-        this.direccion = (int)Math.signum(direccion);
-        orientarSprite(sprite, this.direccion);
-    }
-
-    public Modo getModo() {
-        return MODO;
-    }
 }

@@ -4,10 +4,11 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
+import com.prz.juego.entidades.Lanzable;
 import com.prz.juego.recursos.GestorRecursos;
 import com.prz.juego.utilidades.Render;
 
-public class BolaFuego {
+public class BolaFuego implements Lanzable {
 
     private static final float RADIO = 12f;
     private static final float VELOCIDAD_ROTACION = -720f;
@@ -36,28 +37,34 @@ public class BolaFuego {
         BOUNDS = new Circle(x, y, RADIO);
     }
 
+    @Override
+    public void update(float delta) {
+        SPRITE.rotate(VELOCIDAD_ROTACION * DIRECCION * delta);
+    }
+
+    @Override
+    public void dibujar() {
+        SPRITE.draw(Render.batch);
+    }
+
+    @Override
+    public void dibujarHitbox(ShapeRenderer shapeRenderer) {
+        shapeRenderer.setColor(Color.ORANGE);
+        shapeRenderer.circle(BOUNDS.x, BOUNDS.y, BOUNDS.radius);
+    }
+
+    @Override
+    public int getId() {
+        return id;
+    }
+
+    @Override
     public void actualizarEstado(float x, float y) {
         this.x = x;
         this.y = y;
 
         BOUNDS.setPosition(x, y);
         SPRITE.setPosition(x - RADIO, y - RADIO);
-    }
 
-    public void update(float delta) {
-        SPRITE.rotate(VELOCIDAD_ROTACION * DIRECCION * delta);
-    }
-
-    public void dibujar() {
-        SPRITE.draw(Render.batch);
-    }
-
-    public void dibujarHitbox(ShapeRenderer shapeRenderer) {
-        shapeRenderer.setColor(Color.ORANGE);
-        shapeRenderer.circle(BOUNDS.x, BOUNDS.y, BOUNDS.radius);
-    }
-
-    public int getId() {
-        return id;
     }
 }

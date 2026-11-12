@@ -1,14 +1,16 @@
 package com.prz.juego.red;
 
-public class BolaFuegoRed {
+public class ProyectilRed {
 
     private int id;
+    private String origen;
     private float x, y;
-    private int direccion;
+    private float direccion;
 
-    public BolaFuegoRed(int id, float x, float y, int direccion)
+    public ProyectilRed(int id, String origen, float x, float y, float direccion)
     {
         this.id = id;
+        this.origen = origen;
         this.x = x;
         this.y = y;
         this.direccion = direccion;
@@ -19,6 +21,11 @@ public class BolaFuegoRed {
         return this.id;
     }
 
+    public String getOrigen()
+    {
+        return this.origen;
+    }
+
     public float getX() {
         return x;
     }
@@ -27,7 +34,7 @@ public class BolaFuegoRed {
         return y;
     }
 
-    public int getDireccion() {
+    public float getDireccion() {
         return direccion;
     }
 

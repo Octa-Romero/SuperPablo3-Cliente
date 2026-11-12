@@ -59,9 +59,6 @@ public abstract class Enemigo extends Entidad {
         guardarPosicionAnterior();
     }
 
-    //protected abstract void actualizarComportamiento(float delta, Rectangle boundsJugador);
-
-
     public int getId()
     {
         return this.id;
@@ -69,10 +66,6 @@ public abstract class Enemigo extends Entidad {
 
     protected void actualizarOrientacionSprites() {
         orientarSprite(sprite, direccion);
-    }
-
-    public boolean estaAtacando() {
-        return atacando;
     }
 
     public void actualizarEstadoRed(float x, float y, int direccion, boolean estaAtacando, double vida)
@@ -85,10 +78,6 @@ public abstract class Enemigo extends Entidad {
 
         bounds.setPosition(x, y);
         actualizarOrientacionSprites();
-    }
-
-    public boolean puedeRecibirDanio() {
-        return true;
     }
 
     @Override

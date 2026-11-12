@@ -1,6 +1,5 @@
 package com.prz.juego.niveles;
 
-
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.MapProperties;
@@ -13,11 +12,12 @@ import com.prz.juego.entidades.Lanzable;
 import com.prz.juego.entidades.Reliquia;
 import com.prz.juego.entidades.enemigos.Enemigo;
 import com.prz.juego.entidades.enemigos.TipoEnemigo;
+import com.prz.juego.entidades.enemigos.rango.Proyectil;
 import com.prz.juego.entidades.jefes.Retumbar;
 import com.prz.juego.entidades.jugadores.*;
 
 import com.prz.juego.red.EnemigoRed;
-import com.prz.juego.red.BolaFuegoRed;
+import com.prz.juego.red.ProyectilRed;
 import com.prz.juego.sistemas.Camara;
 import com.prz.juego.sistemas.Colisiones;
 import com.prz.juego.utilidades.Debug;
@@ -103,8 +103,7 @@ public abstract class Nivel {
 
         colision = new Colisiones(mapa);
 
-        // No generar enemigos locales.
-        // Los enemigos llegarán mediante los mensajes del servidor.
+        // Los enemigos llegan desde el servidor.
 
         MapProperties props = mapa.getProperties();
 
@@ -238,17 +237,10 @@ public abstract class Nivel {
         ENTIDADES.addAll(ENTIDADES_PENDIENTES);
         ENTIDADES_PENDIENTES.clear();
 
-        // Actualización visual de proyectiles.
-        for (int i = PROYECTILES.size() - 1; i >= 0; i--) {
-            Lanzable proyectil = PROYECTILES.get(i);
+        for (Lanzable proyectil : PROYECTILES) {
             proyectil.update(delta);
-
-            if (!proyectil.estaActiva()) {
-                PROYECTILES.remove(i);
-            }
         }
 
-        // La cámara sigue al jugador local.
         camara.seguirPersonaje(
             jugadorLocal.getX() + jugadorLocal.getAncho() / 2f,
             jugadorLocal.getY() + jugadorLocal.getAlto() / 2f,
@@ -263,6 +255,8 @@ public abstract class Nivel {
             gameOver = true;
         }
     }
+
+    // SINCRONIZACIÓN DE ENEMIGOS
 
     public void agregarEnemigos(EnemigoRed estadoRed) {
         TipoEnemigo tipo = estadoRed.getTipo();
@@ -313,25 +307,63 @@ public abstract class Nivel {
         }
     }
 
-    public void agregarOrbes(BolaFuegoRed estadoRed) {
-        walter.agregarBola(
-            estadoRed.getId(),
-            estadoRed.getX(),
-            estadoRed.getY(),
-            estadoRed.getDireccion()
-        );
+
+    public void agregarProyectil(ProyectilRed datos) {
+
+        for (Lanzable existente : PROYECTILES) {
+            if (existente.getId() == datos.getId()) {
+                return;
+            }
+        }
+
+        Lanzable proyectil;
+
+        if (datos.getOrigen().equals("WALTER")) {
+
+            proyectil = new BolaFuego(
+                datos.getId(),
+                datos.getX(),
+                datos.getY(),
+                (int) datos.getDireccion()
+            );
+
+        } else if (datos.getOrigen().equals("ENEMIGO")) {
+
+            proyectil = new Proyectil(
+                datos.getId(),
+                datos.getX(),
+                datos.getY(),
+                datos.getDireccion()
+            );
+
+        } else {
+            return;
+        }
+
+        PROYECTILES.add(proyectil);
     }
 
-    public void actualizarEstadoOrbes(BolaFuegoRed estadoRed) {
-        walter.actualizarEstadoBola(
-            estadoRed.getId(),
-            estadoRed.getX(),
-            estadoRed.getY()
-        );
+    public void actualizarEstadoProyectil(ProyectilRed datos) {
+
+        for (Lanzable proyectil : PROYECTILES) {
+            if (proyectil.getId() == datos.getId()) {
+                proyectil.actualizarEstado(
+                    datos.getX(),
+                    datos.getY()
+                );
+                return;
+            }
+        }
     }
 
-    public void eliminarOrbes(int id) {
-        walter.eliminarBola(id);
+    public void eliminarProyectil(int id) {
+
+        for (int i = 0; i < PROYECTILES.size(); i++) {
+            if (PROYECTILES.get(i).getId() == id) {
+                PROYECTILES.remove(i);
+                return;
+            }
+        }
     }
 
     public void resize(int width, int height) {

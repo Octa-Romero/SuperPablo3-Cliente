@@ -11,7 +11,7 @@ import com.prz.juego.niveles.Hub;
 import com.prz.juego.niveles.Nivel;
 import com.prz.juego.red.Cliente;
 import com.prz.juego.red.EnemigoRed;
-import com.prz.juego.red.BolaFuegoRed;
+import com.prz.juego.red.ProyectilRed;
 import com.prz.juego.red.JugadorEstadoRed;
 import com.prz.juego.sistemas.Hud;
 import com.prz.juego.utilidades.Entrada;
@@ -149,17 +149,17 @@ public class PantallaJuego implements Screen {
                     NIVEL.eliminarEnemigo(id);
                 }
 
-                for (BolaFuegoRed o : cliente.getOrbesRecibidos()) {
-                    NIVEL.agregarOrbes(o);
-                    cliente.registrarEstadoOrbe(o);
+                for (ProyectilRed p : cliente.getProyectilesNuevos()) {
+                    NIVEL.agregarProyectil(p);
+                    cliente.registrarEstadoProyectil(p);
                 }
 
-                for (BolaFuegoRed o : cliente.getEstadoOrbes()) {
-                    NIVEL.actualizarEstadoOrbes(o);
+                for (ProyectilRed p : cliente.getEstadoProyectiles()) {
+                    NIVEL.actualizarEstadoProyectil(p);
                 }
 
-                for (Integer id : cliente.getOrbesEliminados()) {
-                    NIVEL.eliminarOrbes(id);
+                for (Integer id : cliente.getProyectilesEliminados()) {
+                    NIVEL.eliminarProyectil(id);
                 }
 
                 if (NIVEL.enemigoReliquiaDerrotado()) {

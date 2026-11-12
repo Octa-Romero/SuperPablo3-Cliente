@@ -59,7 +59,4 @@ public abstract class EnemigoMelee extends Enemigo {
         }
     }
 
-    public Rectangle getBoundsAtaquePublico() {
-        return getBoundsAtaque();
-    }
 }

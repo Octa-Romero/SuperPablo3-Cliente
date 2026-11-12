@@ -4,7 +4,7 @@ import com.prz.juego.entidades.enemigos.TipoEnemigo;
 import com.prz.juego.entidades.jugadores.Personajes;
 import com.prz.juego.red.EnemigoRed;
 import com.prz.juego.red.JugadorEstadoRed;
-import com.prz.juego.red.BolaFuegoRed;
+import com.prz.juego.red.ProyectilRed;
 import com.prz.juego.utilidades.Global;
 
 import java.io.IOException;
@@ -28,9 +28,9 @@ public class HiloCliente extends Thread{
     private ArrayList<EnemigoRed> enemigosRecibidos = new ArrayList<>();
     private ArrayList<EnemigoRed> estadoEnemigos = new ArrayList<>();
     private ArrayList<Integer> enemigosEliminados = new ArrayList<>();
-    private ArrayList<BolaFuegoRed> orbesNuevos = new ArrayList<>();
-    private ArrayList<BolaFuegoRed> estadoOrbes = new ArrayList<>();
-    private ArrayList<Integer> orbesEliminados = new ArrayList<>();
+    private ArrayList<ProyectilRed> proyectilesNuevo = new ArrayList<>();
+    private ArrayList<ProyectilRed> estadoProyectiles = new ArrayList<>();
+    private ArrayList<Integer> proyectilesEliminados = new ArrayList<>();
 
     public HiloCliente()
     {
@@ -89,15 +89,15 @@ public class HiloCliente extends Thread{
         } else if (msj.startsWith("ELIMINAR_ENEMIGO"))
         {
             procesarEliminacionEnemigos(msj);
-        } else if (msj.startsWith("CREAR_ORBE"))
+        } else if (msj.startsWith("CREAR_PROYECTIL"))
         {
-            procesarCreacionOrbes(msj);
-        } else if (msj.startsWith("ESTADO_ORBE"))
+            procesarCreacionProyectiles(msj);
+        } else if (msj.startsWith("ESTADO_PROYECTIL"))
         {
-            procesarEstadoOrbes(msj);
-        } else if (msj.startsWith("ELIMINAR_ORBE"))
+            procesarEstadoProyectiles(msj);
+        } else if (msj.startsWith("ELIMINAR_PROYECTIL"))
         {
-            procesarEliminacionOrbes(msj);
+            procesarEliminacionProyectiles(msj);
         } else if (msj.startsWith("CENTRO_HUB"))
         {
             procesarEstaEnCentroHub(msj);
@@ -224,26 +224,27 @@ public class HiloCliente extends Thread{
         }
     }
 
-    private synchronized void procesarCreacionOrbes(String msj)
+    private synchronized void procesarCreacionProyectiles(String msj)
     {
         String[] mensajeParametrizado = msj.split(";");
 
         try {
             int id = Integer.parseInt(mensajeParametrizado[1]);
-            float x = Float.parseFloat(mensajeParametrizado[2]);
-            float y = Float.parseFloat(mensajeParametrizado[3]);
-            int direccion = Integer.parseInt(mensajeParametrizado[4]);
+            String origen = mensajeParametrizado[2];
+            float x = Float.parseFloat(mensajeParametrizado[3]);
+            float y = Float.parseFloat(mensajeParametrizado[4]);
+            float direccion = Float.parseFloat(mensajeParametrizado[5]);
 
-            BolaFuegoRed nuevoOrbe = new BolaFuegoRed(id, x, y, direccion);
+            ProyectilRed nuevoProyectil = new ProyectilRed(id, origen, x, y, direccion);
 
-            orbesNuevos.add(nuevoOrbe);
+            proyectilesNuevo.add(nuevoProyectil);
 
         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-            System.out.println("Parametros de creacion del orbe invalido.");
+            System.out.println("Parametros de creacion del proyectil invalido.");
         }
     }
 
-    private synchronized void procesarEstadoOrbes(String msj)
+    private synchronized void procesarEstadoProyectiles(String msj)
     {
         String[] mensajeParametrizado = msj.split(";");
 
@@ -252,7 +253,7 @@ public class HiloCliente extends Thread{
             float x = Float.parseFloat(mensajeParametrizado[2]);
             float y = Float.parseFloat(mensajeParametrizado[3]);
 
-            BolaFuegoRed encontrado = buscarOrbe(id);
+            ProyectilRed encontrado = buscarProyectil(id);
 
             if (encontrado != null)
             {
@@ -260,22 +261,22 @@ public class HiloCliente extends Thread{
             }
 
         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-            System.out.println("Estado del orbe invalido");
+            System.out.println("Estado del proyectil invalido");
         }
     }
 
-    private synchronized void procesarEliminacionOrbes(String msj)
+    private synchronized void procesarEliminacionProyectiles(String msj)
     {
         String[] mensajeParametrizado = msj.split(";");
 
         try {
             int id = Integer.parseInt(mensajeParametrizado[1]);
-            orbesEliminados.add(id);
+            proyectilesEliminados.add(id);
 
-            estadoOrbes.removeIf(e -> e.getId() == id);
+            estadoProyectiles.removeIf(e -> e.getId() == id);
 
         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-            System.out.println("ID de orbe eliminado inválido");
+            System.out.println("ID de proyectil eliminado inválido");
         }
     }
 
@@ -339,9 +340,9 @@ public class HiloCliente extends Thread{
         return null;
     }
 
-    private BolaFuegoRed buscarOrbe(int id)
+    private ProyectilRed buscarProyectil(int id)
     {
-        for(BolaFuegoRed o : estadoOrbes)
+        for(ProyectilRed o : estadoProyectiles)
         {
             if(o.getId() == id)
             {
@@ -436,20 +437,20 @@ public class HiloCliente extends Thread{
         return new ArrayList<>(estadoEnemigos);
     }
 
-    public synchronized ArrayList<BolaFuegoRed> getOrbesRecibidos() {
-        ArrayList<BolaFuegoRed> copia = new ArrayList<>(orbesNuevos);
-        orbesNuevos.clear();
+    public synchronized ArrayList<ProyectilRed> getProyectilesNuevos() {
+        ArrayList<ProyectilRed> copia = new ArrayList<>(proyectilesNuevo);
+        proyectilesNuevo.clear();
         return copia;
     }
 
-    public synchronized ArrayList<Integer> getOrbesEliminados() {
-        ArrayList<Integer> copia = new ArrayList<>(orbesEliminados);
-        orbesEliminados.clear();
-        return copia;
+    public synchronized ArrayList<ProyectilRed> getEstadoProyectiles() {
+        return new ArrayList<>(estadoProyectiles);
     }
 
-    public synchronized ArrayList<BolaFuegoRed> getEstadoOrbes() {
-        return new ArrayList<>(estadoOrbes);
+    public synchronized ArrayList<Integer> getProyectilesEliminados() {
+        ArrayList<Integer> copia = new ArrayList<>(proyectilesEliminados);
+        proyectilesEliminados.clear();
+        return copia;
     }
 
 
@@ -457,9 +458,9 @@ public class HiloCliente extends Thread{
         estadoEnemigos.add(enemigo);
     }
 
-    public synchronized void registrarEstadoOrbe(BolaFuegoRed orbe) {
-        if (buscarOrbe(orbe.getId()) == null) {
-            estadoOrbes.add(orbe);
+    public synchronized void registrarEstadoProyectil(ProyectilRed orbe) {
+        if (buscarProyectil(orbe.getId()) == null) {
+            estadoProyectiles.add(orbe);
         }
     }
 }

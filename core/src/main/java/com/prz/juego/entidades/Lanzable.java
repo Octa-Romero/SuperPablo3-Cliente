@@ -10,5 +10,7 @@ public interface Lanzable {
 
     void dibujarHitbox(ShapeRenderer shapeRenderer);
 
-    boolean estaActiva();
+    int getId();
+
+    void actualizarEstado(float x, float y);
 }

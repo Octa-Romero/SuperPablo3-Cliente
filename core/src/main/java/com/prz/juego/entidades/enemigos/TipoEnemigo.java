@@ -15,7 +15,7 @@ public enum TipoEnemigo {
                 return new BichoMelee(datos.getId(), datos.getX(), datos.getY(), jugador);
 
             case BICHO_RANGO:
-                //return new BichoRango(datos.getId(), datos.getX(), datos.getY(), jugador);
+                return new BichoRango(datos.getId(), datos.getX(), datos.getY(), jugador);
             default:
                 return null;
         }

@@ -8,7 +8,7 @@ public class BichoRango extends EnemigoRango {
 
     private static final float DURACION_FRAME_IDLE = 0.12f;
 
-    public BichoRango(int id, float x, float y, Jugador jugador, Modo modo) {
+    public BichoRango(int id, float x, float y, Jugador jugador) {
         super(
                 id,
                 x,
@@ -19,11 +19,8 @@ public class BichoRango extends EnemigoRango {
                 3,
                 0.5,
                 jugador,
-                GestorRecursos.obtenerTextura("Enemigos/BichoRango/bichoRango.png"),
-                GestorRecursos.obtenerTextura("Enemigos/BichoRango/flecha.png"),
-                50,
-                10,
-                modo);
+                GestorRecursos.obtenerTextura("Enemigos/BichoRango/bichoRango.png")
+                );
 
         Texture spritesheet = GestorRecursos.obtenerTextura("Enemigos/BichoRango/bichoRango.png");
         ANIMACION.configurar(
