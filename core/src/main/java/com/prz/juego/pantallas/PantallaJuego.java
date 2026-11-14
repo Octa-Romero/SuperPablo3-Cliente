@@ -204,6 +204,20 @@ public class PantallaJuego implements Screen {
                     NIVEL.actualizarEstadoLasers(lasers);
                 }
 
+                for (MeteoritoRed meteorito : cliente.getMeteoritosNuevos()) {
+                    NIVEL.crearMeteorito(meteorito);
+                }
+
+                for (MeteoritoRed meteorito : cliente.getEstadoMeteoritos()) {
+                    if (meteorito.tieneEstadoRecibido()) {
+                        NIVEL.actualizarEstadoMeteorito(meteorito);
+                    }
+                }
+
+                for (int id : cliente.getMeteoritosEliminados()) {
+                    NIVEL.eliminarMeteorito(id);
+                }
+
                 if(cliente.jefeMuerto())
                 {
                     NIVEL.eliminarJefe();

@@ -13,10 +13,7 @@ import com.prz.juego.entidades.Entidad;
 import com.prz.juego.entidades.enemigos.Enemigo;
 import com.prz.juego.entidades.jugadores.Jugador;
 import com.prz.juego.recursos.GestorRecursos;
-import com.prz.juego.red.FuegoSueloRed;
-import com.prz.juego.red.LasersRed;
-import com.prz.juego.red.ManoRed;
-import com.prz.juego.red.RayosRed;
+import com.prz.juego.red.*;
 import com.prz.juego.utilidades.Render;
 import com.prz.juego.utilidades.Sonido;
 
@@ -124,6 +121,24 @@ public class Retumbar extends Enemigo {
         float anchoMapa, float altoMapa, float sueloY) {
 
         ataquesExtra = new AtaquesExtraRetumbar(anchoMapa, altoMapa, sueloY);
+    }
+
+    public void crearMeteorito(MeteoritoRed estado) {
+        if (ataquesExtra != null) {
+            ataquesExtra.crearMeteorito(estado);
+        }
+    }
+
+    public void actualizarEstadoMeteorito(MeteoritoRed estado) {
+        if (ataquesExtra != null) {
+            ataquesExtra.actualizarEstadoMeteorito(estado);
+        }
+    }
+
+    public void eliminarMeteorito(int id) {
+        if (ataquesExtra != null) {
+            ataquesExtra.eliminarMeteorito(id);
+        }
     }
 
     public void actualizarEstadoRayos(RayosRed datos) {

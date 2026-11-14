@@ -10,6 +10,9 @@ import com.prz.juego.utilidades.Global;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class HiloCliente extends Thread{
 
@@ -39,6 +42,9 @@ public class HiloCliente extends Thread{
     private FuegoSueloRed fuegoSuelo = new FuegoSueloRed();
     private RayosRed estadoRayos = new RayosRed();
     private LasersRed estadoLasers = new LasersRed();
+    private final ArrayList<MeteoritoRed> meteoritos = new ArrayList<>();
+    private final ArrayList<MeteoritoRed> meteoritosNuevos = new ArrayList<>();
+    private final ArrayList<Integer> meteoritosEliminados = new ArrayList<>();
 
     public HiloCliente()
     {
@@ -135,10 +141,18 @@ public class HiloCliente extends Thread{
         } else if (msj.startsWith("ESTADO_FUEGO_SUELO"))
         {
             procesarEstadoFuegoSuelo(msj);
-        } else if (msj.startsWith("ESTADO_RAYOS;")) {
+        } else if (msj.startsWith("ESTADO_RAYOS")) {
             procesarEstadoRayos(msj);
-        } else if (msj.startsWith("ESTADO_LASERES;")) {
+        } else if (msj.startsWith("ESTADO_LASERES")) {
             procesarEstadoLasers(msj);
+        }else if (msj.startsWith("CREAR_METEORITO")) {
+            procesarCreacionMeteorito(msj);
+
+        } else if (msj.startsWith("ESTADO_METEORITO")) {
+            procesarEstadoMeteorito(msj);
+
+        } else if (msj.startsWith("ELIMINAR_METEORITO")) {
+            procesarEliminacionMeteorito(msj);
         }
     }
 
@@ -490,6 +504,80 @@ public class HiloCliente extends Thread{
         }
     }
 
+    private synchronized void procesarCreacionMeteorito(String msj) {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            int id = Integer.parseInt(mensajeParametrizado[1]);
+
+            MeteoritoRed.Tipo tipo =
+                MeteoritoRed.Tipo.valueOf(mensajeParametrizado[2]);
+
+            float x = Float.parseFloat(mensajeParametrizado[3]);
+            float y = Float.parseFloat(mensajeParametrizado[4]);
+
+            if (buscarMeteorito(id) == null) {
+                MeteoritoRed meteorito = new MeteoritoRed(id, tipo, x, y);
+
+                meteoritos.add(meteorito);
+                meteoritosNuevos.add(meteorito);
+            }
+
+        } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Creación de meteorito inválida");
+        }
+    }
+
+    private synchronized void procesarEstadoMeteorito(String msj) {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            int id = Integer.parseInt(mensajeParametrizado[1]);
+
+            MeteoritoRed.Tipo tipo =
+                MeteoritoRed.Tipo.valueOf(mensajeParametrizado[2]);
+
+            float x = Float.parseFloat(mensajeParametrizado[3]);
+            float y = Float.parseFloat(mensajeParametrizado[4]);
+            boolean impacto = Boolean.parseBoolean(mensajeParametrizado[5]);
+            float rotacion = Float.parseFloat(mensajeParametrizado[6]);
+            float tiempoEfecto = Float.parseFloat(mensajeParametrizado[7]);
+
+            MeteoritoRed actualizado = new MeteoritoRed(
+                id, tipo, x, y, impacto, rotacion, tiempoEfecto
+            );
+
+            MeteoritoRed anterior = buscarMeteorito(id);
+
+            if (anterior == null) {
+                meteoritos.add(actualizado);
+                meteoritosNuevos.add(actualizado);
+            } else {
+                int indice = meteoritos.indexOf(anterior);
+                meteoritos.set(indice, actualizado);
+            }
+
+        } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Estado de meteorito inválido");
+        }
+    }
+
+    private synchronized void procesarEliminacionMeteorito(String msj) {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            int id = Integer.parseInt(mensajeParametrizado[1]);
+
+            meteoritos.removeIf(m -> m.getId() == id);
+            meteoritosNuevos.removeIf(m -> m.getId() == id);
+            meteoritosEliminados.add(id);
+
+        } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Eliminación de meteorito inválida");
+        }
+    }
+
+
     private EnemigoRed buscarEnemigo(int id)
     {
         for(EnemigoRed e : estadoEnemigos)
@@ -530,6 +618,16 @@ public class HiloCliente extends Thread{
         }
 
         return manoDerecha;
+    }
+
+    private MeteoritoRed buscarMeteorito(int id) {
+        for (MeteoritoRed meteorito : meteoritos) {
+            if (meteorito.getId() == id) {
+                return meteorito;
+            }
+        }
+
+        return null;
     }
 
     public void enviarMensaje(String msj)
@@ -664,5 +762,21 @@ public class HiloCliente extends Thread{
 
     public synchronized LasersRed getEstadoLasers() {
         return estadoLasers;
+    }
+
+    public synchronized ArrayList<MeteoritoRed> getMeteoritosNuevos() {
+        ArrayList<MeteoritoRed> nuevos = new ArrayList<>(meteoritosNuevos);
+        meteoritosNuevos.clear();
+        return nuevos;
+    }
+
+    public synchronized ArrayList<MeteoritoRed> getEstadoMeteoritos() {
+        return new ArrayList<>(meteoritos);
+    }
+
+    public synchronized ArrayList<Integer> getMeteoritosEliminados() {
+        ArrayList<Integer> eliminados = new ArrayList<>(meteoritosEliminados);
+        meteoritosEliminados.clear();
+        return eliminados;
     }
 }

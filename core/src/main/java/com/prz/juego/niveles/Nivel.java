@@ -415,6 +415,30 @@ public abstract class Nivel {
         }
     }
 
+    public void crearMeteorito(MeteoritoRed estado) {
+        Retumbar jefe = getJefe();
+
+        if (jefe != null) {
+            jefe.crearMeteorito(estado);
+        }
+    }
+
+    public void actualizarEstadoMeteorito(MeteoritoRed estado) {
+        Retumbar jefe = getJefe();
+
+        if (jefe != null) {
+            jefe.actualizarEstadoMeteorito(estado);
+        }
+    }
+
+    public void eliminarMeteorito(int id) {
+        Retumbar jefe = getJefe();
+
+        if (jefe != null) {
+            jefe.eliminarMeteorito(id);
+        }
+    }
+
     public void eliminarJefe() {}
 
     public void resize(int width, int height) {

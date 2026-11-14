@@ -6,8 +6,12 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.prz.juego.recursos.GestorRecursos;
 import com.prz.juego.red.LasersRed;
+import com.prz.juego.red.MeteoritoRed;
 import com.prz.juego.red.RayosRed;
 import com.prz.juego.utilidades.Render;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class AtaquesExtraRetumbar {
 
@@ -55,6 +59,12 @@ public class AtaquesExtraRetumbar {
     private final Animation<TextureRegion> ANIMACION_LASER;
     private float tiempoAnimacionLaser;
 
+    private final List<Meteorito> METEORITOS = new ArrayList<>();
+    private final List<MeteoritoGrande> METEORITOS_GRANDES = new ArrayList<>();
+
+    private final Texture TEXTURA_METEORITO;
+    private final Animation<TextureRegion> ANIMACION_FUEGO;
+
     public AtaquesExtraRetumbar(float anchoMapa, float altoMapa, float sueloY) {
 
         this.ANCHO_MAPA = anchoMapa;
@@ -79,10 +89,25 @@ public class AtaquesExtraRetumbar {
         ANIMACION_LASER.setPlayMode(Animation.PlayMode.LOOP);
 
         inicializarPosicionesLasers();
+
+        TEXTURA_METEORITO =
+            GestorRecursos.obtenerTextura("Jefe/meteorito.png");
+
+        Texture texturaFuego =
+            GestorRecursos.obtenerTextura("Jefe/fuegoMeteorito.png");
+
+        TextureRegion[] framesFuego = TextureRegion.split(
+            texturaFuego,
+            texturaFuego.getWidth() / 2,
+            texturaFuego.getHeight()
+        )[0];
+
+        ANIMACION_FUEGO = new Animation<>(0.14f, framesFuego);
+        ANIMACION_FUEGO.setPlayMode(Animation.PlayMode.LOOP);
     }
 
     public void update(float delta) {
-        if ("IMPACTO".equals(faseLasers)) {
+        if (faseLasers == FaseLasers.IMPACTO) {
             tiempoAnimacionLaser += delta;
         }
     }
@@ -95,6 +120,56 @@ public class AtaquesExtraRetumbar {
             POSICIONES_LASERES[i] =
                 margen + i * anchoUtil / (POSICIONES_LASERES.length - 1f);
         }
+    }
+
+    public void crearMeteorito(MeteoritoRed estado) {
+        int id = estado.getId();
+
+        if (buscarMeteorito(id) != null
+            || buscarMeteoritoGrande(id) != null) {
+            return;
+        }
+
+        if (estado.getTipo() == MeteoritoRed.Tipo.NORMAL) {
+            METEORITOS.add(new Meteorito(
+                id,
+                estado.getX(),
+                estado.getY(),
+                SUELO_Y,
+                TEXTURA_METEORITO,
+                ANIMACION_FUEGO
+            ));
+        } else {
+            METEORITOS_GRANDES.add(new MeteoritoGrande(
+                id,
+                estado.getX(),
+                estado.getY(),
+                SUELO_Y,
+                ANCHO_MAPA,
+                TEXTURA_METEORITO,
+                ANIMACION_FUEGO
+            ));
+        }
+    }
+
+    private Meteorito buscarMeteorito(int id) {
+        for (Meteorito meteorito : METEORITOS) {
+            if (meteorito.getId() == id) {
+                return meteorito;
+            }
+        }
+
+        return null;
+    }
+
+    private MeteoritoGrande buscarMeteoritoGrande(int id) {
+        for (MeteoritoGrande meteorito : METEORITOS_GRANDES) {
+            if (meteorito.getId() == id) {
+                return meteorito;
+            }
+        }
+
+        return null;
     }
 
     private void dibujarAvisosLasers() {
@@ -160,6 +235,40 @@ public class AtaquesExtraRetumbar {
         lasersActivos = datos.getActivos();
     }
 
+    public void actualizarEstadoMeteorito(MeteoritoRed estado) {
+        int id = estado.getId();
+
+        if (estado.getTipo() == MeteoritoRed.Tipo.NORMAL) {
+            Meteorito meteorito = buscarMeteorito(id);
+
+            if (meteorito == null) {
+                crearMeteorito(estado);
+                meteorito = buscarMeteorito(id);
+            }
+
+            if (meteorito != null) {
+                meteorito.actualizarEstado(estado.getY(), estado.estaImpactando(), estado.getRotacion(), estado.getTiempoEfecto());
+            }
+
+        } else {
+            MeteoritoGrande meteorito = buscarMeteoritoGrande(id);
+
+            if (meteorito == null) {
+                crearMeteorito(estado);
+                meteorito = buscarMeteoritoGrande(id);
+            }
+
+            if (meteorito != null) {
+                meteorito.actualizarEstado(estado.getY(), estado.estaImpactando(), estado.getRotacion(), estado.getTiempoEfecto());
+            }
+        }
+    }
+
+    public void eliminarMeteorito(int id) {
+        METEORITOS.removeIf(m -> m.getId() == id);
+        METEORITOS_GRANDES.removeIf(m -> m.getId() == id);
+    }
+
     public void dibujar() {
 
         if (faseRayos == FaseRayos.AVISO) {
@@ -172,6 +281,14 @@ public class AtaquesExtraRetumbar {
             dibujarAvisosLasers();
         } else if (faseLasers == FaseLasers.IMPACTO) {
             dibujarLasers();
+        }
+
+        for (Meteorito meteorito : METEORITOS) {
+            meteorito.dibujar();
+        }
+
+        for (MeteoritoGrande meteorito : METEORITOS_GRANDES) {
+            meteorito.dibujar();
         }
     }
 

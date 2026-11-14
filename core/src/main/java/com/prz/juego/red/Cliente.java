@@ -5,6 +5,7 @@ import com.prz.juego.entidades.jugadores.Personajes;
 import com.prz.juego.hilos.HiloCliente;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Cliente {
 
@@ -140,6 +141,21 @@ public class Cliente {
 
     public LasersRed getEstadoLasers() {
         return hilo.getEstadoLasers();
+    }
+
+    public ArrayList<MeteoritoRed> getMeteoritosNuevos()
+    {
+        return hilo.getMeteoritosNuevos();
+    }
+
+    public ArrayList<MeteoritoRed> getEstadoMeteoritos()
+    {
+        return hilo.getEstadoMeteoritos();
+    }
+
+    public ArrayList<Integer> getMeteoritosEliminados()
+    {
+        return hilo.getMeteoritosEliminados();
     }
 
     public void cerrar()
