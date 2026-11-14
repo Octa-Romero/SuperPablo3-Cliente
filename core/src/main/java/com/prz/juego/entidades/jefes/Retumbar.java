@@ -179,6 +179,35 @@ public class Retumbar extends Enemigo {
         this.FUEGO_SUELO.actualizarEstado(estadoRed.getX(), estadoRed.getY(), estadoRed.getAlto(), estadoRed.estaActivo());
     }
 
+    public void crearFueguito(FueguitoRed estado) {
+        if (ataquesExtra != null) {
+            ataquesExtra.crearFueguito(estado);
+        }
+    }
+
+    public void actualizarEstadoFueguito(FueguitoRed estado) {
+        if (ataquesExtra != null) {
+            ataquesExtra.actualizarEstadoFueguito(estado);
+        }
+    }
+
+    public void configurarAnimacionesFueguitos(
+        Texture texturaLluvia,
+        Animation<TextureRegion> animacionRadial) {
+
+        if (ataquesExtra != null) {
+            ataquesExtra.configurarAnimacionesFueguitos(
+                texturaLluvia, animacionRadial
+            );
+        }
+    }
+
+    public void eliminarFueguito(int id) {
+        if (ataquesExtra != null) {
+            ataquesExtra.eliminarFueguito(id);
+        }
+    }
+
     @Override
     public void dibujar() {
         super.dibujar();

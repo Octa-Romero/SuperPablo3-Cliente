@@ -42,6 +42,11 @@ public class Nivel7 extends Nivel {
                 estadoRed.getY()
             );
 
+            jefe.configurarAnimacionesFueguitos(
+                texturaLluvia,
+                null
+            );
+
             agregarEntidadAlFondo(jefe);
             agregarEntidad(jefe.getManoIzquierda());
             agregarEntidad(jefe.getManoDerecha());

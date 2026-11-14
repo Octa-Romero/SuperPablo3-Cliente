@@ -439,6 +439,30 @@ public abstract class Nivel {
         }
     }
 
+    public void crearFueguito(FueguitoRed estado) {
+        Retumbar jefe = getJefe();
+
+        if (jefe != null) {
+            jefe.crearFueguito(estado);
+        }
+    }
+
+    public void actualizarEstadoFueguito(FueguitoRed estado) {
+        Retumbar jefe = getJefe();
+
+        if (jefe != null) {
+            jefe.actualizarEstadoFueguito(estado);
+        }
+    }
+
+    public void eliminarFueguito(int id) {
+        Retumbar jefe = getJefe();
+
+        if (jefe != null) {
+            jefe.eliminarFueguito(id);
+        }
+    }
+
     public void eliminarJefe() {}
 
     public void resize(int width, int height) {

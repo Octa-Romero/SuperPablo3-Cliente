@@ -158,6 +158,18 @@ public class Cliente {
         return hilo.getMeteoritosEliminados();
     }
 
+    public ArrayList<FueguitoRed> getFueguitosNuevos() {
+        return hilo.getFueguitosNuevos();
+    }
+
+    public ArrayList<FueguitoRed> getEstadoFueguitos() {
+        return hilo.getEstadoFueguitos();
+    }
+
+    public ArrayList<Integer> getFueguitosEliminados() {
+        return hilo.getFueguitosEliminados();
+    }
+
     public void cerrar()
     {
         if(hilo != null) {

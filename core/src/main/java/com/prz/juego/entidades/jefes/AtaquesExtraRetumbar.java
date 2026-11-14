@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.prz.juego.recursos.GestorRecursos;
+import com.prz.juego.red.FueguitoRed;
 import com.prz.juego.red.LasersRed;
 import com.prz.juego.red.MeteoritoRed;
 import com.prz.juego.red.RayosRed;
@@ -65,6 +66,13 @@ public class AtaquesExtraRetumbar {
     private final Texture TEXTURA_METEORITO;
     private final Animation<TextureRegion> ANIMACION_FUEGO;
 
+    private final ArrayList<Fueguito> FUEGUITOS = new ArrayList<>();
+
+    private Animation<TextureRegion> ANIMACION_LLUVIA;
+    private Animation<TextureRegion> ANIMACION_RADIAL;
+    private final Texture TEXTURA_FUEGUITO;
+
+
     public AtaquesExtraRetumbar(float anchoMapa, float altoMapa, float sueloY) {
 
         this.ANCHO_MAPA = anchoMapa;
@@ -73,6 +81,7 @@ public class AtaquesExtraRetumbar {
 
         TEXTURA_RAYO = GestorRecursos.obtenerTextura("Jefe/rayo.png");
         TEXTURA_PIXEL = GestorRecursos.obtenerPixel();
+        TEXTURA_FUEGUITO = GestorRecursos.obtenerTextura("Jefe/fueguito.png");
 
         Texture texturaLaser =
             GestorRecursos.obtenerTextura("Jefe/laser.png");
@@ -110,6 +119,10 @@ public class AtaquesExtraRetumbar {
         if (faseLasers == FaseLasers.IMPACTO) {
             tiempoAnimacionLaser += delta;
         }
+
+        for (Fueguito fueguito : FUEGUITOS) {
+            fueguito.update(delta);
+        }
     }
 
     private void inicializarPosicionesLasers() {
@@ -120,6 +133,80 @@ public class AtaquesExtraRetumbar {
             POSICIONES_LASERES[i] =
                 margen + i * anchoUtil / (POSICIONES_LASERES.length - 1f);
         }
+    }
+
+    public void configurarAnimacionesFueguitos(
+        Texture texturaLluvia,
+        Animation<TextureRegion> animacionRadial) {
+
+        TextureRegion[][] frames = TextureRegion.split(
+            texturaLluvia,
+            texturaLluvia.getWidth() / 2,
+            texturaLluvia.getHeight()
+        );
+
+        ANIMACION_LLUVIA = new Animation<>(
+            0.08f,
+            frames[0][0],
+            frames[0][1]
+        );
+
+        ANIMACION_LLUVIA.setPlayMode(Animation.PlayMode.LOOP);
+
+        ANIMACION_RADIAL = animacionRadial;
+    }
+
+    public void crearFueguito(FueguitoRed estado) {
+        if (buscarFueguito(estado.getId()) != null) {
+            return;
+        }
+
+        boolean radial =
+            estado.getTipo() == FueguitoRed.Tipo.RADIAL;
+
+        Animation<TextureRegion> animacion;
+
+        if (radial) {
+            animacion = ANIMACION_RADIAL;
+        } else {
+            animacion = ANIMACION_LLUVIA;
+        }
+
+        if (animacion == null) {
+            return;
+        }
+
+        Fueguito fueguito = new Fueguito(
+            estado.getId(),
+            estado.getX(),
+            estado.getY(),
+            estado.getTamano(),
+            estado.getRotacion(),
+            TEXTURA_FUEGUITO
+        );
+
+        FUEGUITOS.add(fueguito);
+    }
+
+    public void actualizarEstadoFueguito(FueguitoRed estado) {
+        Fueguito fueguito = buscarFueguito(estado.getId());
+
+        if (fueguito == null) {
+            crearFueguito(estado);
+            fueguito = buscarFueguito(estado.getId());
+        }
+
+        if (fueguito != null) {
+            fueguito.actualizarEstado(
+                estado.getX(),
+                estado.getY(),
+                estado.getRotacion()
+            );
+        }
+    }
+
+    public void eliminarFueguito(int id) {
+        FUEGUITOS.removeIf(fueguito -> fueguito.getId() == id);
     }
 
     public void crearMeteorito(MeteoritoRed estado) {
@@ -229,6 +316,16 @@ public class AtaquesExtraRetumbar {
         );
     }
 
+    private Fueguito buscarFueguito(int id) {
+        for (Fueguito fueguito : FUEGUITOS) {
+            if (fueguito.getId() == id) {
+                return fueguito;
+            }
+        }
+
+        return null;
+    }
+
     public void actualizarEstadoLasers(LasersRed datos) {
         faseLasers = datos.getFase();
         mostrarAvisoLaser = datos.mostrarAviso();
@@ -289,6 +386,10 @@ public class AtaquesExtraRetumbar {
 
         for (MeteoritoGrande meteorito : METEORITOS_GRANDES) {
             meteorito.dibujar();
+        }
+
+        for (Fueguito fueguito : FUEGUITOS) {
+            fueguito.dibujar();
         }
     }
 

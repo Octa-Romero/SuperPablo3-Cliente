@@ -218,6 +218,18 @@ public class PantallaJuego implements Screen {
                     NIVEL.eliminarMeteorito(id);
                 }
 
+                for (FueguitoRed fueguito : cliente.getFueguitosNuevos()) {
+                    NIVEL.crearFueguito(fueguito);
+                }
+
+                for (FueguitoRed fueguito : cliente.getEstadoFueguitos()) {
+                    NIVEL.actualizarEstadoFueguito(fueguito);
+                }
+
+                for (int id : cliente.getFueguitosEliminados()) {
+                    NIVEL.eliminarFueguito(id);
+                }
+
                 if(cliente.jefeMuerto())
                 {
                     NIVEL.eliminarJefe();

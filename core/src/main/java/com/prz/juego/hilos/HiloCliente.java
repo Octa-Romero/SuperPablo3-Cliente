@@ -45,6 +45,9 @@ public class HiloCliente extends Thread{
     private final ArrayList<MeteoritoRed> meteoritos = new ArrayList<>();
     private final ArrayList<MeteoritoRed> meteoritosNuevos = new ArrayList<>();
     private final ArrayList<Integer> meteoritosEliminados = new ArrayList<>();
+    private final ArrayList<FueguitoRed> fueguitos = new ArrayList<>();
+    private final ArrayList<FueguitoRed> fueguitosNuevos = new ArrayList<>();
+    private final ArrayList<Integer> fueguitosEliminados = new ArrayList<>();
 
     public HiloCliente()
     {
@@ -153,6 +156,14 @@ public class HiloCliente extends Thread{
 
         } else if (msj.startsWith("ELIMINAR_METEORITO")) {
             procesarEliminacionMeteorito(msj);
+        }else if (msj.startsWith("CREAR_FUEGUITO;")) {
+            procesarCreacionFueguito(msj);
+
+        } else if (msj.startsWith("ESTADO_FUEGUITO;")) {
+            procesarEstadoFueguito(msj);
+
+        } else if (msj.startsWith("ELIMINAR_FUEGUITO;")) {
+            procesarEliminacionFueguito(msj);
         }
     }
 
@@ -577,6 +588,80 @@ public class HiloCliente extends Thread{
         }
     }
 
+    private synchronized void procesarCreacionFueguito(String msj) {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            int id = Integer.parseInt(mensajeParametrizado[1]);
+
+            FueguitoRed.Tipo tipo = FueguitoRed.Tipo.valueOf(mensajeParametrizado[2]);
+
+            float x = Float.parseFloat(mensajeParametrizado[3]);
+            float y = Float.parseFloat(mensajeParametrizado[4]);
+            float tamano = Float.parseFloat(mensajeParametrizado[5]);
+            float rotacion = Float.parseFloat(mensajeParametrizado[6]);
+
+            if (buscarFueguito(id) == -1) {
+                FueguitoRed fueguito = new FueguitoRed(
+                    id, tipo, x, y, tamano, rotacion
+                );
+
+                fueguitos.add(fueguito);
+                fueguitosNuevos.add(fueguito);
+            }
+
+        } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Creación de fueguito inválida");
+        }
+    }
+
+    private synchronized void procesarEstadoFueguito(String msj) {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            int id = Integer.parseInt(mensajeParametrizado[1]);
+            FueguitoRed.Tipo tipo = FueguitoRed.Tipo.valueOf(mensajeParametrizado[2]);
+            float x = Float.parseFloat(mensajeParametrizado[3]);
+            float y = Float.parseFloat(mensajeParametrizado[4]);
+            float tamano = Float.parseFloat(mensajeParametrizado[5]);
+            float rotacion = Float.parseFloat(mensajeParametrizado[6]);
+
+            FueguitoRed actualizado = new FueguitoRed(
+                id, tipo, x, y, tamano, rotacion
+            );
+
+            int indice = buscarFueguito(id);
+
+            if (indice == -1) {
+                fueguitos.add(actualizado);
+                fueguitosNuevos.add(actualizado);
+            } else {
+                fueguitos.set(indice, actualizado);
+            }
+
+        } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Estado de fueguito inválido");
+        }
+    }
+
+    private synchronized void procesarEliminacionFueguito(String msj) {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            if (mensajeParametrizado.length != 2) {
+                return;
+            }
+
+            int id = Integer.parseInt(mensajeParametrizado[1]);
+
+            fueguitos.removeIf(f -> f.getId() == id);
+            fueguitosNuevos.removeIf(f -> f.getId() == id);
+            fueguitosEliminados.add(id);
+
+        } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Eliminación de fueguito inválida");
+        }
+    }
 
     private EnemigoRed buscarEnemigo(int id)
     {
@@ -628,6 +713,16 @@ public class HiloCliente extends Thread{
         }
 
         return null;
+    }
+
+    private int buscarFueguito(int id) {
+        for (int i = 0; i < fueguitos.size(); i++) {
+            if (fueguitos.get(i).getId() == id) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     public void enviarMensaje(String msj)
@@ -779,4 +874,24 @@ public class HiloCliente extends Thread{
         meteoritosEliminados.clear();
         return eliminados;
     }
+    public synchronized ArrayList<FueguitoRed> getFueguitosNuevos() {
+        ArrayList<FueguitoRed> nuevos =
+            new ArrayList<>(fueguitosNuevos);
+
+        fueguitosNuevos.clear();
+        return nuevos;
+    }
+
+    public synchronized ArrayList<FueguitoRed> getEstadoFueguitos() {
+        return new ArrayList<>(fueguitos);
+    }
+
+    public synchronized ArrayList<Integer> getFueguitosEliminados() {
+        ArrayList<Integer> eliminados =
+            new ArrayList<>(fueguitosEliminados);
+
+        fueguitosEliminados.clear();
+        return eliminados;
+    }
+
 }
