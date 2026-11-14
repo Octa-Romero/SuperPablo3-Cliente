@@ -16,8 +16,7 @@ import com.prz.juego.entidades.enemigos.rango.Proyectil;
 import com.prz.juego.entidades.jefes.Retumbar;
 import com.prz.juego.entidades.jugadores.*;
 
-import com.prz.juego.red.EnemigoRed;
-import com.prz.juego.red.ProyectilRed;
+import com.prz.juego.red.*;
 import com.prz.juego.sistemas.Camara;
 import com.prz.juego.sistemas.Colisiones;
 import com.prz.juego.utilidades.Debug;
@@ -138,6 +137,13 @@ public abstract class Nivel {
         ENTIDADES.add(entidad);
     }
 
+    protected void agregarEntidadAlFondo(Entidad entidad) {
+        ENTIDADES.add(0, entidad);
+    }
+
+    protected void eliminarEntidad(Entidad entidad) {
+        ENTIDADES.remove(entidad);
+    }
     protected void agregarEntidadDiferida(Entidad entidad) {
         ENTIDADES_PENDIENTES.add(entidad);
     }
@@ -146,10 +152,6 @@ public abstract class Nivel {
         if (!ENTIDADES_PENDIENTES_ELIMINAR.contains(entidad)) {
             ENTIDADES_PENDIENTES_ELIMINAR.add(entidad);
         }
-    }
-
-    protected void agregarEntidadAlFondo(Entidad entidad) {
-        ENTIDADES.add(0, entidad);
     }
 
     protected void configurarEntornoEspecifico(float ancho, float alto) {
@@ -179,7 +181,7 @@ public abstract class Nivel {
         }
 
         if (dibujarJugadoresAlFrente) {
-            getJefe().dibujarAtaquesExtra();
+            //getJefe().dibujarAtaquesExtra();
             pablo.dibujar();
             walter.dibujar();
         }
@@ -208,7 +210,7 @@ public abstract class Nivel {
         }
 
         if (getJefe() != null) {
-            getJefe().dibujarHitboxesAtaquesExtra(shapeRenderer);
+            //getJefe().dibujarHitboxesAtaquesExtra(shapeRenderer);
         }
 
         for (Lanzable proyectil : PROYECTILES) {
@@ -256,25 +258,22 @@ public abstract class Nivel {
         }
     }
 
-    // SINCRONIZACIÓN DE ENEMIGOS
-
     public void agregarEnemigos(EnemigoRed estadoRed) {
-        TipoEnemigo tipo = estadoRed.getTipo();
 
-        Enemigo enemigo = tipo.crear(estadoRed, jugadorLocal);
+        for (Entidad entidad : ENTIDADES) {
+            if (entidad instanceof Enemigo existente
+                && existente.getId() == estadoRed.getId()) {
+                return;
+            }
+        }
+
+        Enemigo enemigo = estadoRed.getTipo().crear(estadoRed, jugadorLocal);
 
         if (enemigo != null) {
-            for (Entidad entidad : ENTIDADES) {
-                if (entidad instanceof Enemigo existente
-                    && existente.getId() == enemigo.getId()) {
-                    return;
-                }
-            }
-
-            ENTIDADES.add(enemigo);
+            enemigo.setId(estadoRed.getId());
+            agregarEntidad(enemigo);
         }
     }
-
     public void actualizarEstadoEnemigos(EnemigoRed estado) {
         for (Entidad entidad : ENTIDADES) {
             if (entidad instanceof Enemigo enemigo
@@ -365,6 +364,42 @@ public abstract class Nivel {
             }
         }
     }
+
+    public void crearJefe(JefeRed estadoRed) {}
+
+    public void actualizarEstadoJefe(JefeRed estadoRed) {
+        Retumbar jefe = getJefe();
+
+        if (jefe != null) {
+            jefe.actualizarEstado(
+                estadoRed.getX(),
+                estadoRed.getY(),
+                estadoRed.getVida(),
+                estadoRed.esVisible(),
+                estadoRed.getEscalaSprite()
+            );
+        }
+    }
+
+    public void actualizarEstadoMano(ManoRed estadoRed) {
+        Retumbar jefe = getJefe();
+
+        if (jefe != null) {
+            jefe.actualizarEstadoMano(estadoRed);
+        }
+    }
+
+    public void actualizarEstadoFuegoSuelo(FuegoSueloRed estadoRed)
+    {
+        Retumbar jefe = getJefe();
+
+        if(jefe != null)
+        {
+            jefe.actualizarEstadoFuegoSuelo(estadoRed);
+        }
+    }
+
+    public void eliminarJefe() {}
 
     public void resize(int width, int height) {
         camara.actualizarTamano(width, height);

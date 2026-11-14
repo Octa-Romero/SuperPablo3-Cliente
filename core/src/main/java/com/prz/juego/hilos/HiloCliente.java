@@ -1,10 +1,9 @@
 package com.prz.juego.hilos;
 
 import com.prz.juego.entidades.enemigos.TipoEnemigo;
+import com.prz.juego.entidades.jefes.Mano;
 import com.prz.juego.entidades.jugadores.Personajes;
-import com.prz.juego.red.EnemigoRed;
-import com.prz.juego.red.JugadorEstadoRed;
-import com.prz.juego.red.ProyectilRed;
+import com.prz.juego.red.*;
 import com.prz.juego.utilidades.Global;
 
 import java.io.IOException;
@@ -31,6 +30,12 @@ public class HiloCliente extends Thread{
     private ArrayList<ProyectilRed> proyectilesNuevo = new ArrayList<>();
     private ArrayList<ProyectilRed> estadoProyectiles = new ArrayList<>();
     private ArrayList<Integer> proyectilesEliminados = new ArrayList<>();
+    private JefeRed jefeNuevo;
+    private JefeRed estadoJefe;
+    private boolean jefeEliminado = false;
+    private ManoRed manoIzquierda = new ManoRed(Mano.Lado.IZQUIERDA);
+    private ManoRed manoDerecha = new ManoRed(Mano.Lado.DERECHA);
+    private FuegoSueloRed fuegoSuelo = new FuegoSueloRed();
 
     public HiloCliente()
     {
@@ -112,6 +117,21 @@ public class HiloCliente extends Thread{
         } else if (msj.startsWith("INICIAR_NIVEL"))
         {
             procesarInicioNivel(msj);
+        } else if (msj.startsWith("CREAR_JEFE"))
+        {
+            procesarCreacionJefe(msj);
+        } else if (msj.startsWith("ESTADO_JEFE"))
+        {
+            procesarEstadoJefe(msj);
+        } else if (msj.startsWith("ELIMINAR_JEFE"))
+        {
+            procesarEliminacionJefe();
+        } else if (msj.startsWith("ESTADO_MANO"))
+        {
+            procesarEstadoMano(msj);
+        } else if (msj.startsWith("ESTADO_FUEGO_SUELO"))
+        {
+            procesarEstadoFuegoSuelo(msj);
         }
     }
 
@@ -307,11 +327,11 @@ public class HiloCliente extends Thread{
     }
 
     private void procesarVotosNivel(String msj) {
-        String[] datos = msj.split(";");
+        String[] mensajeParametrizado = msj.split(";");
 
         try {
-            votoLocalNivel = Integer.parseInt(datos[1]);
-            votoRemotoNivel = Integer.parseInt(datos[2]);
+            votoLocalNivel = Integer.parseInt(mensajeParametrizado[1]);
+            votoRemotoNivel = Integer.parseInt(mensajeParametrizado[2]);
         } catch (NumberFormatException e) {
             System.out.println("Votos de nivel inválidos");
         }
@@ -319,12 +339,96 @@ public class HiloCliente extends Thread{
 
     private void procesarInicioNivel(String msj)
     {
-        String[] datos = msj.split(";");
+        String[] mensajeParametrizado = msj.split(";");
 
         try {
-            nivelParaIniciar = Integer.parseInt(datos[1]);
+            nivelParaIniciar = Integer.parseInt(mensajeParametrizado[1]);
         } catch (NumberFormatException e) {
             System.out.println("Votos de nivel inválidos");
+        }
+    }
+
+    private synchronized void procesarCreacionJefe(String msj)
+    {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            float x = Float.parseFloat(mensajeParametrizado[1]);
+            float y = Float.parseFloat(mensajeParametrizado[2]);
+            double vida = Double.parseDouble(mensajeParametrizado[3]);
+
+            jefeNuevo = new JefeRed(x, y ,vida);
+            estadoJefe = jefeNuevo;
+            jefeEliminado = false;
+        } catch (NumberFormatException e) {
+            System.out.println("Parametros para la creacion del jefe invalidos");
+        }
+    }
+
+    private synchronized void procesarEstadoJefe(String msj) {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            float x = Float.parseFloat(mensajeParametrizado[1]);
+            float y = Float.parseFloat(mensajeParametrizado[2]);
+            double vida = Double.parseDouble(mensajeParametrizado[3]);
+            boolean visible = Boolean.parseBoolean(mensajeParametrizado[4]);
+            float escala = Float.parseFloat(mensajeParametrizado[5]);
+
+            if (estadoJefe != null) {
+                estadoJefe.actualizarEstado(x, y, vida, visible, escala);
+            }
+
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Estado del jefe inválido");
+        }
+    }
+
+    private synchronized void procesarEliminacionJefe() {
+        jefeEliminado = true;
+        estadoJefe = null;
+        jefeNuevo = null;
+    }
+
+    private synchronized void procesarEstadoMano(String msj) {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            Mano.Lado lado = Mano.Lado.valueOf(mensajeParametrizado[1]);
+            float x = Float.parseFloat(mensajeParametrizado[2]);
+            float y = Float.parseFloat(mensajeParametrizado[3]);
+            double vida = Double.parseDouble(mensajeParametrizado[4]);
+            boolean visible = Boolean.parseBoolean(mensajeParametrizado[5]);
+            float escala = Float.parseFloat(mensajeParametrizado[6]);
+
+            Mano.EstadoAtaque estadoAtaque = Mano.EstadoAtaque.valueOf(mensajeParametrizado[7]);
+
+            Mano.EstiloAtaque estiloAtaque = Mano.EstiloAtaque.valueOf(mensajeParametrizado[8]);
+
+            boolean mostrarFuegoGolpe = Boolean.parseBoolean(mensajeParametrizado[9]);
+
+            ManoRed mano = obtenerMano(lado);
+
+            mano.actualizarEstado(x, y, vida, visible, escala, estadoAtaque, estiloAtaque, mostrarFuegoGolpe);
+
+        } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Estado de mano inválido");
+        }
+    }
+
+    private synchronized void procesarEstadoFuegoSuelo(String msj) {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            float x = Float.parseFloat(mensajeParametrizado[1]);
+            float y = Float.parseFloat(mensajeParametrizado[2]);
+            float alto = Float.parseFloat(mensajeParametrizado[3]);
+            boolean activo = Boolean.parseBoolean(mensajeParametrizado[4]);
+
+            fuegoSuelo.actualizarEstado(x, y, alto, activo);
+
+        } catch (NumberFormatException e) {
+            System.out.println("Estado de FuegoSuelo inválido");
         }
     }
 
@@ -360,6 +464,14 @@ public class HiloCliente extends Thread{
         {
             return estadoLocal;
         }
+    }
+
+    private ManoRed obtenerMano(Mano.Lado lado) {
+        if (lado == Mano.Lado.IZQUIERDA) {
+            return manoIzquierda;
+        }
+
+        return manoDerecha;
     }
 
     public void enviarMensaje(String msj)
@@ -462,5 +574,29 @@ public class HiloCliente extends Thread{
         if (buscarProyectil(orbe.getId()) == null) {
             estadoProyectiles.add(orbe);
         }
+    }
+    public synchronized JefeRed getJefeNuevo() {
+        JefeRed nuevo = jefeNuevo;
+        jefeNuevo = null;
+        return nuevo;
+    }
+
+    public synchronized JefeRed getEstadoJefe() {
+        return estadoJefe;
+    }
+
+    public synchronized boolean getJefeEliminado() {
+        boolean eliminado = jefeEliminado;
+        jefeEliminado = false;
+        return eliminado;
+    }
+
+    public synchronized ManoRed getEstadoMano(Mano.Lado lado) {
+        return obtenerMano(lado);
+    }
+
+    public synchronized FuegoSueloRed getEstadoFuegoSuelo()
+    {
+        return this.fuegoSuelo;
     }
 }

@@ -4,15 +4,13 @@ package com.prz.juego.pantallas;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
+import com.prz.juego.entidades.jefes.Mano;
 import com.prz.juego.entidades.jugadores.Jugador;
 import com.prz.juego.entidades.jugadores.Personajes;
 import com.prz.juego.principal.Navegable;
 import com.prz.juego.niveles.Hub;
 import com.prz.juego.niveles.Nivel;
-import com.prz.juego.red.Cliente;
-import com.prz.juego.red.EnemigoRed;
-import com.prz.juego.red.ProyectilRed;
-import com.prz.juego.red.JugadorEstadoRed;
+import com.prz.juego.red.*;
 import com.prz.juego.sistemas.Hud;
 import com.prz.juego.utilidades.Entrada;
 import com.prz.juego.utilidades.Render;
@@ -160,6 +158,43 @@ public class PantallaJuego implements Screen {
 
                 for (Integer id : cliente.getProyectilesEliminados()) {
                     NIVEL.eliminarProyectil(id);
+                }
+
+                JefeRed jefeRecibido = cliente.getJefeRecibido();
+
+                if(jefeRecibido != null)
+                {
+                    NIVEL.crearJefe(jefeRecibido);
+                }
+
+                JefeRed estadoJefe = cliente.getEstadoJefe();
+
+                if(estadoJefe != null)
+                {
+                    NIVEL.actualizarEstadoJefe(estadoJefe);
+                }
+
+                ManoRed izquierda = cliente.getEstadoMano(Mano.Lado.IZQUIERDA);
+                ManoRed derecha = cliente.getEstadoMano(Mano.Lado.DERECHA);
+
+                if (izquierda != null && izquierda.recibioEstado()) {
+                    NIVEL.actualizarEstadoMano(izquierda);
+                }
+
+                if (derecha != null && derecha.recibioEstado()) {
+                    NIVEL.actualizarEstadoMano(derecha);
+                }
+
+                FuegoSueloRed estadoFuegoSuelo = cliente.getEstadoFuegoSuelo();
+
+                if(estadoFuegoSuelo != null && estadoFuegoSuelo.tieneEstadoRecibido())
+                {
+                    NIVEL.actualizarEstadoFuegoSuelo(estadoFuegoSuelo);
+                }
+
+                if(cliente.jefeMuerto())
+                {
+                    NIVEL.eliminarJefe();
                 }
 
                 if (NIVEL.enemigoReliquiaDerrotado()) {

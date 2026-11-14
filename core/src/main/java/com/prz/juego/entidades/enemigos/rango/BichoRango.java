@@ -8,9 +8,8 @@ public class BichoRango extends EnemigoRango {
 
     private static final float DURACION_FRAME_IDLE = 0.12f;
 
-    public BichoRango(int id, float x, float y, Jugador jugador) {
+    public BichoRango(float x, float y, Jugador jugador) {
         super(
-                id,
                 x,
                 y,
                 70,

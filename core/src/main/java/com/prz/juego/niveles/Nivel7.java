@@ -1,7 +1,7 @@
 package com.prz.juego.niveles;
 
 import com.prz.juego.entidades.jefes.Retumbar;
-import com.prz.juego.entidades.jugadores.Jugador;
+import com.prz.juego.red.JefeRed;
 import com.prz.juego.utilidades.Musica;
 
 public class Nivel7 extends Nivel {
@@ -24,29 +24,22 @@ public class Nivel7 extends Nivel {
         return RUTA;
     }
 
-    /*@Override
-    protected void configurarContenidoEspecifico(Jugador jugador) {
-        jefe = new Retumbar(CENTRO_MAPA, SUELO, jugador, 0, ANCHO_MAPA);
+    @Override
+    public void crearJefe(JefeRed datos) {
+        if (jefe == null) {
+            jefe = new Retumbar(
+                datos.getX(),
+                datos.getY(),
+                datos.getVida(),
+                0,
+                ANCHO_MAPA
+            );
+        }
+
         agregarEntidadAlFondo(jefe);
         agregarEntidad(jefe.getManoIzquierda());
         agregarEntidad(jefe.getManoDerecha());
         agregarEntidad(jefe.getFuegoSuelo());
-    }
-
-     */
-
-    @Override
-    protected void configurarEntornoEspecifico(float ancho, float alto) {
-        jefe.configurarAtaquesExtra(
-            ancho,
-            alto,
-            this::agregarEntidadDiferida,
-            this::eliminarEntidadDiferida);
-    }
-
-    @Override
-    public Retumbar getJefe() {
-        return jefe;
     }
 
     @Override
@@ -57,5 +50,11 @@ public class Nivel7 extends Nivel {
     @Override
     protected float getPosicionInicialY() {
         return Y_INICIAL_JUGADOR;
+    }
+
+    @Override
+    public Retumbar getJefe()
+    {
+        return this.jefe;
     }
 }

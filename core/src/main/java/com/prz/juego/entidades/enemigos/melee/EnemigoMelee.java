@@ -6,7 +6,6 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.prz.juego.entidades.enemigos.Enemigo;
 import com.prz.juego.entidades.jugadores.Jugador;
-import com.prz.juego.utilidades.Sonido;
 
 public abstract class EnemigoMelee extends Enemigo {
 
@@ -14,7 +13,6 @@ public abstract class EnemigoMelee extends Enemigo {
     protected float altoAtaque = 10;
 
     protected EnemigoMelee(
-        int id,
         float x,
         float y,
         float ancho,
@@ -25,7 +23,7 @@ public abstract class EnemigoMelee extends Enemigo {
         Jugador jugador,
         Texture textura) {
 
-        super(id, x, y, ancho, alto, velocidadX,
+        super(x, y, ancho, alto, velocidadX,
             vida, danio, jugador, textura);
     }
 

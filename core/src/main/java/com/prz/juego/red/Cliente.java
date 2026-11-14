@@ -1,5 +1,6 @@
 package com.prz.juego.red;
 
+import com.prz.juego.entidades.jefes.Mano;
 import com.prz.juego.entidades.jugadores.Personajes;
 import com.prz.juego.hilos.HiloCliente;
 
@@ -106,6 +107,31 @@ public class Cliente {
     public void registrarEstadoProyectil(ProyectilRed estado)
     {
         hilo.registrarEstadoProyectil(estado);
+    }
+
+    public JefeRed getJefeRecibido()
+    {
+        return hilo.getJefeNuevo();
+    }
+
+    public JefeRed getEstadoJefe()
+    {
+        return hilo.getEstadoJefe();
+    }
+
+    public boolean jefeMuerto()
+    {
+        return hilo.getJefeEliminado();
+    }
+
+    public ManoRed getEstadoMano(Mano.Lado lado)
+    {
+        return hilo.getEstadoMano(lado);
+    }
+
+    public FuegoSueloRed getEstadoFuegoSuelo()
+    {
+        return hilo.getEstadoFuegoSuelo();
     }
 
     public void cerrar()

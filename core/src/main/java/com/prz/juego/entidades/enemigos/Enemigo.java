@@ -3,11 +3,9 @@ package com.prz.juego.entidades.enemigos;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.Rectangle;
 import com.prz.juego.entidades.Entidad;
 import com.prz.juego.entidades.jugadores.Jugador;
 import com.prz.juego.utilidades.Render;
-import com.prz.juego.utilidades.Sonido;
 
 public abstract class Enemigo extends Entidad {
 
@@ -22,7 +20,6 @@ public abstract class Enemigo extends Entidad {
     protected boolean sueltaReliquia = false;
 
     protected Enemigo(
-            int id,
             float x,
             float y,
             float ancho,
@@ -95,6 +92,11 @@ public abstract class Enemigo extends Entidad {
 
     public float getDireccion() {
         return direccion;
+    }
+
+    public void setId(int id)
+    {
+        this.id = id;
     }
 
     public void setSueltaReliquia(boolean valor) {
