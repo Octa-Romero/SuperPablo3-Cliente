@@ -1,6 +1,7 @@
 package com.prz.juego.hilos;
 
 import com.prz.juego.entidades.enemigos.TipoEnemigo;
+import com.prz.juego.entidades.jefes.AtaquesExtraRetumbar;
 import com.prz.juego.entidades.jefes.Mano;
 import com.prz.juego.entidades.jugadores.Personajes;
 import com.prz.juego.red.*;
@@ -36,6 +37,8 @@ public class HiloCliente extends Thread{
     private ManoRed manoIzquierda = new ManoRed(Mano.Lado.IZQUIERDA);
     private ManoRed manoDerecha = new ManoRed(Mano.Lado.DERECHA);
     private FuegoSueloRed fuegoSuelo = new FuegoSueloRed();
+    private RayosRed estadoRayos = new RayosRed();
+    private LasersRed estadoLasers = new LasersRed();
 
     public HiloCliente()
     {
@@ -132,6 +135,10 @@ public class HiloCliente extends Thread{
         } else if (msj.startsWith("ESTADO_FUEGO_SUELO"))
         {
             procesarEstadoFuegoSuelo(msj);
+        } else if (msj.startsWith("ESTADO_RAYOS;")) {
+            procesarEstadoRayos(msj);
+        } else if (msj.startsWith("ESTADO_LASERES;")) {
+            procesarEstadoLasers(msj);
         }
     }
 
@@ -432,6 +439,57 @@ public class HiloCliente extends Thread{
         }
     }
 
+    private synchronized void procesarEstadoRayos(String msj) {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            AtaquesExtraRetumbar.FaseRayos fase;
+            if (mensajeParametrizado[1].equals("NINGUNO")) {
+                fase = null;
+            } else {
+                fase = AtaquesExtraRetumbar.FaseRayos.valueOf(mensajeParametrizado[1]);
+            }
+            boolean mostrarAviso = Boolean.parseBoolean(mensajeParametrizado[2]);
+            float[] posiciones = new float[5];
+
+            for (int i = 0; i < posiciones.length; i++) {
+                posiciones[i] = Float.parseFloat(mensajeParametrizado[i + 3]);
+            }
+
+            estadoRayos.actualizarEstado(fase, mostrarAviso, posiciones);
+
+        } catch (NumberFormatException e) {
+            System.out.println("Estado de rayos inválido");
+        }
+    }
+
+    private synchronized void procesarEstadoLasers(String msj) {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            AtaquesExtraRetumbar.FaseLasers fase;
+
+            if (mensajeParametrizado[1].equals("NINGUNO")) {
+                fase = null;
+            } else {
+                fase = AtaquesExtraRetumbar.FaseLasers.valueOf(mensajeParametrizado[1]);
+            }
+
+            boolean mostrarAviso = Boolean.parseBoolean(mensajeParametrizado[2]);
+
+            boolean[] activos = new boolean[15];
+
+            for (int i = 0; i < activos.length; i++) {
+                activos[i] = Boolean.parseBoolean(mensajeParametrizado[i + 3]);
+            }
+
+            estadoLasers.actualizarEstado(fase, mostrarAviso, activos);
+
+        } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Estado de láseres inválido");
+        }
+    }
+
     private EnemigoRed buscarEnemigo(int id)
     {
         for(EnemigoRed e : estadoEnemigos)
@@ -598,5 +656,13 @@ public class HiloCliente extends Thread{
     public synchronized FuegoSueloRed getEstadoFuegoSuelo()
     {
         return this.fuegoSuelo;
+    }
+
+    public synchronized RayosRed getEstadoRayos() {
+        return estadoRayos;
+    }
+
+    public synchronized LasersRed getEstadoLasers() {
+        return estadoLasers;
     }
 }

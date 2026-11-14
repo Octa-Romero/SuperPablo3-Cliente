@@ -8,6 +8,7 @@ public class Nivel7 extends Nivel {
 
     public static final String RUTA = "Niveles/Niveles/Nivel7.tmx";
     private static final float CENTRO_MAPA = 688;
+    private float altoMapa;
     private static final float ANCHO_MAPA = CENTRO_MAPA * 2;
     private static final float SUELO = 210;
     private static final float X_INICIAL_JUGADOR = 100;
@@ -25,22 +26,34 @@ public class Nivel7 extends Nivel {
     }
 
     @Override
-    public void crearJefe(JefeRed datos) {
+    public void crearJefe(JefeRed estadoRed) {
         if (jefe == null) {
             jefe = new Retumbar(
-                datos.getX(),
-                datos.getY(),
-                datos.getVida(),
+                estadoRed.getX(),
+                estadoRed.getY(),
+                estadoRed.getVida(),
                 0,
                 ANCHO_MAPA
             );
-        }
 
-        agregarEntidadAlFondo(jefe);
-        agregarEntidad(jefe.getManoIzquierda());
-        agregarEntidad(jefe.getManoDerecha());
-        agregarEntidad(jefe.getFuegoSuelo());
+            jefe.configurarAtaquesExtra(
+                ANCHO_MAPA,
+                altoMapa,
+                estadoRed.getY()
+            );
+
+            agregarEntidadAlFondo(jefe);
+            agregarEntidad(jefe.getManoIzquierda());
+            agregarEntidad(jefe.getManoDerecha());
+            agregarEntidad(jefe.getFuegoSuelo());
+        }
     }
+
+    @Override
+    protected void configurarEntornoEspecifico(float ancho, float alto) {
+        this.altoMapa = ancho;
+    }
+
 
     @Override
     protected float getPosicionInicialX() {

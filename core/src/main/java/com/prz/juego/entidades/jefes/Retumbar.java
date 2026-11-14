@@ -14,7 +14,9 @@ import com.prz.juego.entidades.enemigos.Enemigo;
 import com.prz.juego.entidades.jugadores.Jugador;
 import com.prz.juego.recursos.GestorRecursos;
 import com.prz.juego.red.FuegoSueloRed;
+import com.prz.juego.red.LasersRed;
 import com.prz.juego.red.ManoRed;
+import com.prz.juego.red.RayosRed;
 import com.prz.juego.utilidades.Render;
 import com.prz.juego.utilidades.Sonido;
 
@@ -32,7 +34,7 @@ public class Retumbar extends Enemigo {
     private final Mano MANO_IZQUIERDA;
     private final Mano MANO_DERECHA;
     private final FuegoSuelo FUEGO_SUELO;
-
+    private AtaquesExtraRetumbar ataquesExtra;
 
     public Retumbar(float x, float y, double vida, float sueloXMin, float sueloXMax) {
         super(
@@ -78,6 +80,10 @@ public class Retumbar extends Enemigo {
     public void update(float delta) {
         ANIMACION.actualizar(sprite, delta, false, false, false);
         actualizarSpriteVisual();
+
+        if (ataquesExtra != null) {
+            ataquesExtra.update(delta);
+        }
     }
 
     public boolean debeDibujarBarraVida() {
@@ -114,6 +120,24 @@ public class Retumbar extends Enemigo {
         System.out.println("RETUMBAR X: " + x + " | Y: " + y);
     }
 
+    public void configurarAtaquesExtra(
+        float anchoMapa, float altoMapa, float sueloY) {
+
+        ataquesExtra = new AtaquesExtraRetumbar(anchoMapa, altoMapa, sueloY);
+    }
+
+    public void actualizarEstadoRayos(RayosRed datos) {
+        if (ataquesExtra != null) {
+            ataquesExtra.actualizarEstadoRayos(datos);
+        }
+    }
+
+    public void actualizarEstadoLasers(LasersRed datos) {
+        if (ataquesExtra != null) {
+            ataquesExtra.actualizarEstadoLasers(datos);
+        }
+    }
+
     public void actualizarEstadoMano(ManoRed estadoRed) {
         Mano mano;
         if(estadoRed.getLado() == Mano.Lado.IZQUIERDA)
@@ -138,5 +162,14 @@ public class Retumbar extends Enemigo {
     public void actualizarEstadoFuegoSuelo(FuegoSueloRed estadoRed)
     {
         this.FUEGO_SUELO.actualizarEstado(estadoRed.getX(), estadoRed.getY(), estadoRed.getAlto(), estadoRed.estaActivo());
+    }
+
+    @Override
+    public void dibujar() {
+        super.dibujar();
+
+        if (ataquesExtra != null) {
+            ataquesExtra.dibujar();
+        }
     }
 }

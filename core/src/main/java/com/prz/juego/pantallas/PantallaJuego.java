@@ -192,6 +192,18 @@ public class PantallaJuego implements Screen {
                     NIVEL.actualizarEstadoFuegoSuelo(estadoFuegoSuelo);
                 }
 
+                RayosRed rayos = cliente.getEstadoRayos();
+
+                if (rayos != null && rayos.tieneEstadoRecibido()) {
+                    NIVEL.actualizarEstadoRayos(rayos);
+                }
+
+                LasersRed lasers = cliente.getEstadoLasers();
+
+                if (lasers != null && lasers.tieneEstadoRecibido()) {
+                    NIVEL.actualizarEstadoLasers(lasers);
+                }
+
                 if(cliente.jefeMuerto())
                 {
                     NIVEL.eliminarJefe();

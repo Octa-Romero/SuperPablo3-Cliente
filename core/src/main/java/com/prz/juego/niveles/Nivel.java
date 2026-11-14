@@ -399,6 +399,22 @@ public abstract class Nivel {
         }
     }
 
+    public void actualizarEstadoRayos(RayosRed datos) {
+        Retumbar jefe = getJefe();
+
+        if (jefe != null) {
+            jefe.actualizarEstadoRayos(datos);
+        }
+    }
+
+    public void actualizarEstadoLasers(LasersRed datos) {
+        Retumbar jefe = getJefe();
+
+        if (jefe != null) {
+            jefe.actualizarEstadoLasers(datos);
+        }
+    }
+
     public void eliminarJefe() {}
 
     public void resize(int width, int height) {

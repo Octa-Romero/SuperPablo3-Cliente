@@ -134,6 +134,14 @@ public class Cliente {
         return hilo.getEstadoFuegoSuelo();
     }
 
+    public RayosRed getEstadoRayos() {
+        return hilo.getEstadoRayos();
+    }
+
+    public LasersRed getEstadoLasers() {
+        return hilo.getEstadoLasers();
+    }
+
     public void cerrar()
     {
         if(hilo != null) {
