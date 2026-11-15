@@ -150,6 +150,8 @@ public class HiloCliente extends Thread{
             procesarSonido(msj);
         } else if (msj.startsWith("MUSICA;")) {
             procesarMusica(msj);
+        } else if (msj.startsWith("INVENCIBILIDAD;")) {
+            procesarEstadoInvencibilidad(msj);
         }
     }
 
@@ -179,10 +181,19 @@ public class HiloCliente extends Thread{
         try {
             String personaje = mensajeParametrizado[1];
             boolean estadoAtaque = Boolean.parseBoolean(mensajeParametrizado[2]);
+            int tipoAnimacion = 0;
+            float tiempoAnimacion = 0f;
+
+            if (mensajeParametrizado.length > 3) {
+                tipoAnimacion = Integer.parseInt(mensajeParametrizado[3]);
+            }
+            if (mensajeParametrizado.length > 4) {
+                tiempoAnimacion = Float.parseFloat(mensajeParametrizado[4]);
+            }
 
             JugadorEstadoRed estado = obtenerEstadoJugador(personaje);
 
-            estado.actualizarAtaque(estadoAtaque);
+            estado.actualizarAtaque(estadoAtaque, tipoAnimacion, tiempoAnimacion);
         } catch (NumberFormatException e) {
             System.out.println("Estado del ataque recibido invalido");
         }
@@ -215,12 +226,24 @@ public class HiloCliente extends Thread{
             int direccion = Integer.parseInt(mensajeParametrizado[4]);
             boolean estaAtacando = Boolean.parseBoolean(mensajeParametrizado[5]);
             double vida = Double.parseDouble(mensajeParametrizado[6]);
+            boolean spriteVisible = true;
+            if (mensajeParametrizado.length > 7) {
+                spriteVisible = Boolean.parseBoolean(mensajeParametrizado[7]);
+            }
+            int tipoAnimacion = 0;
+            if (mensajeParametrizado.length > 8) {
+                tipoAnimacion = Integer.parseInt(mensajeParametrizado[8]);
+            }
+            float tiempoAnimacion = 0f;
+            if (mensajeParametrizado.length > 9) {
+                tiempoAnimacion = Float.parseFloat(mensajeParametrizado[9]);
+            }
 
             EnemigoRed encontrado = buscarEnemigo(id);
 
             if (encontrado != null)
             {
-                encontrado.actualizarEstado(x, y, direccion, estaAtacando, vida);
+                encontrado.actualizarEstado(x, y, direccion, estaAtacando, vida, spriteVisible, tipoAnimacion, tiempoAnimacion);
             }
 
         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
@@ -1025,5 +1048,24 @@ public class HiloCliente extends Thread{
         }
 
         Musica.reproducirPorNombre(nombreMusica);
+    }
+
+    private void procesarEstadoInvencibilidad(String msj) {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            String personaje = mensajeParametrizado[1];
+            boolean invencible = Boolean.parseBoolean(mensajeParametrizado[2]);
+            boolean spriteVisible = true;
+            if (mensajeParametrizado.length > 3) {
+                spriteVisible = Boolean.parseBoolean(mensajeParametrizado[3]);
+            }
+
+            JugadorEstadoRed estado = obtenerEstadoJugador(personaje);
+
+            estado.actualizarInvencibilidad(invencible, spriteVisible);
+        } catch (NumberFormatException e) {
+            System.out.println("Estado de invencibilidad recibido invalido");
+        }
     }
 }

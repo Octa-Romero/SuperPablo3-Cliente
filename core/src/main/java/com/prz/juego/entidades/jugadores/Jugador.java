@@ -43,15 +43,27 @@ public abstract class Jugador extends Entidad {
 	@Override
 	public void update(float delta) {
         actualizarEstadoRed();
-        ANIMACION.actualizar(
-            sprite,
-            delta,
-            x != xAnterior || (trepando && y != yAnterior),
-            !enSuelo && !trepando,
-            atacando);
+
+        if (estadoRed != null && estadoRed.recibioAnimacion()) {
+            ANIMACION.actualizarConEstado(
+                sprite,
+                estadoRed.getTipoAnimacion(),
+                estadoRed.getTiempoAnimacion());
+        } else {
+            ANIMACION.actualizar(
+                sprite,
+                delta,
+                x != xAnterior || (trepando && y != yAnterior),
+                !enSuelo && !trepando,
+                atacando);
+        }
+
         actualizarOrientacionSegunMovimiento();
         actualizarSpriteVisual();
-		actualizarInvencibilidad(delta);
+		// No actualizar invencibilidad local si viene de red
+		if (estadoRed == null) {
+			actualizarInvencibilidad(delta);
+		}
 	}
 
     public void setAccionesHabilitadas(boolean habilitadas) {
@@ -92,6 +104,10 @@ public abstract class Jugador extends Entidad {
 
         if (estadoRed.recibioVida()) {
             actualizarEstadoVida(estadoRed.getVida());
+        }
+
+        if (estadoRed.recibioInvencibilidad()) {
+            this.spriteVisible = estadoRed.esSpriteVisible();
         }
     }
 

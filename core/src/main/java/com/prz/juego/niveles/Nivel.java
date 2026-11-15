@@ -294,7 +294,10 @@ public abstract class Nivel {
                     estado.getY(),
                     estado.getDireccion(),
                     estado.estaAtacando(),
-                    estado.getVida()
+                    estado.getVida(),
+                    estado.esSpriteVisible(),
+                    estado.getTipoAnimacion(),
+                    estado.getTiempoAnimacion()
                 );
 
                 return;
