@@ -56,6 +56,21 @@ public class Nivel7 extends Nivel {
     }
 
     @Override
+    public void eliminarJefe() {
+        if (jefe == null) {
+            return;
+        }
+
+        eliminarEntidad(jefe.getManoIzquierda());
+        eliminarEntidad(jefe.getManoDerecha());
+        eliminarEntidad(jefe.getFuegoSuelo());
+        eliminarEntidad(jefe);
+
+        jefe.dispose();
+        jefe = null;
+    }
+
+    @Override
     protected void configurarEntornoEspecifico(float ancho, float alto) {
         this.altoMapa = ancho;
     }
