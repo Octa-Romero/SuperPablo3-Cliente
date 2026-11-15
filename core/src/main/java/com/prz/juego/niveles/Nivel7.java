@@ -2,6 +2,7 @@ package com.prz.juego.niveles;
 
 import com.prz.juego.entidades.jefes.Retumbar;
 import com.prz.juego.red.JefeRed;
+import com.prz.juego.recursos.GestorRecursos;
 import com.prz.juego.utilidades.Musica;
 
 public class Nivel7 extends Nivel {
@@ -43,7 +44,7 @@ public class Nivel7 extends Nivel {
             );
 
             jefe.configurarAnimacionesFueguitos(
-                texturaLluvia,
+                GestorRecursos.obtenerTextura("Jefe/fueguito.png"),
                 null
             );
 
