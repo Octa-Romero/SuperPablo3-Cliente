@@ -13,6 +13,8 @@ import com.prz.juego.entidades.Reliquia;
 import com.prz.juego.entidades.enemigos.Enemigo;
 import com.prz.juego.entidades.enemigos.TipoEnemigo;
 import com.prz.juego.entidades.enemigos.rango.Proyectil;
+import com.prz.juego.entidades.jefes.FuegoSuelo;
+import com.prz.juego.entidades.jefes.Mano;
 import com.prz.juego.entidades.jefes.Retumbar;
 import com.prz.juego.entidades.jugadores.*;
 
@@ -262,6 +264,9 @@ public abstract class Nivel {
 
         for (Entidad entidad : ENTIDADES) {
             if (entidad instanceof Enemigo existente
+                && !(entidad instanceof Retumbar)
+                && !(entidad instanceof Mano)
+                && !(entidad instanceof FuegoSuelo)
                 && existente.getId() == estadoRed.getId()) {
                 return;
             }
@@ -274,9 +279,14 @@ public abstract class Nivel {
             agregarEntidad(enemigo);
         }
     }
+
     public void actualizarEstadoEnemigos(EnemigoRed estado) {
+
         for (Entidad entidad : ENTIDADES) {
             if (entidad instanceof Enemigo enemigo
+                && !(entidad instanceof Retumbar)
+                && !(entidad instanceof Mano)
+                && !(entidad instanceof FuegoSuelo)
                 && enemigo.getId() == estado.getId()) {
 
                 enemigo.actualizarEstadoRed(
@@ -297,6 +307,9 @@ public abstract class Nivel {
             Entidad entidad = ENTIDADES.get(i);
 
             if (entidad instanceof Enemigo enemigo
+                && !(entidad instanceof Retumbar)
+                && !(entidad instanceof Mano)
+                && !(entidad instanceof FuegoSuelo)
                 && enemigo.getId() == id) {
 
                 enemigo.dispose();
@@ -439,10 +452,34 @@ public abstract class Nivel {
         }
     }
 
-    public void crearFueguito(FueguitoRed estado) {
+    public void actualizarEstadoLaserJefe(LaserJefeRed estado) {
         Retumbar jefe = getJefe();
 
         if (jefe != null) {
+            jefe.actualizarEstadoLaserJefe(
+                estado.estaVisible(),
+                estado.debeMostrarAviso(),
+                estado.getAngulo(),
+                estado.getTiempoAnimacion()
+            );
+        }
+    }
+
+    public void crearFueguito(FueguitoRed estado) {
+        Retumbar jefe = getJefe();
+
+        if (jefe == null) {
+            return;
+        }
+
+        if (estado.getTipo() == FueguitoRed.Tipo.RADIAL) {
+            jefe.crearFueguitoRadial(
+                estado.getId(),
+                estado.getX(),
+                estado.getY(),
+                estado.getRotacion()
+            );
+        } else {
             jefe.crearFueguito(estado);
         }
     }
@@ -450,15 +487,33 @@ public abstract class Nivel {
     public void actualizarEstadoFueguito(FueguitoRed estado) {
         Retumbar jefe = getJefe();
 
-        if (jefe != null) {
+        if (jefe == null) {
+            return;
+        }
+
+        if (estado.getTipo() == FueguitoRed.Tipo.RADIAL) {
+            jefe.actualizarEstadoFueguitoRadial(
+                estado.getId(),
+                estado.getX(),
+                estado.getY(),
+                estado.getRotacion()
+            );
+        } else {
             jefe.actualizarEstadoFueguito(estado);
         }
     }
+    public void eliminarFueguito(
+        int id, FueguitoRed.Tipo tipo) {
 
-    public void eliminarFueguito(int id) {
         Retumbar jefe = getJefe();
 
-        if (jefe != null) {
+        if (jefe == null) {
+            return;
+        }
+
+        if (tipo == FueguitoRed.Tipo.RADIAL) {
+            jefe.eliminarFueguitoRadial(id);
+        } else {
             jefe.eliminarFueguito(id);
         }
     }
