@@ -51,6 +51,15 @@ public enum Musica {
         return volumenGlobal;
     }
 
+    public static void reproducirPorNombre(String nombre) {
+        for (Musica musica : values()) {
+            if (musica.name().equals(nombre)) {
+                musica.sonar();
+                return;
+            }
+        }
+    }
+
     public static void dispose() {
         for (Musica musica : values()) {
             if (musica.music != null) {

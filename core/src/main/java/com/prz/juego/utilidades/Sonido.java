@@ -43,6 +43,9 @@ public enum Sonido {
     }
 
     public void sonarConLoop() {
+        if (sonidoLoopId != -1) {
+            return;
+        }
         cargar();
         sonidoLoopId = sound.play(volumenGlobal);
     }
@@ -71,6 +74,33 @@ public enum Sonido {
 
     public static float getVolumen() {
         return volumenGlobal;
+    }
+
+    public static void reproducirPorNombre(String nombre) {
+        for (Sonido sonido : values()) {
+            if (sonido.name().equals(nombre)) {
+                sonido.sonar();
+                return;
+            }
+        }
+    }
+
+    public static void reproducirLoopPorNombre(String nombre) {
+        for (Sonido sonido : values()) {
+            if (sonido.name().equals(nombre)) {
+                sonido.sonarConLoop();
+                return;
+            }
+        }
+    }
+
+    public static void detenerLoopPorNombre(String nombre) {
+        for (Sonido sonido : values()) {
+            if (sonido.name().equals(nombre)) {
+                sonido.detenerLoop();
+                return;
+            }
+        }
     }
 
     public static void dispose() {

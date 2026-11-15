@@ -47,6 +47,7 @@ public class Retumbar extends Enemigo {
     private boolean avisoLaserJefe;
     private float anguloLaserJefe;
     private float tiempoAnimacionLaserJefe;
+    private String faseEspecial = "NORMAL";
 
     public Retumbar(float x, float y, double vida, float sueloXMin, float sueloXMax) {
         super(
@@ -140,7 +141,8 @@ public class Retumbar extends Enemigo {
 
     public boolean debeDibujarBarraVida() {
         return MANO_IZQUIERDA.estaMuerto()
-            && MANO_DERECHA.estaMuerto();
+            && MANO_DERECHA.estaMuerto()
+            && "COMPLETADA".equals(faseEspecial);
     }
 
     public Mano getManoIzquierda()
@@ -159,12 +161,13 @@ public class Retumbar extends Enemigo {
     }
 
     public void actualizarEstado(float x, float y, double vida,
-                                 boolean visible, float escala) {
+                                 boolean visible, float escala, String faseEspecial) {
         this.x = x;
         this.y = y;
         this.vida = vida;
         this.muerto = vida <= 0;
         this.spriteVisible = visible;
+        this.faseEspecial = faseEspecial;
 
         bounds.setPosition(x, y);
         sprite.setScale(escala);

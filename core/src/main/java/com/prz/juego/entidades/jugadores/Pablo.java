@@ -49,10 +49,6 @@ public class Pablo extends Jugador {
 
     @Override
     public void actualizarEstadoAtaque(boolean estaAtacando) {
-        if (!this.atacando && estaAtacando) {
-            Sonido.ESPADA.sonar();
-        }
-
         this.atacando = estaAtacando;
     }
 

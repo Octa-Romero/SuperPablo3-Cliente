@@ -389,7 +389,8 @@ public abstract class Nivel {
                 estadoRed.getY(),
                 estadoRed.getVida(),
                 estadoRed.esVisible(),
-                estadoRed.getEscalaSprite()
+                estadoRed.getEscalaSprite(),
+                estadoRed.getFaseEspecial()
             );
         }
     }
