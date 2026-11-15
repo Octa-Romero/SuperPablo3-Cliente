@@ -15,7 +15,7 @@ public class Lwjgl3Launcher {
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {
         Lwjgl3ApplicationConfiguration configuration = new Lwjgl3ApplicationConfiguration();
-        configuration.setTitle("Super Pablo 3 - Cliente");
+        configuration.setTitle("Super Pablo 3");
         configuration.useVsync(true);
         configuration.setForegroundFPS(Lwjgl3ApplicationConfiguration.getDisplayMode().refreshRate + 1);
         configuration.setFullscreenMode(Lwjgl3ApplicationConfiguration.getDisplayMode());
