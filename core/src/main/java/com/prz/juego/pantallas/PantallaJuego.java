@@ -69,10 +69,6 @@ public class PantallaJuego implements Screen {
         }
 
         HUD = new Hud(jugadorLocal, Render.batch);
-
-        if (NIVEL != null) {
-            HUD.setJefe(NIVEL.getJefe());
-        }
     }
 
     @Override
@@ -165,6 +161,7 @@ public class PantallaJuego implements Screen {
                 if(jefeRecibido != null)
                 {
                     NIVEL.crearJefe(jefeRecibido);
+                    HUD.setJefe(NIVEL.getJefe());
                 }
 
                 JefeRed estadoJefe = cliente.getEstadoJefe();
