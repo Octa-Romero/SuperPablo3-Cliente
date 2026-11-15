@@ -31,7 +31,22 @@ public class Retumbar extends Enemigo {
     private final Mano MANO_IZQUIERDA;
     private final Mano MANO_DERECHA;
     private final FuegoSuelo FUEGO_SUELO;
+    private final ArrayList<Fueguito> FUEGUITOS_DIRECCIONADOS =
+        new ArrayList<>();
+    private final Animation<TextureRegion> ANIMACION_FUEGUITO;
     private AtaquesExtraRetumbar ataquesExtra;
+    private static final float ANCHO_SPRITE_LASER_JEFE = 96f;
+    private static final float ANCHO_HITBOX_LASER_JEFE = 56f;
+    private static final float LARGO_SPRITE_LASER_JEFE = 1000f;
+    private static final float ALTURA_PECHO = 400f * 0.77f;
+
+    private final TextureRegion REGION_PIXEL;
+    private final Animation<TextureRegion> ANIMACION_LASER_JEFE;
+
+    private boolean laserJefeVisible;
+    private boolean avisoLaserJefe;
+    private float anguloLaserJefe;
+    private float tiempoAnimacionLaserJefe;
 
     public Retumbar(float x, float y, double vida, float sueloXMin, float sueloXMax) {
         super(
@@ -71,6 +86,42 @@ public class Retumbar extends Enemigo {
         MANO_DERECHA = new Mano(this, Mano.Lado.DERECHA);
 
         FUEGO_SUELO = new FuegoSuelo(sueloXMin, sueloXMax, y);
+
+        Texture texturaFueguito = GestorRecursos.obtenerTextura("Jefe/fueguito.png");
+
+        TextureRegion[] framesFueguito = TextureRegion.split(
+            texturaFueguito,
+            texturaFueguito.getWidth() / 2,
+            texturaFueguito.getHeight()
+        )[0];
+
+        ANIMACION_FUEGUITO = new Animation<>(
+            0.08f,
+            framesFueguito
+        );
+
+        ANIMACION_FUEGUITO.setPlayMode(
+            Animation.PlayMode.LOOP
+        );
+
+        REGION_PIXEL = new TextureRegion(GestorRecursos.obtenerPixel());
+
+        Texture texturaLaser = GestorRecursos.obtenerTextura("Jefe/laser.png");
+
+        TextureRegion[] framesLaser = TextureRegion.split(
+            texturaLaser,
+            texturaLaser.getWidth() / 2,
+            texturaLaser.getHeight()
+        )[0];
+
+        ANIMACION_LASER_JEFE = new Animation<>(
+            0.12f,
+            framesLaser
+        );
+
+        ANIMACION_LASER_JEFE.setPlayMode(
+            Animation.PlayMode.LOOP
+        );
     }
 
     @Override
@@ -80,6 +131,10 @@ public class Retumbar extends Enemigo {
 
         if (ataquesExtra != null) {
             ataquesExtra.update(delta);
+        }
+
+        for (Fueguito fueguito : FUEGUITOS_DIRECCIONADOS) {
+            fueguito.update(delta);
         }
     }
 
@@ -108,6 +163,7 @@ public class Retumbar extends Enemigo {
         this.x = x;
         this.y = y;
         this.vida = vida;
+        this.muerto = vida <= 0;
         this.spriteVisible = visible;
 
         bounds.setPosition(x, y);
@@ -179,10 +235,105 @@ public class Retumbar extends Enemigo {
         this.FUEGO_SUELO.actualizarEstado(estadoRed.getX(), estadoRed.getY(), estadoRed.getAlto(), estadoRed.estaActivo());
     }
 
+    public void actualizarEstadoLaserJefe(boolean visible, boolean aviso, float angulo, float tiempoAnimacion) {
+
+        this.laserJefeVisible = visible;
+        this.avisoLaserJefe = aviso;
+        this.anguloLaserJefe = angulo;
+        this.tiempoAnimacionLaserJefe = tiempoAnimacion;
+    }
+
+    private void dibujarLaserSegundaFase() {
+        if (!laserJefeVisible && !avisoLaserJefe) {
+            return;
+        }
+
+        float origenX = x + ancho / 2f;
+        float origenY = y + ALTURA_PECHO;
+        float largo = LARGO_SPRITE_LASER_JEFE;
+
+        if (avisoLaserJefe) {
+            Color colorAnterior = Render.batch.getColor().cpy();
+
+            Render.batch.setColor(1f, 0f, 0f, 0.45f);
+
+            Render.batch.draw(
+                REGION_PIXEL,
+                origenX - ANCHO_HITBOX_LASER_JEFE / 2f,
+                origenY,
+                ANCHO_HITBOX_LASER_JEFE / 2f,
+                0f,
+                ANCHO_HITBOX_LASER_JEFE,
+                largo,
+                1f,
+                1f,
+                anguloLaserJefe - 90f
+            );
+
+            Render.batch.setColor(colorAnterior);
+            return;
+        }
+
+        TextureRegion frame = new TextureRegion(
+            ANIMACION_LASER_JEFE.getKeyFrame(
+                tiempoAnimacionLaserJefe
+            )
+        );
+
+        frame.flip(false, true);
+
+        Render.batch.draw(
+            frame,
+            origenX - ANCHO_SPRITE_LASER_JEFE / 2f,
+            origenY,
+            ANCHO_SPRITE_LASER_JEFE / 2f,
+            0f,
+            ANCHO_SPRITE_LASER_JEFE,
+            largo,
+            1f,
+            1f,
+            anguloLaserJefe - 90f
+        );
+    }
+
     public void crearFueguito(FueguitoRed estado) {
         if (ataquesExtra != null) {
             ataquesExtra.crearFueguito(estado);
         }
+    }
+
+    public void crearFueguitoRadial(int id, float x, float y, float rotacion) {
+
+        if (buscarFueguitoRadial(id) != null) {
+            return;
+        }
+
+        Fueguito fueguito = new Fueguito(
+            id,
+            x,
+            y,
+            rotacion,
+            ANIMACION_FUEGUITO
+        );
+
+        FUEGUITOS_DIRECCIONADOS.add(fueguito);
+    }
+
+    public void actualizarEstadoFueguitoRadial(int id, float x, float y, float rotacion) {
+
+        Fueguito fueguito = buscarFueguitoRadial(id);
+
+        if (fueguito == null) {
+            crearFueguitoRadial(id, x, y, rotacion);
+        } else {
+            fueguito.actualizarEstado(x, y, rotacion);
+        }
+    }
+
+    public void eliminarFueguitoRadial(int id) {
+        FUEGUITOS_DIRECCIONADOS.removeIf(
+            f -> f.getId() == id
+        );
     }
 
     public void actualizarEstadoFueguito(FueguitoRed estado) {
@@ -208,12 +359,28 @@ public class Retumbar extends Enemigo {
         }
     }
 
+    private Fueguito buscarFueguitoRadial(int id) {
+        for (Fueguito fueguito : FUEGUITOS_DIRECCIONADOS) {
+            if (fueguito.getId() == id) {
+                return fueguito;
+            }
+        }
+
+        return null;
+    }
+
     @Override
     public void dibujar() {
         super.dibujar();
 
         if (ataquesExtra != null) {
             ataquesExtra.dibujar();
+        }
+
+        dibujarLaserSegundaFase();
+
+        for (Fueguito fueguito : FUEGUITOS_DIRECCIONADOS) {
+            fueguito.dibujar();
         }
     }
 }

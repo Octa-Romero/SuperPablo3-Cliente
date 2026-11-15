@@ -45,9 +45,10 @@ public class HiloCliente extends Thread{
     private final ArrayList<MeteoritoRed> meteoritos = new ArrayList<>();
     private final ArrayList<MeteoritoRed> meteoritosNuevos = new ArrayList<>();
     private final ArrayList<Integer> meteoritosEliminados = new ArrayList<>();
+    private final LaserJefeRed estadoLaserJefe = new LaserJefeRed();
     private final ArrayList<FueguitoRed> fueguitos = new ArrayList<>();
     private final ArrayList<FueguitoRed> fueguitosNuevos = new ArrayList<>();
-    private final ArrayList<Integer> fueguitosEliminados = new ArrayList<>();
+    private final ArrayList<FueguitoRed> fueguitosEliminados = new ArrayList<>();
 
     public HiloCliente()
     {
@@ -78,71 +79,52 @@ public class HiloCliente extends Thread{
 
     private void procesarMensaje(DatagramPacket dp) {
         String msj = new String(dp.getData()).trim();
-        if(msj.equals("Conexion recibida"))
-        {
+
+        if(msj.equals("Conexion recibida")) {
             ipServer = dp.getAddress();
-        } else if(msj.equals("Conexion establecida"))
-        {
+        } else if(msj.equals("Conexion establecida")) {
             conexionEstablecida = true;
-        }else if(msj.equals("Empieza juego"))
-        {
+        }else if(msj.equals("Empieza juego")) {
             Global.empieza = true;
         }else if(msj.equals("PABLO") || msj.equals("WALTER")) {
             personajeRemoto = msj;
         } else if (msj.startsWith("POS")) {
             procesarPosicion(msj);
-        } else if (msj.startsWith("ATAQUE"))
-        {
+        } else if (msj.startsWith("ATAQUE")) {
             procesarEstadoAtaque(msj);
-        } else if (msj.startsWith("VIDA"))
-        {
+        } else if (msj.startsWith("VIDA")) {
             procesarEstadoVida(msj);
-        } else if (msj.startsWith("CREAR_ENEMIGO"))
-        {
+        } else if (msj.startsWith("CREAR_ENEMIGO")) {
             procesarCreacionEnemigos(msj);
-        } else if (msj.startsWith("ESTADO_ENEMIGO"))
-        {
+        } else if (msj.startsWith("ESTADO_ENEMIGO")) {
             procesarEstadoEnemigos(msj);
-        } else if (msj.startsWith("ELIMINAR_ENEMIGO"))
-        {
+        } else if (msj.startsWith("ELIMINAR_ENEMIGO")) {
             procesarEliminacionEnemigos(msj);
-        } else if (msj.startsWith("CREAR_PROYECTIL"))
-        {
+        } else if (msj.startsWith("CREAR_PROYECTIL")) {
             procesarCreacionProyectiles(msj);
-        } else if (msj.startsWith("ESTADO_PROYECTIL"))
-        {
+        } else if (msj.startsWith("ESTADO_PROYECTIL")) {
             procesarEstadoProyectiles(msj);
-        } else if (msj.startsWith("ELIMINAR_PROYECTIL"))
-        {
+        } else if (msj.startsWith("ELIMINAR_PROYECTIL")) {
             procesarEliminacionProyectiles(msj);
-        } else if (msj.startsWith("CENTRO_HUB"))
-        {
+        } else if (msj.startsWith("CENTRO_HUB")) {
             procesarEstaEnCentroHub(msj);
-        } else if (msj.startsWith("ESTADO_SELECCION"))
-        {
+        } else if (msj.startsWith("ESTADO_SELECCION")) {
             procesarEstadoSeleccion(msj);
-        } else if (msj.equals("ABRIR_SELECCION_NIVEL"))
-        {
+        } else if (msj.equals("ABRIR_SELECCION_NIVEL")) {
             seleccionarNivel = true;
         } else if (msj.startsWith("VOTOS_NIVEL;")) {
             procesarVotosNivel(msj);
-        } else if (msj.startsWith("INICIAR_NIVEL"))
-        {
+        } else if (msj.startsWith("INICIAR_NIVEL")) {
             procesarInicioNivel(msj);
-        } else if (msj.startsWith("CREAR_JEFE"))
-        {
+        } else if (msj.startsWith("CREAR_JEFE")) {
             procesarCreacionJefe(msj);
-        } else if (msj.startsWith("ESTADO_JEFE"))
-        {
+        } else if (msj.startsWith("ESTADO_JEFE")) {
             procesarEstadoJefe(msj);
-        } else if (msj.startsWith("ELIMINAR_JEFE"))
-        {
+        } else if (msj.startsWith("ELIMINAR_JEFE")) {
             procesarEliminacionJefe();
-        } else if (msj.startsWith("ESTADO_MANO"))
-        {
+        } else if (msj.startsWith("ESTADO_MANO")) {
             procesarEstadoMano(msj);
-        } else if (msj.startsWith("ESTADO_FUEGO_SUELO"))
-        {
+        } else if (msj.startsWith("ESTADO_FUEGO_SUELO")) {
             procesarEstadoFuegoSuelo(msj);
         } else if (msj.startsWith("ESTADO_RAYOS")) {
             procesarEstadoRayos(msj);
@@ -150,18 +132,16 @@ public class HiloCliente extends Thread{
             procesarEstadoLasers(msj);
         }else if (msj.startsWith("CREAR_METEORITO")) {
             procesarCreacionMeteorito(msj);
-
         } else if (msj.startsWith("ESTADO_METEORITO")) {
             procesarEstadoMeteorito(msj);
-
         } else if (msj.startsWith("ELIMINAR_METEORITO")) {
             procesarEliminacionMeteorito(msj);
+        }else if (msj.startsWith("ESTADO_LASER_JEFE;")) {
+            procesarEstadoLaserJefe(msj);
         }else if (msj.startsWith("CREAR_FUEGUITO;")) {
             procesarCreacionFueguito(msj);
-
         } else if (msj.startsWith("ESTADO_FUEGUITO;")) {
             procesarEstadoFueguito(msj);
-
         } else if (msj.startsWith("ELIMINAR_FUEGUITO;")) {
             procesarEliminacionFueguito(msj);
         }
@@ -420,6 +400,8 @@ public class HiloCliente extends Thread{
         jefeEliminado = true;
         estadoJefe = null;
         jefeNuevo = null;
+        estadoLaserJefe.reiniciar();
+        limpiarFueguitos();
     }
 
     private synchronized void procesarEstadoMano(String msj) {
@@ -456,6 +438,10 @@ public class HiloCliente extends Thread{
             float y = Float.parseFloat(mensajeParametrizado[2]);
             float alto = Float.parseFloat(mensajeParametrizado[3]);
             boolean activo = Boolean.parseBoolean(mensajeParametrizado[4]);
+
+            if (activo) {
+                System.out.println("HILO CLIENTE: RECIBIÓ FUEGO ACTIVO");
+            }
 
             fuegoSuelo.actualizarEstado(x, y, alto, activo);
 
@@ -588,6 +574,30 @@ public class HiloCliente extends Thread{
         }
     }
 
+    private synchronized void procesarEstadoLaserJefe(String msj) {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            boolean visible = Boolean.parseBoolean(mensajeParametrizado[1]);
+
+            boolean aviso = Boolean.parseBoolean(mensajeParametrizado[2]);
+
+            float angulo = Float.parseFloat(mensajeParametrizado[3]);
+
+            float tiempoAnimacion = Float.parseFloat(mensajeParametrizado[4]);
+
+            estadoLaserJefe.actualizarEstado(
+                visible,
+                aviso,
+                angulo,
+                tiempoAnimacion
+            );
+
+        } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Estado del láser del jefe inválido");
+        }
+    }
+
     private synchronized void procesarCreacionFueguito(String msj) {
         String[] mensajeParametrizado = msj.split(";");
 
@@ -601,7 +611,7 @@ public class HiloCliente extends Thread{
             float tamano = Float.parseFloat(mensajeParametrizado[5]);
             float rotacion = Float.parseFloat(mensajeParametrizado[6]);
 
-            if (buscarFueguito(id) == -1) {
+            if (buscarFueguito(id, tipo) == -1) {
                 FueguitoRed fueguito = new FueguitoRed(
                     id, tipo, x, y, tamano, rotacion
                 );
@@ -620,7 +630,9 @@ public class HiloCliente extends Thread{
 
         try {
             int id = Integer.parseInt(mensajeParametrizado[1]);
+
             FueguitoRed.Tipo tipo = FueguitoRed.Tipo.valueOf(mensajeParametrizado[2]);
+
             float x = Float.parseFloat(mensajeParametrizado[3]);
             float y = Float.parseFloat(mensajeParametrizado[4]);
             float tamano = Float.parseFloat(mensajeParametrizado[5]);
@@ -630,7 +642,7 @@ public class HiloCliente extends Thread{
                 id, tipo, x, y, tamano, rotacion
             );
 
-            int indice = buscarFueguito(id);
+            int indice = buscarFueguito(id, tipo);
 
             if (indice == -1) {
                 fueguitos.add(actualizado);
@@ -648,15 +660,22 @@ public class HiloCliente extends Thread{
         String[] mensajeParametrizado = msj.split(";");
 
         try {
-            if (mensajeParametrizado.length != 2) {
-                return;
-            }
-
             int id = Integer.parseInt(mensajeParametrizado[1]);
 
-            fueguitos.removeIf(f -> f.getId() == id);
-            fueguitosNuevos.removeIf(f -> f.getId() == id);
-            fueguitosEliminados.add(id);
+            FueguitoRed.Tipo tipo =
+                FueguitoRed.Tipo.valueOf(mensajeParametrizado[2]);
+
+            fueguitos.removeIf(f ->
+                f.getId() == id && f.getTipo() == tipo
+            );
+
+            fueguitosNuevos.removeIf(f ->
+                f.getId() == id && f.getTipo() == tipo
+            );
+
+            fueguitosEliminados.add(
+                new FueguitoRed(id, tipo)
+            );
 
         } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
             System.out.println("Eliminación de fueguito inválida");
@@ -715,9 +734,13 @@ public class HiloCliente extends Thread{
         return null;
     }
 
-    private int buscarFueguito(int id) {
+    private int buscarFueguito(int id, FueguitoRed.Tipo tipo) {
+
         for (int i = 0; i < fueguitos.size(); i++) {
-            if (fueguitos.get(i).getId() == id) {
+            FueguitoRed fueguito = fueguitos.get(i);
+
+            if (fueguito.getId() == id
+                && fueguito.getTipo() == tipo) {
                 return i;
             }
         }
@@ -874,6 +897,11 @@ public class HiloCliente extends Thread{
         meteoritosEliminados.clear();
         return eliminados;
     }
+
+    public synchronized LaserJefeRed getEstadoLaserJefe() {
+        return estadoLaserJefe;
+    }
+
     public synchronized ArrayList<FueguitoRed> getFueguitosNuevos() {
         ArrayList<FueguitoRed> nuevos =
             new ArrayList<>(fueguitosNuevos);
@@ -886,12 +914,17 @@ public class HiloCliente extends Thread{
         return new ArrayList<>(fueguitos);
     }
 
-    public synchronized ArrayList<Integer> getFueguitosEliminados() {
-        ArrayList<Integer> eliminados =
+    public synchronized ArrayList<FueguitoRed> getFueguitosEliminados() {
+        ArrayList<FueguitoRed> eliminados =
             new ArrayList<>(fueguitosEliminados);
 
         fueguitosEliminados.clear();
         return eliminados;
     }
 
+    private synchronized void limpiarFueguitos() {
+        fueguitos.clear();
+        fueguitosNuevos.clear();
+        fueguitosEliminados.clear();
+    }
 }

@@ -26,6 +26,10 @@ public class FueguitoRed {
         this.rotacion = rotacion;
     }
 
+    public FueguitoRed(int id, Tipo tipo) {
+        this(id, tipo, 0f, 0f, 0f, 0f);
+    }
+
     public int getId() {
         return id;
     }

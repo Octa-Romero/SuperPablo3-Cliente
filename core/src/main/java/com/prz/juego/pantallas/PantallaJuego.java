@@ -215,6 +215,12 @@ public class PantallaJuego implements Screen {
                     NIVEL.eliminarMeteorito(id);
                 }
 
+                LaserJefeRed estadoLaserJefe = cliente.getEstadoLaserJefe();
+
+                if (estadoLaserJefe.tieneEstadoRecibido()) {
+                    NIVEL.actualizarEstadoLaserJefe(estadoLaserJefe);
+                }
+
                 for (FueguitoRed fueguito : cliente.getFueguitosNuevos()) {
                     NIVEL.crearFueguito(fueguito);
                 }
@@ -223,13 +229,17 @@ public class PantallaJuego implements Screen {
                     NIVEL.actualizarEstadoFueguito(fueguito);
                 }
 
-                for (int id : cliente.getFueguitosEliminados()) {
-                    NIVEL.eliminarFueguito(id);
+                for (FueguitoRed fueguito : cliente.getFueguitosEliminados()) {
+                    NIVEL.eliminarFueguito(
+                        fueguito.getId(),
+                        fueguito.getTipo()
+                    );
                 }
 
                 if(cliente.jefeMuerto())
                 {
                     NIVEL.eliminarJefe();
+                    HUD.setJefe(null);
                 }
 
                 if (NIVEL.enemigoReliquiaDerrotado()) {

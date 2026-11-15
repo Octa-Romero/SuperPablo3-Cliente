@@ -52,6 +52,22 @@ public class Fueguito {
         actualizarEstado(x, y, rotacion);
     }
 
+    public Fueguito(
+        int id, float x, float y,
+        float rotacion,
+        Animation<TextureRegion> animacion) {
+
+        this.ID = id;
+        this.ANIMACION = animacion;
+
+        SPRITE = new Sprite(animacion.getKeyFrame(0f));
+
+        SPRITE.setSize(ANCHO_RADIAL, ALTO_RADIAL);
+        SPRITE.setOriginCenter();
+
+        actualizarEstado(x, y, rotacion);
+    }
+
     public void actualizarEstado(
         float x, float y, float rotacion) {
 

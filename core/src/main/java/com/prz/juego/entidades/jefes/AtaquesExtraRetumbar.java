@@ -161,21 +161,6 @@ public class AtaquesExtraRetumbar {
             return;
         }
 
-        boolean radial =
-            estado.getTipo() == FueguitoRed.Tipo.RADIAL;
-
-        Animation<TextureRegion> animacion;
-
-        if (radial) {
-            animacion = ANIMACION_RADIAL;
-        } else {
-            animacion = ANIMACION_LLUVIA;
-        }
-
-        if (animacion == null) {
-            return;
-        }
-
         Fueguito fueguito = new Fueguito(
             estado.getId(),
             estado.getX(),

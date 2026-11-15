@@ -158,6 +158,10 @@ public class Cliente {
         return hilo.getMeteoritosEliminados();
     }
 
+    public LaserJefeRed getEstadoLaserJefe() {
+        return hilo.getEstadoLaserJefe();
+    }
+
     public ArrayList<FueguitoRed> getFueguitosNuevos() {
         return hilo.getFueguitosNuevos();
     }
@@ -166,7 +170,7 @@ public class Cliente {
         return hilo.getEstadoFueguitos();
     }
 
-    public ArrayList<Integer> getFueguitosEliminados() {
+    public ArrayList<FueguitoRed> getFueguitosEliminados() {
         return hilo.getFueguitosEliminados();
     }
 
