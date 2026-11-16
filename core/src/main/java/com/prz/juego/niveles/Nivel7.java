@@ -56,13 +56,11 @@ public class Nivel7 extends Nivel {
             return;
         }
 
+        // No eliminar el jefe por completo; mantener la referencia para que siga recibiendo actualizaciones de estado
+        // Solo eliminar las manos y fuego suelo
         eliminarEntidad(jefe.getManoIzquierda());
         eliminarEntidad(jefe.getManoDerecha());
         eliminarEntidad(jefe.getFuegoSuelo());
-        eliminarEntidad(jefe);
-
-        jefe.dispose();
-        jefe = null;
     }
 
     @Override

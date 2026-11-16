@@ -36,6 +36,8 @@ public class Hub {
 
     private Rectangle centroHub;
     private Rectangle zonaPancrasio;
+    private float mapaAncho;
+    private float mapaAlto;
 
     private BitmapFont fontAlerta;
     private Dialogo dialogoPancrasio;
@@ -108,6 +110,9 @@ public class Hub {
         float mapTotalWidth = tileWidth * mapWidthTiles;
         float mapTotalHeight = tileHeight * mapHeightTiles;
 
+        mapaAncho = mapTotalWidth;
+        mapaAlto = mapTotalHeight;
+
         camara.setLimitesMapa(mapTotalWidth, mapTotalHeight);
 
         mapRenderer = new OrthogonalTiledMapRenderer(mapa, 1f);
@@ -130,8 +135,8 @@ public class Hub {
     public void render() {
         Render.batch.setProjectionMatrix(camara.getCamera().combined);
 
-        jugadorLocal.dibujar();
         jugadorRemoto.dibujar();
+        jugadorLocal.dibujar();
 
         if (cuadroDialogo.estaVisible()) {
             cuadroDialogo.dibujar(
@@ -156,8 +161,8 @@ public class Hub {
 
         colision.dibujarHitboxes(shapeRenderer);
 
-        jugadorLocal.dibujarHitbox(shapeRenderer);
         jugadorRemoto.dibujarHitbox(shapeRenderer);
+        jugadorLocal.dibujarHitbox(shapeRenderer);
 
         shapeRenderer.end();
     }
@@ -166,11 +171,27 @@ public class Hub {
         jugadorLocal.update(delta);
         jugadorRemoto.update(delta);
 
+        // Restringir jugadores a los bordes laterales del mapa
+        restringirBordes(jugadorLocal);
+        restringirBordes(jugadorRemoto);
+
         camara.seguirPersonaje(
             jugadorLocal.getX() + jugadorLocal.getAncho() / 2f,
             jugadorLocal.getY() + jugadorLocal.getAlto() / 2f,
             delta
         );
+    }
+
+    private void restringirBordes(Jugador jugador) {
+        // Borde izquierdo: no puede pasar de 0
+        if (jugador.getX() < 0) {
+            jugador.setX(0f);
+        }
+        // Borde derecho: no puede pasar del ancho del mapa menos su propio ancho
+        float bordeDerecho = mapaAncho - jugador.getAncho();
+        if (jugador.getX() > bordeDerecho) {
+            jugador.setX(bordeDerecho);
+        }
     }
 
     public boolean puedeInteractuarPancrasio() {

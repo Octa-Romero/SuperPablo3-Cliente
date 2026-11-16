@@ -90,6 +90,10 @@ public class JugadorEstadoRed {
         return this.vidaRecibida;
     }
 
+    public void resetearVidaRecibida() {
+        this.vidaRecibida = false;
+    }
+
     public boolean recibioEstadoAtaque()
     {
         return this.estadoAtaqueRecibida;
@@ -133,5 +137,9 @@ public class JugadorEstadoRed {
 
     public boolean recibioAnimacion() {
         return animacionRecibida;
+    }
+
+    public void resetearAnimacionRecibida() {
+        this.animacionRecibida = false;
     }
 }

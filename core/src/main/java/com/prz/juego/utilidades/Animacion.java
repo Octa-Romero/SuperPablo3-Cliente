@@ -129,6 +129,14 @@ public class Animacion {
         sprite.setRegion(actual.getKeyFrame(tiempo));
     }
 
+    public void forzarIdle(Sprite sprite) {
+        if (reposo != null) {
+            actual = reposo;
+            tiempo = 0f;
+            sprite.setRegion(reposo.getKeyFrame(0f));
+        }
+    }
+
     public void dispose() {
         reposo = null;
         caminar = null;

@@ -1,6 +1,7 @@
 package com.prz.juego.niveles;
 
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.maps.tiled.TiledMap;
@@ -10,6 +11,7 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.prz.juego.entidades.Entidad;
 import com.prz.juego.entidades.Lanzable;
 import com.prz.juego.entidades.Reliquia;
+import com.prz.juego.entidades.Tumba;
 import com.prz.juego.entidades.enemigos.Enemigo;
 import com.prz.juego.entidades.enemigos.TipoEnemigo;
 import com.prz.juego.entidades.enemigos.rango.Proyectil;
@@ -48,10 +50,13 @@ public abstract class Nivel {
     private final ArrayList<Entidad> ENTIDADES_PENDIENTES_ELIMINAR = new ArrayList<>();
     private final ArrayList<Lanzable> PROYECTILES = new ArrayList<>();
     private final ArrayList<Reliquia> RELIQUIAS = new ArrayList<>();
+    private final ArrayList<Tumba> TUMBAS = new ArrayList<>();
 
     private boolean enemigoReliquiaDerrotado = false;
     private boolean gameOver = false;
     private boolean tieneReliquia = false;
+    private boolean tumbaLocalCreada = false;
+    private boolean tumbaRemotoCreada = false;
 
     public static Nivel crear(String ruta) {
         switch (ruta) {
@@ -167,21 +172,22 @@ public abstract class Nivel {
     public void render() {
         Render.batch.setProjectionMatrix(camara.getCamera().combined);
 
-        boolean dibujarJugadoresAlFrente = getJefe() != null;
-
+        // Dibujar enemigos y jefes primero (todo lo que no sea jugador)
         for (Entidad entidad : ENTIDADES) {
-            if (dibujarJugadoresAlFrente
-                && (entidad == pablo || entidad == walter)) {
+            if (entidad == pablo || entidad == walter) {
                 continue;
             }
-
             entidad.dibujar();
         }
 
-        if (dibujarJugadoresAlFrente) {
-            //getJefe().dibujarAtaquesExtra();
-            pablo.dibujar();
-            walter.dibujar();
+        // Dibujar jugador remoto sobre los enemigos
+        if (jugadorRemoto != null) {
+            jugadorRemoto.dibujar();
+        }
+
+        // Dibujar jugador local encima de todo
+        if (jugadorLocal != null) {
+            jugadorLocal.dibujar();
         }
 
         for (Lanzable proyectil : PROYECTILES) {
@@ -190,6 +196,10 @@ public abstract class Nivel {
 
         for (Reliquia reliquia : RELIQUIAS) {
             reliquia.dibujar();
+        }
+
+        for (Tumba tumba : TUMBAS) {
+            tumba.dibujar();
         }
     }
 
@@ -241,18 +251,64 @@ public abstract class Nivel {
             proyectil.update(delta);
         }
 
+        // Determinar qué jugador sigue la cámara
+        Jugador jugadorParaCamara;
+        if (jugadorLocal.estaMuerto() && !jugadorRemoto.estaMuerto()) {
+            jugadorParaCamara = jugadorRemoto;
+        } else if (jugadorRemoto.estaMuerto() && !jugadorLocal.estaMuerto()) {
+            jugadorParaCamara = jugadorLocal;
+        } else if (jugadorLocal.estaMuerto() && jugadorRemoto.estaMuerto()) {
+            // Ambos muertos: seguir al que tiene X más alta
+            jugadorParaCamara = jugadorLocal.getX() >= jugadorRemoto.getX()
+                ? jugadorLocal : jugadorRemoto;
+        } else {
+            jugadorParaCamara = jugadorLocal;
+        }
+
         camara.seguirPersonaje(
-            jugadorLocal.getX() + jugadorLocal.getAncho() / 2f,
-            jugadorLocal.getY() + jugadorLocal.getAlto() / 2f,
+            jugadorParaCamara.getX() + jugadorParaCamara.getAncho() / 2f,
+            jugadorParaCamara.getY() + jugadorParaCamara.getAlto() / 2f,
             delta
         );
 
-        if (entrada.aprietaF1()) {
+        if (entrada != null && entrada.aprietaF1()) {
             Debug.cambiarHitboxes();
         }
 
-        if (jugadorLocal.estaMuerto()) {
+        // Crear tumbas cuando los jugadores mueren
+        boolean localMuerto = jugadorLocal.estaMuerto();
+        boolean remotoMuerto = jugadorRemoto.estaMuerto();
+
+        if (localMuerto && remotoMuerto && !gameOver) {
             gameOver = true;
+        }
+
+        if (localMuerto && !tumbaLocalCreada) {
+            tumbaLocalCreada = true;
+            Tumba tumba = new Tumba(
+                jugadorLocal.getX() + jugadorLocal.getAncho() / 2f,
+                jugadorLocal.getY(),
+                colision
+            );
+            TUMBAS.add(tumba);
+        }
+        if (remotoMuerto && !tumbaRemotoCreada) {
+            tumbaRemotoCreada = true;
+            Tumba tumba = new Tumba(
+                jugadorRemoto.getX() + jugadorRemoto.getAncho() / 2f,
+                jugadorRemoto.getY(),
+                colision
+            );
+            TUMBAS.add(tumba);
+        }
+
+        // Actualizar tumbas
+        for (int i = TUMBAS.size() - 1; i >= 0; i--) {
+            Tumba tumba = TUMBAS.get(i);
+            if (tumba.actualizar(delta)) {
+                tumba.dispose();
+                TUMBAS.remove(i);
+            }
         }
     }
 
@@ -520,6 +576,14 @@ public abstract class Nivel {
 
     public void eliminarJefe() {}
 
+    public void eliminarAtaquesJefe() {
+        Retumbar jefe = getJefe();
+
+        if (jefe != null) {
+            jefe.eliminarAtaques();
+        }
+    }
+
     public void resize(int width, int height) {
         camara.actualizarTamano(width, height);
     }
@@ -562,7 +626,9 @@ public abstract class Nivel {
         }
 
         for (Entidad entidad : ENTIDADES) {
-            entidad.dispose();
+            if (entidad != jugadorLocal && entidad != jugadorRemoto) {
+                entidad.dispose();
+            }
         }
 
         ENTIDADES.clear();
@@ -575,5 +641,10 @@ public abstract class Nivel {
         }
 
         RELIQUIAS.clear();
+
+        for (Tumba tumba : TUMBAS) {
+            tumba.dispose();
+        }
+        TUMBAS.clear();
     }
 }

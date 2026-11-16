@@ -14,6 +14,7 @@ import com.prz.juego.utilidades.Sonido;
 public class Principal extends Game implements Navegable {
 
     private Cliente cliente;
+    private PantallaJuego pantallaJuego;
 
     @Override
     public void create() {
@@ -53,7 +54,8 @@ public class Principal extends Game implements Navegable {
 
     @Override
     public void iniciarJuego(String rutaNivel) {
-        setScreen(new PantallaJuego(this, cliente, rutaNivel));
+        pantallaJuego = new PantallaJuego(this, cliente, rutaNivel);
+        setScreen(pantallaJuego);
     }
 
     @Override
@@ -63,7 +65,10 @@ public class Principal extends Game implements Navegable {
 
     @Override
     public void volverAHub() {
-        setScreen(new PantallaJuego(this, cliente, null));
+        if (pantallaJuego != null) {
+            pantallaJuego.cargarHub();
+            setScreen(pantallaJuego);
+        }
     }
 
 }

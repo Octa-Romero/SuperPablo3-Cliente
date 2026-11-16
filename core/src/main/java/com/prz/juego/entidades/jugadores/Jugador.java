@@ -82,7 +82,7 @@ public abstract class Jugador extends Entidad {
     }
 
     public void dibujar() {
-        if (spriteVisible && sprite != null) {
+        if (!muerto && spriteVisible && sprite != null) {
             sprite.draw(Render.batch);
         }
     }
@@ -142,5 +142,38 @@ public abstract class Jugador extends Entidad {
 
 	public Texture getTEXTURA_HUD() {
 		return TEXTURA_HUD;
+	}
+
+    public void forzarIdle() {
+		ANIMACION.forzarIdle(sprite);
+		// Restaurar la orientacion del sprite despues de forzarIdle
+		// porque setRegion() puede resetear flipX
+		actualizarOrientacionSegunMovimiento();
+	}
+
+    public void reiniciar(float x, float y) {
+		muerto = false;
+		spriteVisible = true;
+		vida = vidaMaxima;
+		velocidadY = 0;
+		enSuelo = true;
+		trepando = false;
+		atacando = false;
+		accionesHabilitadas = true;
+		tiempoInvencibilidad = 0;
+		tiempoParpadeo = 0;
+		this.x = x;
+		this.y = y;
+		xAnterior = x;
+		yAnterior = y;
+		bounds.setPosition(x, y);
+		if (sprite != null) {
+			actualizarSpriteVisual();
+		}
+		ANIMACION.forzarIdle(sprite);
+		// Resetear estados de red para que no sobrescriban el reinicio
+		if (estadoRed != null) {
+			estadoRed.resetearVidaRecibida();
+		}
 	}
 }

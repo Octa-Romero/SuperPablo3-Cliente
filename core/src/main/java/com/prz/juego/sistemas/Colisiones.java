@@ -33,4 +33,8 @@ public class Colisiones {
 			shapeRenderer.rect(colision.x, colision.y, colision.width, colision.height);
 		}
 	}
+
+	public ArrayList<Rectangle> getColisiones() {
+		return colisiones;
+	}
 }

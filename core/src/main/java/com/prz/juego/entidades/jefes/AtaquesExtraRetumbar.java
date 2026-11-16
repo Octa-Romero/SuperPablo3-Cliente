@@ -351,6 +351,18 @@ public class AtaquesExtraRetumbar {
         METEORITOS_GRANDES.removeIf(m -> m.getId() == id);
     }
 
+    public void eliminarAtaques() {
+        faseRayos = null;
+        mostrarAvisoRayo = false;
+        faseLasers = null;
+        mostrarAvisoLaser = false;
+        tiempoAnimacionLaser = 0f;
+
+        METEORITOS.clear();
+        METEORITOS_GRANDES.clear();
+        FUEGUITOS.clear();
+    }
+
     public void dibujar() {
 
         if (faseRayos == FaseRayos.AVISO) {

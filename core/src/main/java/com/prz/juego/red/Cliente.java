@@ -188,6 +188,59 @@ public class Cliente {
         return hilo.getFueguitosEliminados();
     }
 
+    public void actualizarCamara(float x, float y) {
+        if (hilo != null) {
+            hilo.actualizarCamara(x, y);
+        }
+    }
+
+    public boolean otroJugadorVaAlHub() {
+        if (hilo != null) {
+            return hilo.getOtroJugadorVaAlHub();
+        }
+        return false;
+    }
+
+    public boolean ambosJugadoresVuelvenHub() {
+        if (hilo != null) {
+            return hilo.getAmbosJugadoresVuelvenHub();
+        }
+        return false;
+    }
+
+    public void resetearVolverHub() {
+        if (hilo != null) {
+            hilo.resetearVolverHub();
+        }
+    }
+
+    public void limpiarEntidades() {
+        if (hilo != null) {
+            hilo.limpiarEntidades();
+        }
+    }
+
+    public boolean otroJugadorCanceloHub() {
+        if (hilo != null) {
+            return hilo.getOtroJugadorCanceloHub();
+        }
+        return false;
+    }
+
+    public boolean getMostrarCreditos() {
+        if (hilo != null) {
+            return hilo.getMostrarCreditos();
+        }
+        return false;
+    }
+
+    public boolean getEliminarAtaquesJefe() {
+        if (hilo != null) {
+            return hilo.getEliminarAtaquesJefe();
+        }
+        return false;
+    }
+
     public void cerrar()
     {
         if(hilo != null) {

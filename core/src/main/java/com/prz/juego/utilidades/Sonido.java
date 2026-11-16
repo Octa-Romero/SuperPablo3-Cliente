@@ -19,12 +19,14 @@ public enum Sonido {
     RETUMBAR_ATAQUE("Sonidos/retumbarAtaque.WAV"),
     RETUMBAR_GOLPE_RECIBIDO("Sonidos/retumbarGolpeRecibido.WAV"),
     RETUMBAR_MANO_ROTA("Sonidos/retumbarManoRota.WAV"),
-    RETUMBAR_MUERTE("Sonidos/retumbarMuerte.WAV");
+    RETUMBAR_MUERTE("Sonidos/retumbarMuerte.WAV"),
+    MUERTE("Sonidos/muerte.WAV");
 
     private final String NOMBRE_ARCHIVO;
     private Sound sound;
     private long sonidoLoopId = -1;
     private static float volumenGlobal = 0.5f;
+    private static boolean audioActivo = true;
     private final int RANGO_ESCUCHA = 700;
 
     private Sonido(String NOMBRE_ARCHIVO) {
@@ -32,28 +34,44 @@ public enum Sonido {
     }
 
     public void sonar() {
-        cargar();
-        sound.play(volumenGlobal);
+        if (!audioActivo) return;
+        try {
+            cargar();
+            sound.play(volumenGlobal);
+        } catch (Throwable t) {
+            audioActivo = false;
+        }
     }
 
     public void sonar(float x, float xJugador) {
+        if (!audioActivo) return;
         if ((xJugador - RANGO_ESCUCHA) < x && (xJugador + RANGO_ESCUCHA) > x) {
             sonar();
         }
     }
 
     public void sonarConLoop() {
+        if (!audioActivo) return;
         if (sonidoLoopId != -1) {
             return;
         }
-        cargar();
-        sonidoLoopId = sound.play(volumenGlobal);
+        try {
+            cargar();
+            sonidoLoopId = sound.play(volumenGlobal);
+        } catch (Throwable t) {
+            audioActivo = false;
+        }
     }
 
     public void detenerLoop() {
+        if (!audioActivo) return;
         if (sonidoLoopId != -1) {
-            cargar();
-            sound.stop(sonidoLoopId);
+            try {
+                cargar();
+                sound.stop(sonidoLoopId);
+            } catch (Throwable t) {
+                audioActivo = false;
+            }
             sonidoLoopId = -1;
         }
     }
@@ -64,7 +82,11 @@ public enum Sonido {
 
     private void cargar() {
         if (sound == null) {
-            sound = Gdx.audio.newSound(Gdx.files.internal(NOMBRE_ARCHIVO));
+            try {
+                sound = Gdx.audio.newSound(Gdx.files.internal(NOMBRE_ARCHIVO));
+            } catch (Throwable t) {
+                audioActivo = false;
+            }
         }
     }
 
@@ -77,6 +99,7 @@ public enum Sonido {
     }
 
     public static void reproducirPorNombre(String nombre) {
+        if (!audioActivo) return;
         for (Sonido sonido : values()) {
             if (sonido.name().equals(nombre)) {
                 sonido.sonar();
@@ -86,6 +109,7 @@ public enum Sonido {
     }
 
     public static void reproducirLoopPorNombre(String nombre) {
+        if (!audioActivo) return;
         for (Sonido sonido : values()) {
             if (sonido.name().equals(nombre)) {
                 sonido.sonarConLoop();
@@ -95,6 +119,7 @@ public enum Sonido {
     }
 
     public static void detenerLoopPorNombre(String nombre) {
+        if (!audioActivo) return;
         for (Sonido sonido : values()) {
             if (sonido.name().equals(nombre)) {
                 sonido.detenerLoop();
@@ -104,10 +129,15 @@ public enum Sonido {
     }
 
     public static void dispose() {
+        audioActivo = false;
         for (Sonido sonido : values()) {
             sonido.detenerLoop();
             if (sonido.sound != null) {
-                sonido.sound.dispose();
+                try {
+                    sonido.sound.dispose();
+                } catch (Throwable t) {
+                    // Ya disposed
+                }
                 sonido.sound = null;
             }
         }

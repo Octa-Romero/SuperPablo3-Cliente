@@ -49,6 +49,11 @@ public class Retumbar extends Enemigo {
     private float tiempoAnimacionLaserJefe;
     private String faseEspecial = "NORMAL";
 
+    // Parpadeo después de morir
+    private float tiempoDesdeMuerte = 0f;
+    private static final float DURACION_PARPADEO = 2f;
+    private static final float INTERVALO_PARPADEO = 0.1f;
+
     public Retumbar(float x, float y, double vida, float sueloXMin, float sueloXMax) {
         super(
             x, y,
@@ -130,6 +135,11 @@ public class Retumbar extends Enemigo {
         ANIMACION.actualizar(sprite, delta, false, false, false, false);
         actualizarSpriteVisual();
 
+        // Avanzar temporizador de parpadeo después de morir
+        if (muerto) {
+            tiempoDesdeMuerte += delta;
+        }
+
         if (ataquesExtra != null) {
             ataquesExtra.update(delta);
         }
@@ -165,9 +175,15 @@ public class Retumbar extends Enemigo {
         this.x = x;
         this.y = y;
         this.vida = vida;
+        boolean antesMuerto = this.muerto;
         this.muerto = vida <= 0;
         this.spriteVisible = visible;
         this.faseEspecial = faseEspecial;
+
+        // Reiniciar temporizador de parpadeo cuando el jefe muere
+        if (this.muerto && !antesMuerto) {
+            tiempoDesdeMuerte = 0f;
+        }
 
         bounds.setPosition(x, y);
         sprite.setScale(escala);
@@ -362,6 +378,20 @@ public class Retumbar extends Enemigo {
         }
     }
 
+    public void eliminarAtaques() {
+        // Eliminar fueguitos direccionados (radiales)
+        FUEGUITOS_DIRECCIONADOS.clear();
+
+        // Eliminar ataques extra (rayos, lasers, meteoritos, fueguitos de lluvia)
+        if (ataquesExtra != null) {
+            ataquesExtra.eliminarAtaques();
+        }
+
+        // Ocultar laser jefe
+        laserJefeVisible = false;
+        avisoLaserJefe = false;
+    }
+
     private Fueguito buscarFueguitoRadial(int id) {
         for (Fueguito fueguito : FUEGUITOS_DIRECCIONADOS) {
             if (fueguito.getId() == id) {
@@ -374,6 +404,22 @@ public class Retumbar extends Enemigo {
 
     @Override
     public void dibujar() {
+        // Si el jefe murió, parpadear el sprite por 2 segundos
+        if (muerto && tiempoDesdeMuerte < DURACION_PARPADEO) {
+            // Parpadear: mostrar/ocultar cada INTERVALO_PARPADEO
+            boolean visible = (int)(tiempoDesdeMuerte / INTERVALO_PARPADEO) % 2 == 0;
+            if (visible) {
+                super.dibujar();
+            }
+            // No dibujar ataques cuando el jefe está muerto
+            return;
+        }
+
+        // Si ya pasó el tiempo de parpadeo, no dibujar nada
+        if (muerto) {
+            return;
+        }
+
         super.dibujar();
 
         if (ataquesExtra != null) {

@@ -1,10 +1,12 @@
 package com.prz.juego.hilos;
 
+import com.badlogic.gdx.Gdx;
 import com.prz.juego.entidades.enemigos.TipoEnemigo;
 import com.prz.juego.entidades.jefes.AtaquesExtraRetumbar;
 import com.prz.juego.entidades.jefes.Mano;
 import com.prz.juego.entidades.jugadores.Personajes;
 import com.prz.juego.red.*;
+import com.prz.juego.utilidades.Config;
 import com.prz.juego.utilidades.Global;
 import com.prz.juego.utilidades.Musica;
 import com.prz.juego.utilidades.Sonido;
@@ -56,6 +58,15 @@ public class HiloCliente extends Thread{
     private final ArrayList<FueguitoRed> fueguitos = new ArrayList<>();
     private final ArrayList<FueguitoRed> fueguitosNuevos = new ArrayList<>();
     private final ArrayList<FueguitoRed> fueguitosEliminados = new ArrayList<>();
+
+    private volatile float camaraX = Config.ANCHO_BASE / 2f;
+    private volatile float camaraY = Config.ALTO_BASE / 2f;
+
+    private volatile boolean otroJugadorVaAlHub = false;
+    private volatile boolean ambosJugadoresVuelvenHub = false;
+    private volatile boolean otroJugadorCanceloHub = false;
+    private volatile boolean mostrarCreditos = false;
+    private volatile boolean eliminarAtaquesJefe = false;
 
     public HiloCliente() {
         try {
@@ -193,6 +204,16 @@ public class HiloCliente extends Thread{
             procesarMusica(msj);
         } else if (msj.startsWith("INVENCIBILIDAD;")) {
             procesarEstadoInvencibilidad(msj);
+        } else if (msj.equals("VOLVER_HUB;OTRO")) {
+            otroJugadorVaAlHub = true;
+        } else if (msj.equals("VOLVER_HUB;AMBOS")) {
+            ambosJugadoresVuelvenHub = true;
+        } else if (msj.equals("CANCELAR_HUB")) {
+            otroJugadorCanceloHub = true;
+        } else if (msj.equals("MOSTRAR_CREDITOS")) {
+            mostrarCreditos = true;
+        } else if (msj.equals("ELIMINAR_ATAQUES_JEFE")) {
+            eliminarAtaquesJefe = true;
         }
     }
 
@@ -842,6 +863,11 @@ public class HiloCliente extends Thread{
         }
     }
 
+    public void actualizarCamara(float x, float y) {
+        this.camaraX = x;
+        this.camaraY = y;
+    }
+
     public void cerrar() {
         fin = true;
 
@@ -892,6 +918,7 @@ public class HiloCliente extends Thread{
 
     public Personajes getPersonajeRemoto()
     {
+        if (personajeRemoto == null) return null;
         return Personajes.valueOf(personajeRemoto);
     }
 
@@ -1025,92 +1052,108 @@ public class HiloCliente extends Thread{
     }
 
     private void procesarSonido(String msj) {
-        String[] partes = msj.split(";");
-        if (partes.length < 2) {
-            return;
-        }
-
-        String nombreSonido = partes[1];
-
-        // Verificar si es LOOP con posición (SONIDO;nombre;LOOP;x;y)
-        if (partes.length >= 5 && partes[2].equals("LOOP")) {
+        // Usar postRunnable para ejecutar las llamadas de audio en el hilo principal de LibGDX
+        // y evitar BufferOverflowException por condiciones de carrera con OpenAL
+        Gdx.app.postRunnable(() -> {
             try {
-                float sonidoX = Float.parseFloat(partes[3]);
-                float sonidoY = Float.parseFloat(partes[4]);
-                float distX = Math.abs(estadoLocal.getX() - sonidoX);
-                float distY = Math.abs(estadoLocal.getY() - sonidoY);
-                if (distX <= 1200 && distY <= 1200) {
-                    Sonido.reproducirLoopPorNombre(nombreSonido);
-                } else {
-                    // El jugador se alejó, detener el loop para que se reinicie al volver a acercar
-                    Sonido.detenerLoopPorNombre(nombreSonido);
-                }
-            } catch (NumberFormatException e) {
-                Sonido.reproducirLoopPorNombre(nombreSonido);
-            }
-            return;
-        }
-
-        // LOOP sin posición (siempre reproducir)
-        if (partes.length >= 3 && partes[2].equals("LOOP")) {
-            Sonido.reproducirLoopPorNombre(nombreSonido);
-            return;
-        }
-
-        // Verificar si es DETENER_LOOP con posición (SONIDO;nombre;DETENER_LOOP;x;y)
-        if (partes.length >= 5 && partes[2].equals("DETENER_LOOP")) {
-            try {
-                float sonidoX = Float.parseFloat(partes[3]);
-                float sonidoY = Float.parseFloat(partes[4]);
-                float distX = Math.abs(estadoLocal.getX() - sonidoX);
-                float distY = Math.abs(estadoLocal.getY() - sonidoY);
-                if (distX <= 1200 && distY <= 1200) {
-                    Sonido.detenerLoopPorNombre(nombreSonido);
-                }
-            } catch (NumberFormatException e) {
-                Sonido.detenerLoopPorNombre(nombreSonido);
-            }
-            return;
-        }
-
-        // DETENER_LOOP sin posición (siempre detener)
-        if (partes.length >= 3 && partes[2].equals("DETENER_LOOP")) {
-            Sonido.detenerLoopPorNombre(nombreSonido);
-            return;
-        }
-
-        // Si el sonido tiene posición, filtrar por distancia
-        if (partes.length >= 4) {
-            try {
-                float sonidoX = Float.parseFloat(partes[2]);
-                float sonidoY = Float.parseFloat(partes[3]);
-                float distX = Math.abs(estadoLocal.getX() - sonidoX);
-                float distY = Math.abs(estadoLocal.getY() - sonidoY);
-                if (distX > 1200 || distY > 1200) {
+                String[] partes = msj.split(";");
+                if (partes.length < 2) {
                     return;
                 }
-            } catch (NumberFormatException e) {
-                // Si no se puede parsear, reproducir de todos modos
-            }
-        }
 
-        Sonido.reproducirPorNombre(nombreSonido);
+                String nombreSonido = partes[1];
+
+                // Verificar si es LOOP con posición (SONIDO;nombre;LOOP;x;y)
+                if (partes.length >= 5 && partes[2].equals("LOOP")) {
+                    try {
+                        float sonidoX = Float.parseFloat(partes[3]);
+                        float sonidoY = Float.parseFloat(partes[4]);
+                        float distX = Math.abs(camaraX - sonidoX);
+                        float distY = Math.abs(camaraY - sonidoY);
+                        if (distX <= 1200 && distY <= 1200) {
+                            Sonido.reproducirLoopPorNombre(nombreSonido);
+                        } else {
+                            // El jugador se alejó, detener el loop para que se reinicie al volver a acercar
+                            Sonido.detenerLoopPorNombre(nombreSonido);
+                        }
+                    } catch (NumberFormatException e) {
+                        Sonido.reproducirLoopPorNombre(nombreSonido);
+                    }
+                    return;
+                }
+
+                // LOOP sin posición (siempre reproducir)
+                if (partes.length >= 3 && partes[2].equals("LOOP")) {
+                    Sonido.reproducirLoopPorNombre(nombreSonido);
+                    return;
+                }
+
+                // Verificar si es DETENER_LOOP con posición (SONIDO;nombre;DETENER_LOOP;x;y)
+                if (partes.length >= 5 && partes[2].equals("DETENER_LOOP")) {
+                    try {
+                        float sonidoX = Float.parseFloat(partes[3]);
+                        float sonidoY = Float.parseFloat(partes[4]);
+                        float distX = Math.abs(camaraX - sonidoX);
+                        float distY = Math.abs(camaraY - sonidoY);
+                        if (distX <= 1200 && distY <= 1200) {
+                            Sonido.detenerLoopPorNombre(nombreSonido);
+                        }
+                    } catch (NumberFormatException e) {
+                        Sonido.detenerLoopPorNombre(nombreSonido);
+                    }
+                    return;
+                }
+
+                // DETENER_LOOP sin posición (siempre detener)
+                if (partes.length >= 3 && partes[2].equals("DETENER_LOOP")) {
+                    Sonido.detenerLoopPorNombre(nombreSonido);
+                    return;
+                }
+
+                // Si el sonido tiene posición, filtrar por distancia
+                if (partes.length >= 4) {
+                    try {
+                        float sonidoX = Float.parseFloat(partes[2]);
+                        float sonidoY = Float.parseFloat(partes[3]);
+                        float distX = Math.abs(camaraX - sonidoX);
+                        float distY = Math.abs(camaraY - sonidoY);
+                        if (distX > 1200 || distY > 1200) {
+                            return;
+                        }
+                    } catch (NumberFormatException e) {
+                        // Si no se puede parsear, reproducir de todos modos
+                    }
+                }
+
+                Sonido.reproducirPorNombre(nombreSonido);
+            } catch (Throwable t) {
+                // El sistema de audio puede estar disposed
+            }
+        });
     }
 
     private void procesarMusica(String msj) {
-        String[] partes = msj.split(";");
-        if (partes.length < 2) {
-            return;
-        }
+        // Usar postRunnable para ejecutar las llamadas de audio en el hilo principal de LibGDX
+        // y evitar BufferOverflowException por condiciones de carrera con OpenAL
+        Gdx.app.postRunnable(() -> {
+            try {
+                String[] partes = msj.split(";");
+                if (partes.length < 2) {
+                    return;
+                }
 
-        String nombreMusica = partes[1];
+                String nombreMusica = partes[1];
 
-        if ("PARAR".equals(nombreMusica)) {
-            Musica.parar();
-            return;
-        }
+                if ("PARAR".equals(nombreMusica)) {
+                    Musica.parar();
+                    return;
+                }
 
-        Musica.reproducirPorNombre(nombreMusica);
+                Musica.reproducirPorNombre(nombreMusica);
+            } catch (Throwable t) {
+                // El sistema de audio puede estar disposed
+            }
+        });
     }
 
     private void procesarEstadoInvencibilidad(String msj) {
@@ -1130,5 +1173,59 @@ public class HiloCliente extends Thread{
         } catch (NumberFormatException e) {
             System.out.println("Estado de invencibilidad recibido invalido");
         }
+    }
+
+    public boolean getOtroJugadorVaAlHub() {
+        return otroJugadorVaAlHub;
+    }
+
+    public boolean getAmbosJugadoresVuelvenHub() {
+        return ambosJugadoresVuelvenHub;
+    }
+
+    public synchronized void limpiarEntidades() {
+        enemigosRecibidos.clear();
+        estadoEnemigos.clear();
+        enemigosEliminados.clear();
+        proyectilesNuevo.clear();
+        estadoProyectiles.clear();
+        proyectilesEliminados.clear();
+        jefeNuevo = null;
+        estadoJefe = null;
+        jefeEliminado = false;
+        manoIzquierda = new ManoRed(Mano.Lado.IZQUIERDA);
+        manoDerecha = new ManoRed(Mano.Lado.DERECHA);
+        fuegoSuelo = new FuegoSueloRed();
+        estadoRayos = new RayosRed();
+        estadoLasers = new LasersRed();
+        meteoritos.clear();
+        meteoritosNuevos.clear();
+        meteoritosEliminados.clear();
+        estadoLaserJefe.reiniciar();
+        fueguitos.clear();
+        fueguitosNuevos.clear();
+        fueguitosEliminados.clear();
+    }
+
+    public void resetearVolverHub() {
+        otroJugadorVaAlHub = false;
+        ambosJugadoresVuelvenHub = false;
+        otroJugadorCanceloHub = false;
+    }
+
+    public boolean getOtroJugadorCanceloHub() {
+        return otroJugadorCanceloHub;
+    }
+
+    public synchronized boolean getMostrarCreditos() {
+        boolean mostrar = mostrarCreditos;
+        mostrarCreditos = false;
+        return mostrar;
+    }
+
+    public synchronized boolean getEliminarAtaquesJefe() {
+        boolean eliminar = eliminarAtaquesJefe;
+        eliminarAtaquesJefe = false;
+        return eliminar;
     }
 }

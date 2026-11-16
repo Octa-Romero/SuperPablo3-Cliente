@@ -13,8 +13,10 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.prz.juego.principal.Navegable;
+import com.prz.juego.red.Cliente;
 import com.prz.juego.utilidades.Config;
 import com.prz.juego.utilidades.FuenteJuego;
+import com.prz.juego.utilidades.Render;
 import com.prz.juego.utilidades.Sonido;
 
 public class MenuPausa {
@@ -23,6 +25,10 @@ public class MenuPausa {
     private final Navegable NAV;
     private boolean activo = false;
     private final PantallaJuego PANTALLA_JUEGO;
+    private final Cliente CLIENTE;
+    private TextButton botonVolverHub;
+    private boolean yoVoyAlHub = false;
+    private boolean ambosVienen = false;
     private final BitmapFont FONT_TITULO;
     private final BitmapFont FONT_BOTONES;
     private Texture texturaFondoOscuro;
@@ -30,9 +36,10 @@ public class MenuPausa {
     private Image fondoOscuro;
     private Image panelOscuro;
 
-    public MenuPausa(Navegable NAV, PantallaJuego anteriorPantalla) {
+    public MenuPausa(Navegable NAV, PantallaJuego anteriorPantalla, Cliente cliente) {
         this.NAV = NAV;
         this.PANTALLA_JUEGO = anteriorPantalla;
+        this.CLIENTE = cliente;
 
         STAGE = new Stage(new FitViewport(Config.ANCHO_BASE, Config.ALTO_BASE));
 
@@ -64,7 +71,7 @@ public class MenuPausa {
 
         TextButton reanudar = new TextButton("Reanudar", style);
         TextButton opciones = new TextButton("Opciones", style);
-        TextButton hub = new TextButton("Volver al hub", style);
+        botonVolverHub = new TextButton("Volver al hub", style);
         TextButton menu = new TextButton("Salir al menú", style);
 
         reanudar.addListener(
@@ -74,6 +81,8 @@ public class MenuPausa {
                         Sonido.CLICK.sonar();
                         PANTALLA_JUEGO.setPausa(false);
                         desactivar();
+                        // Al sacar la pausa, cancelar el volver al hub
+                        cancelarVolverHub();
                     }
                 });
 
@@ -87,12 +96,22 @@ public class MenuPausa {
                     }
                 });
 
-        hub.addListener(
+        botonVolverHub.addListener(
                 new ClickListener() {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
                         Sonido.CLICK.sonar();
-                        NAV.volverAHub();
+                        if (!yoVoyAlHub) {
+                            // Detener el sonido del laser giratorio antes de volver al hub
+                            Sonido.detenerLoopPorNombre("FUEGO_SOSTENIDO");
+                            // Confirmar volver al hub
+                            yoVoyAlHub = true;
+                            CLIENTE.enviarMensaje("VOLVER_HUB");
+                            botonVolverHub.setText("Volver al hub (1/2)");
+                        } else {
+                            // Cancelar (toggle)
+                            cancelarVolverHub();
+                        }
                     }
                 });
 
@@ -109,7 +128,7 @@ public class MenuPausa {
         contenedor.add(reanudar).width(250).height(50).padBottom(20).row();
         contenedor.add(opciones).width(250).height(50).padBottom(20).row();
         if (!PANTALLA_JUEGO.estaEnHub()) {
-            contenedor.add(hub).width(250).height(50).padBottom(20).row();
+            contenedor.add(botonVolverHub).width(250).height(50).padBottom(20).row();
         }
         contenedor.add(menu).width(250).height(50).padBottom(20).row();
         contenedor.pack();
@@ -163,14 +182,53 @@ public class MenuPausa {
         STAGE.getRoot().setTouchable(Touchable.disabled);
     }
 
+    public void cancelarVolverHub() {
+        yoVoyAlHub = false;
+        ambosVienen = false;
+        CLIENTE.enviarMensaje("CANCELAR_HUB");
+        if (botonVolverHub != null) {
+            botonVolverHub.setText("Volver al hub");
+        }
+        CLIENTE.resetearVolverHub();
+    }
+
+    public void actualizarBotonHub() {
+        if (CLIENTE.ambosJugadoresVuelvenHub()) {
+            // No volver al hub si ya estamos en el hub (evita mensajes residuales del servidor)
+            if (!PANTALLA_JUEGO.estaEnHub()) {
+                ambosVienen = true;
+                if (botonVolverHub != null) {
+                    botonVolverHub.setText("Volver al hub (2/2)");
+                }
+                Sonido.CLICK.sonar();
+                NAV.volverAHub();
+            }
+            CLIENTE.resetearVolverHub();
+        } else if (CLIENTE.otroJugadorCanceloHub()) {
+            // El otro jugador cancelo, resetear
+            if (botonVolverHub != null) {
+                botonVolverHub.setText("Volver al hub");
+            }
+            CLIENTE.resetearVolverHub();
+        } else if (CLIENTE.otroJugadorVaAlHub() && !yoVoyAlHub) {
+            // El otro jugador quiere volver, mostrar (1/2) a ambos
+            if (botonVolverHub != null) {
+                botonVolverHub.setText("Volver al hub (1/2)");
+            }
+        }
+    }
+
     public void update(float delta) {
         if (activo) {
             STAGE.act(delta);
+            actualizarBotonHub();
         }
     }
 
     public void render() {
         if (activo) {
+            STAGE.getViewport().update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
+            Render.batch.setProjectionMatrix(STAGE.getCamera().combined);
             STAGE.draw();
         }
     }

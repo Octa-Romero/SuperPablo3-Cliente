@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -25,6 +26,16 @@ public class Hud {
     private final Jugador JUGADOR;
     private final Stage STAGE;
     private final FitViewport VIEWPORT = new FitViewport(1280, 720, new OrthographicCamera());
+
+    private boolean localMuerto = false;
+    private boolean remotoMuerto = false;
+    private String nombreJugadorVivo = "";
+    private String nombreJugadorMuerto = "";
+    private float tiempoMuerteLocal = -1f;
+    private float tiempoMuerteRemoto = -1f;
+    private static final float DURACION_NOTIFICACION = 3f;
+    private static final float DURACION_FADE = 0.5f;
+    private BitmapFont fuenteNotificacion;
 
     private final Texture CORAZON_LLENO = GestorRecursos.obtenerTextura("Hud/corazon_lleno.png");
     private final Texture CORAZON_MITAD = GestorRecursos.obtenerTextura("Hud/corazon_mitad.png");
@@ -65,7 +76,6 @@ public class Hud {
 
         STAGE = new Stage(VIEWPORT, batch);
 
-        // cache de drawables (se crea una sola vez para ser reutilizado)
         LLENO_DRAWABLE = new TextureRegionDrawable(new TextureRegion(CORAZON_LLENO));
         MITAD_DRAWABLE = new TextureRegionDrawable(new TextureRegion(CORAZON_MITAD));
         VACIO_DRAWABLE = new TextureRegionDrawable(new TextureRegion(CORAZON_VACIO));
@@ -131,21 +141,6 @@ public class Hud {
         }
     }
 
-    public void dibujar() {
-
-        double vidaActual = JUGADOR.getVida();
-
-        if (vidaActual != ultimaVida) {
-            actualizarCorazones();
-            ultimaVida = vidaActual;
-        }
-
-        STAGE.act();
-        STAGE.draw();
-
-        dibujarBarrasJefe();
-    }
-
     public void setJefe(Retumbar jefe) {
         this.jefe = jefe;
     }
@@ -204,12 +199,6 @@ public class Hud {
         VIEWPORT.update(width, height, true);
     }
 
-    public void dispose() {
-        STAGE.dispose();
-        FUENTE_JEFE.dispose();
-        FUENTE_MANO.dispose();
-    }
-
     public void setTieneReliquia(boolean valor) {
         if (tieneReliquia == valor) {
             return;
@@ -217,5 +206,98 @@ public class Hud {
 
         tieneReliquia = valor;
         imagenReliquia.setVisible(valor);
+    }
+
+    public void setEstadoMuerte(boolean localMuerto, boolean remotoMuerto, String nombreVivo, String nombreMuerto) {
+        this.localMuerto = localMuerto;
+        this.remotoMuerto = remotoMuerto;
+        this.nombreJugadorVivo = nombreVivo;
+        this.nombreJugadorMuerto = nombreMuerto;
+
+        if (localMuerto && this.tiempoMuerteLocal < 0f) {
+            this.tiempoMuerteLocal = 0f;
+        }
+        if (remotoMuerto && !localMuerto && this.tiempoMuerteRemoto < 0f) {
+            this.tiempoMuerteRemoto = 0f;
+        }
+    }
+
+    public void update(float delta) {
+        if (tiempoMuerteLocal >= 0f) {
+            tiempoMuerteLocal += delta;
+        }
+        if (tiempoMuerteRemoto >= 0f) {
+            tiempoMuerteRemoto += delta;
+        }
+    }
+
+    private void dibujarNotificaciones() {
+        if (fuenteNotificacion == null) {
+            fuenteNotificacion = FuenteJuego.generar(28);
+        }
+
+        VIEWPORT.apply();
+        BATCH.setProjectionMatrix(VIEWPORT.getCamera().combined);
+        BATCH.begin();
+
+        float yBase = Config.ALTO_BASE * 0.2f;
+        int indiceY = 0;
+        float separacionY = 40f;
+
+        if (localMuerto) {
+            String texto = "Observando a " + nombreJugadorVivo;
+            GlyphLayout layout = new GlyphLayout(fuenteNotificacion, texto);
+            float x = (Config.ANCHO_BASE - layout.width) / 2f;
+            float y = yBase + indiceY * separacionY;
+            fuenteNotificacion.setColor(1f, 1f, 1f, 1f);
+            fuenteNotificacion.draw(BATCH, texto, x, y);
+            indiceY++;
+        }
+
+        if (remotoMuerto && !localMuerto && tiempoMuerteRemoto >= 0f && tiempoMuerteRemoto <= DURACION_NOTIFICACION) {
+            String texto = nombreJugadorMuerto + " ha muerto";
+            float alpha = calcularAlpha(tiempoMuerteRemoto, DURACION_NOTIFICACION);
+            GlyphLayout layout = new GlyphLayout(fuenteNotificacion, texto);
+            float x = (Config.ANCHO_BASE - layout.width) / 2f;
+            float y = yBase + indiceY * separacionY;
+            fuenteNotificacion.setColor(1f, 1f, 1f, alpha);
+            fuenteNotificacion.draw(BATCH, texto, x, y);
+        }
+
+        BATCH.end();
+    }
+
+    private float calcularAlpha(float tiempo, float duracionTotal) {
+        if (tiempo < DURACION_FADE) {
+            return tiempo / DURACION_FADE;
+        } else if (tiempo > duracionTotal - DURACION_FADE) {
+            return (duracionTotal - tiempo) / DURACION_FADE;
+        }
+        return 1f;
+    }
+
+    public void dibujar() {
+
+        double vidaActual = JUGADOR.getVida();
+
+        if (vidaActual != ultimaVida) {
+            actualizarCorazones();
+            ultimaVida = vidaActual;
+        }
+
+        STAGE.act();
+        STAGE.draw();
+
+        dibujarBarrasJefe();
+        dibujarNotificaciones();
+    }
+
+    public void dispose() {
+        STAGE.dispose();
+        FUENTE_JEFE.dispose();
+        FUENTE_MANO.dispose();
+        if (fuenteNotificacion != null) {
+            fuenteNotificacion.dispose();
+        }
     }
 }

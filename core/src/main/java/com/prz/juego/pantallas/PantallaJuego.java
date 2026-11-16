@@ -6,6 +6,7 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.prz.juego.entidades.jefes.Mano;
 import com.prz.juego.entidades.jugadores.Jugador;
+import com.prz.juego.entidades.jugadores.Pablo;
 import com.prz.juego.entidades.jugadores.Personajes;
 import com.prz.juego.principal.Navegable;
 import com.prz.juego.niveles.Hub;
@@ -24,12 +25,14 @@ public class PantallaJuego implements Screen {
     private JugadorEstadoRed estadoRedLocal;
     private Jugador jugadorRemoto;
 
-    private final Nivel NIVEL;
+    private Nivel NIVEL;
     private final Entrada ENTRADA;
-    private final MenuPausa MENU_PAUSA;
+    private MenuPausa MENU_PAUSA;
     private boolean pausado = false;
     private final Hud HUD;
     private Hub hub;
+    private boolean cambiarASeleccionNivel = false;
+    private boolean envioEntradaActivo = true;
 
     private float tiempoMensaje = 0f;
     private static final float INTERVALO_MENSAJE = 0.25f;
@@ -44,8 +47,10 @@ public class PantallaJuego implements Screen {
     public PantallaJuego(Navegable NAV, Cliente cliente, String rutaNivel) {
         this.NAV = NAV;
         this.ENTRADA = new Entrada();
+        // Limpiar entidades del nivel anterior antes de cargar uno nuevo
+        cliente.limpiarEntidades();
         this.NIVEL = rutaNivel == null ? null : Nivel.crear(rutaNivel);
-        this.MENU_PAUSA = new MenuPausa(NAV, this);
+        this.MENU_PAUSA = new MenuPausa(NAV, this, cliente);
         this.cliente = cliente;
 
         Personajes personajeElegido = cliente.getPersonajeLocal();
@@ -57,7 +62,7 @@ public class PantallaJuego implements Screen {
 
         this.estadoRedLocal = jugadorLocal.getEstadoRed();
 
-        jugadorRemoto = personajeRemoto.crear(75, 150);
+        jugadorRemoto = personajeRemoto.crear(50, 150);
         jugadorRemoto.setEstadoRed(cliente.getEstadoRemoto());
 
         if (rutaNivel == null) {
@@ -87,6 +92,7 @@ public class PantallaJuego implements Screen {
     public void render(float delta) {
         Render.limpiarPantalla();
 
+        // Detectar Escape
         if (ENTRADA.aprietaEscape()) {
             setPausa(!pausado);
 
@@ -101,17 +107,19 @@ public class PantallaJuego implements Screen {
                 cliente.enviarMensaje("INPUT;NOE");
             } else {
                 MENU_PAUSA.desactivar();
+                // Al cerrar el menú de pausa, cancelar el estado de volver al hub
+                MENU_PAUSA.cancelarVolverHub();
             }
         }
 
-        if (!pausado) {
+        if (!pausado && envioEntradaActivo) {
             actualizarEnvioEntrada(delta);
-        } else {
+        } else if (pausado) {
             // Cuando está pausado, limpiar la entrada para que el jugador se detenga
             ENTRADA.limpiar();
         }
 
-        // Actualizar entidades siempre, aunque esté pausado, para que reciban el estado del servidor
+        // Actualizar entidades siempre
         if (hub != null) {
             hub.update(delta, ENTRADA);
 
@@ -120,6 +128,10 @@ public class PantallaJuego implements Screen {
                 if (estadoRedLocal.estaEsperandoSeleccion()) {
 
                     cliente.enviarMensaje("SELECCION_NIVEL;false");
+                    // Reactivar el envío de entrada al cancelar la selección
+                    envioEntradaActivo = true;
+                    // Limpiar entrada para evitar movimientos residuales que causen teletransporte
+                    ENTRADA.limpiar();
 
                 } else if (hub.puedeInteractuarPancrasio()) {
 
@@ -128,16 +140,42 @@ public class PantallaJuego implements Screen {
                 } else if (estadoRedLocal.estaEnCentroHub()) {
 
                     cliente.enviarMensaje("SELECCION_NIVEL;true");
+                    // Detener el envío de entrada para que el servidor procese los mensajes nulos
+                    envioEntradaActivo = false;
+                    // Limpiar entrada y forzar idle para que la animación no se congele
+                    ENTRADA.limpiar();
+                    cliente.enviarMensaje("INPUT;NOIZQUIERDA");
+                    cliente.enviarMensaje("INPUT;NODERECHA");
+                    cliente.enviarMensaje("INPUT;NOARRIBA");
+                    cliente.enviarMensaje("INPUT;NOABAJO");
+                    cliente.enviarMensaje("INPUT;NOATACA");
+                    cliente.enviarMensaje("INPUT;NOE");
+                    jugadorLocal.forzarIdle();
+                    estadoRedLocal.resetearAnimacionRecibida();
                 }
+            }
+
+            // Forzar idle mientras se espera al otro jugador (cada frame, no solo al presionar E)
+            if (estadoRedLocal.estaEsperandoSeleccion()) {
+                jugadorLocal.forzarIdle();
             }
 
             if (!pausado && cliente.sePuedeSeleccionarNivel()) {
 
                 guardarPosicionCamara();
                 ENTRADA.limpiar();
-
-                NAV.cambiarPantalla(new SeleccionNivel(NAV, cliente, this));
-                return;
+                // Enviar entrada nula al servidor para que el jugador vuelva al idle
+                cliente.enviarMensaje("INPUT;NOIZQUIERDA");
+                cliente.enviarMensaje("INPUT;NODERECHA");
+                cliente.enviarMensaje("INPUT;NOARRIBA");
+                cliente.enviarMensaje("INPUT;NOABAJO");
+                cliente.enviarMensaje("INPUT;NOATACA");
+                cliente.enviarMensaje("INPUT;NOE");
+                // Forzar la animacion de idle localmente para que se renderice en este frame
+                jugadorLocal.forzarIdle();
+                jugadorRemoto.forzarIdle();
+                // Cambiar pantalla al siguiente frame para que el idle se vea
+                cambiarASeleccionNivel = true;
             }
         } else {
             NIVEL.update(delta, ENTRADA);
@@ -251,16 +289,27 @@ public class PantallaJuego implements Screen {
                 );
             }
 
-            if(cliente.jefeMuerto())
-            {
-                NIVEL.eliminarJefe();
-                HUD.setJefe(null);
+            // No eliminar el jefe inmediatamente para que siga visible durante los 2 segundos
+            // antes de los créditos. El jefe se eliminará implícitamente al cambiar a PantallaFinal.
+
+            // Eliminar todos los ataques del jefe cuando el servidor lo indica
+            if (cliente.getEliminarAtaquesJefe()) {
+                NIVEL.eliminarAtaquesJefe();
             }
 
-            if (NIVEL.enemigoReliquiaDerrotado()) {
+            if (cliente.getMostrarCreditos()) {
                 NAV.cambiarPantalla(new PantallaFinal(NAV));
                 return;
             }
+        }
+
+        // Actualizar la posición de la cámara para el rango de escucha de sonidos
+        if (hub != null) {
+            com.badlogic.gdx.graphics.Camera cam = hub.getCamara();
+            cliente.actualizarCamara(cam.position.x, cam.position.y);
+        } else {
+            com.badlogic.gdx.graphics.Camera cam = NIVEL.getCamara();
+            cliente.actualizarCamara(cam.position.x, cam.position.y);
         }
 
         // Dibujar el Hub o el NIVEL seleccionado
@@ -282,19 +331,37 @@ public class PantallaJuego implements Screen {
             NIVEL.renderDebug();
 
             if (NIVEL.isGameOver()) {
-                NAV.cambiarPantalla(new GameOver(NAV));
+                NAV.cambiarPantalla(new GameOver(NAV, NIVEL, cliente));
                 return;
             }
         }
 
         if (hub == null) {
             HUD.setTieneReliquia(NIVEL.tieneReliquia());
+            HUD.update(delta);
+
+            boolean localMuerto = jugadorLocal.estaMuerto();
+            boolean remotoMuerto = jugadorRemoto.estaMuerto();
+            String nombreVivo = localMuerto
+                ? (jugadorRemoto instanceof Pablo ? "Pablo" : "Walter")
+                : (jugadorLocal instanceof Pablo ? "Pablo" : "Walter");
+            String nombreMuerto = remotoMuerto
+                ? (jugadorRemoto instanceof Pablo ? "Pablo" : "Walter")
+                : "";
+            HUD.setEstadoMuerte(localMuerto, remotoMuerto, nombreVivo, nombreMuerto);
+
             HUD.dibujar();
         }
 
         if (pausado) {
             MENU_PAUSA.update(delta);
             MENU_PAUSA.render();
+        }
+
+        // Cambiar a SeleccionNivel después de renderizar el frame con el idle
+        if (cambiarASeleccionNivel) {
+            cambiarASeleccionNivel = false;
+            NAV.cambiarPantalla(new SeleccionNivel(NAV, cliente, this));
         }
     }
 
@@ -423,6 +490,44 @@ public class PantallaJuego implements Screen {
         return NIVEL == null;
     }
 
+    public void cargarHub() {
+        // Desactivar pausa si estaba activa
+        if (pausado) {
+            pausado = false;
+            MENU_PAUSA.desactivar();
+        }
+        // Limpiar el nivel actual si existe
+        if (NIVEL != null) {
+            NIVEL.dispose();
+            NIVEL = null;
+        }
+        // Limpiar el hub actual si existe
+        if (hub != null) {
+            hub.dispose();
+        }
+        // Dispose del MenuPausa anterior
+        MENU_PAUSA.dispose();
+        // Reiniciar los jugadores a las posiciones iniciales del hub
+        jugadorLocal.reiniciar(50, 150);
+        jugadorRemoto.reiniciar(50, 150);
+        // Crear el hub
+        hub = new Hub();
+        hub.cargar("Niveles/Niveles/Hub.tmx", jugadorLocal, jugadorRemoto);
+        // Crear nuevo MenuPausa
+        MENU_PAUSA = new MenuPausa(NAV, this, cliente);
+        HUD.setJefe(null);
+        ENTRADA.limpiar();
+        // Limpiar cualquier mensaje residual de volver al hub
+        cliente.resetearVolverHub();
+        // Reconfigurar el InputMultiplexer con el nuevo MenuPausa
+        InputMultiplexer mux = new InputMultiplexer();
+        mux.addProcessor(MENU_PAUSA.getStage());
+        mux.addProcessor(ENTRADA);
+        Gdx.input.setInputProcessor(mux);
+        // Reactivar el envío de entrada al volver al hub
+        envioEntradaActivo = true;
+    }
+
     public void restaurarPosicionCamara() {
         if (hub != null) {
             hub.restaurarPosicionCamara();
@@ -449,7 +554,8 @@ public class PantallaJuego implements Screen {
     public void dispose() {
         if (hub != null) {
             hub.dispose();
-        } else {
+        }
+        if (NIVEL != null) {
             NIVEL.dispose();
         }
         MENU_PAUSA.dispose();
