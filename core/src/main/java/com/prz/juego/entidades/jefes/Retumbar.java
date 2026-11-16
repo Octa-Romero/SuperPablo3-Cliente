@@ -77,11 +77,11 @@ public class Retumbar extends Enemigo {
             textura.getWidth() / CANTIDAD_FRAMES,
             textura.getHeight(),
             new int[]{0, 1, 2},
-            null, null, null,
+            null, null, null, null,
             DURACION_FRAME
         );
 
-        ANIMACION.actualizar(sprite, 0f, false, false, false);
+        ANIMACION.actualizar(sprite, 0f, false, false, false, false);
 
         MANO_IZQUIERDA = new Mano(this, Mano.Lado.IZQUIERDA);
         MANO_DERECHA = new Mano(this, Mano.Lado.DERECHA);
@@ -127,7 +127,7 @@ public class Retumbar extends Enemigo {
 
     @Override
     public void update(float delta) {
-        ANIMACION.actualizar(sprite, delta, false, false, false);
+        ANIMACION.actualizar(sprite, delta, false, false, false, false);
         actualizarSpriteVisual();
 
         if (ataquesExtra != null) {

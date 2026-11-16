@@ -49,10 +49,11 @@ public class FuegoSuelo extends Enemigo {
             null,
             null,
             null,
+            null,
             DURACION_FRAME_FUEGO
         );
 
-        ANIMACION.actualizar(sprite, 0f, false, false, false);
+        ANIMACION.actualizar(sprite, 0f, false, false, false, false);
         bounds.set(x, y, ancho, alto);
     }
 
@@ -72,7 +73,7 @@ public class FuegoSuelo extends Enemigo {
             return;
         }
 
-        ANIMACION.actualizar(sprite, delta, false, false, false);
+        ANIMACION.actualizar(sprite, delta, false, false, false, false);
     }
 
     @Override

@@ -10,6 +10,7 @@ public class Animacion {
     private Animation<TextureRegion> reposo;
     private Animation<TextureRegion> caminar;
     private Animation<TextureRegion> salto;
+    private Animation<TextureRegion> caida;
     private Animation<TextureRegion> ataque;
     private Animation<TextureRegion> actual;
     private float tiempo;
@@ -29,13 +30,14 @@ public class Animacion {
             int[] indicesReposo,
             int[] indicesCaminar,
             int[] indicesSalto,
+            int[] indicesCaida,
             int[] indicesAtaque,
             float duracionFrame) {
         validarConfiguracion(spritesheet, anchoFrame, altoFrame, indicesReposo, duracionFrame);
 
         TextureRegion[][] grilla = TextureRegion.split(spritesheet, anchoFrame, altoFrame);
         TextureRegion[] frames = aplanar(grilla);
-        validarIndices(frames.length, indicesReposo, indicesCaminar, indicesSalto, indicesAtaque);
+        validarIndices(frames.length, indicesReposo, indicesCaminar, indicesSalto, indicesCaida, indicesAtaque);
 
         reposo = crearAnimacion(frames, indicesReposo, duracionFrame, Animation.PlayMode.LOOP);
         caminar =
@@ -43,7 +45,10 @@ public class Animacion {
                         frames, indicesCaminar, duracionFrame, Animation.PlayMode.LOOP);
         salto =
                 crearAnimacionSiConfigurada(
-                        frames, indicesSalto, duracionFrame, Animation.PlayMode.NORMAL);
+                        frames, indicesSalto, duracionFrame, Animation.PlayMode.LOOP);
+        caida =
+                crearAnimacionSiConfigurada(
+                        frames, indicesCaida, duracionFrame, Animation.PlayMode.LOOP);
         ataque =
                 crearAnimacionSiConfigurada(
                         frames, indicesAtaque, duracionFrame, Animation.PlayMode.NORMAL);
@@ -53,13 +58,15 @@ public class Animacion {
     }
 
     public void actualizar(
-            Sprite sprite, float delta, boolean caminando, boolean saltando, boolean atacando) {
+            Sprite sprite, float delta, boolean caminando, boolean saltando, boolean cayendo, boolean atacando) {
         Animation<TextureRegion> siguiente;
 
         if (atacando && ataque != null) {
             siguiente = ataque;
         } else if (saltando && salto != null) {
             siguiente = salto;
+        } else if (cayendo && caida != null) {
+            siguiente = caida;
         } else if (caminando) {
             siguiente = caminar != null ? caminar : reposo;
         } else {
@@ -91,6 +98,7 @@ public class Animacion {
     public int getTipoActual() {
         if (actual == ataque) return 3;
         if (actual == salto) return 2;
+        if (actual == caida) return 4;
         if (actual == caminar) return 1;
         return 0; // reposo
     }
@@ -102,6 +110,7 @@ public class Animacion {
         switch (tipoAnimacion) {
             case 3: siguiente = ataque; break;
             case 2: siguiente = salto; break;
+            case 4: siguiente = caida; break;
             case 1: siguiente = caminar != null ? caminar : reposo; break;
             default: siguiente = reposo; break;
         }
@@ -124,6 +133,7 @@ public class Animacion {
         reposo = null;
         caminar = null;
         salto = null;
+        caida = null;
         ataque = null;
         actual = null;
     }

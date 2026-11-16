@@ -49,11 +49,15 @@ public abstract class Enemigo extends Entidad {
                 tipoAnimacionRed,
                 tiempoAnimacionRed);
         } else {
+            boolean saltandoTemp = !enSuelo;
+            boolean saltando = saltandoTemp && velocidadY > 0;
+            boolean cayendo = saltandoTemp && velocidadY <= 0;
             ANIMACION.actualizar(
                 sprite,
                 delta,
                 x != xAnterior,
-                !enSuelo,
+                saltando,
+                cayendo,
                 atacando
             );
         }

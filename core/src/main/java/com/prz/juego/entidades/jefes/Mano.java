@@ -133,7 +133,7 @@ public class Mano extends Enemigo {
             textura.getWidth() / cantidadFrames,
             textura.getHeight(),
             indicesFrames,
-            null, null, null,
+            null, null, null, null,
             DURACION_FRAME
         );
     }
@@ -174,7 +174,7 @@ public class Mano extends Enemigo {
 
         // Solamente animación. Nada de IA, movimiento o daño local.
         actualizarTexturaSegunEstado(delta);
-        ANIMACION_FUEGO_GOLPE.actualizar(SPRITE_FUEGO_GOLPE, delta, false, false, false);
+        ANIMACION_FUEGO_GOLPE.actualizar(SPRITE_FUEGO_GOLPE, delta, false, false, false, false);
         actualizarSpriteVisual();
         actualizarBoundsFuegoGolpe();
     }
@@ -183,14 +183,14 @@ public class Mano extends Enemigo {
         // El efecto de golpe puede convertir momentáneamente la mano normal en puño.
         if (estiloAtaque == EstiloAtaque.PUNIO
             || (estiloAtaque == EstiloAtaque.NORMAL && mostrarFuegoGolpe)) {
-            ANIMACION_PUNIO.actualizar(sprite, delta, false, false, false);
+            ANIMACION_PUNIO.actualizar(sprite, delta, false, false, false, false);
             sprite.setFlip(LADO == Lado.DERECHA, false);
             ajustarTamanoSprite(ANCHO_SPRITE, ALTO_SPRITE);
             return;
         }
 
         if (estiloAtaque == EstiloAtaque.PALMA) {
-            ANIMACION.actualizar(sprite, delta, false, false, false);
+            ANIMACION.actualizar(sprite, delta, false, false, false, false);
             sprite.setFlip(LADO == Lado.DERECHA, false);
             ajustarTamanoSprite(ANCHO_SPRITE_EXTENDIDO, ALTO_SPRITE_EXTENDIDO);
             return;
@@ -200,19 +200,19 @@ public class Mano extends Enemigo {
             case LEVANTANDO:
             case MOVIENDO:
             case EN_POSICION:
-                ANIMACION_ABIERTA_ARRIBA.actualizar(sprite, delta, false, false, false);
+                ANIMACION_ABIERTA_ARRIBA.actualizar(sprite, delta, false, false, false, false);
                 sprite.setFlip(LADO == Lado.DERECHA, false);
                 ajustarTamanoSprite(ANCHO_SPRITE_EXTENDIDO, ALTO_SPRITE_EXTENDIDO);
                 break;
 
             case RECUPERANDO:
-                ANIMACION_PUNIO.actualizar(sprite, delta, false, false, false);
+                ANIMACION_PUNIO.actualizar(sprite, delta, false, false, false, false);
                 sprite.setFlip(LADO == Lado.DERECHA, false);
                 ajustarTamanoSprite(ANCHO_SPRITE, ALTO_SPRITE);
                 break;
 
             default:
-                ANIMACION.actualizar(sprite, delta, false, false, false);
+                ANIMACION.actualizar(sprite, delta, false, false, false, false);
                 sprite.setFlip(LADO == Lado.DERECHA, false);
                 ajustarTamanoSprite(ANCHO_SPRITE_EXTENDIDO, ALTO_SPRITE_EXTENDIDO);
                 break;

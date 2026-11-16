@@ -36,7 +36,8 @@ public class BichoMelee extends EnemigoMelee {
                 null,
                 null,
                 null,
+                null,
                 DURACION_FRAME_IDLE);
-        ANIMACION.actualizar(sprite, 0f, false, false, false);
+        ANIMACION.actualizar(sprite, 0f, false, false, false, false);
     }
 }
