@@ -3,7 +3,6 @@ package com.prz.juego.niveles;
 import com.prz.juego.entidades.jefes.Retumbar;
 import com.prz.juego.red.JefeRed;
 import com.prz.juego.recursos.GestorRecursos;
-import com.prz.juego.utilidades.Musica;
 
 public class Nivel7 extends Nivel {
 
@@ -16,10 +15,6 @@ public class Nivel7 extends Nivel {
     private static final float Y_INICIAL_JUGADOR = 250;
 
     private Retumbar jefe;
-
-    public Nivel7() {
-        musica = Musica.RETUMBAR;
-    }
 
     @Override
     protected String getRutaMapa() {

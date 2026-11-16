@@ -53,8 +53,6 @@ public abstract class Nivel {
     private boolean gameOver = false;
     private boolean tieneReliquia = false;
 
-    protected Musica musica = Musica.NIVEL;
-
     public static Nivel crear(String ruta) {
         switch (ruta) {
             case Nivel1.RUTA:
@@ -121,8 +119,6 @@ public abstract class Nivel {
         configurarEntornoEspecifico(mapTotalWidth, mapTotalHeight);
 
         mapRenderer = new OrthogonalTiledMapRenderer(mapa, 1f);
-
-        musica.sonar();
     }
 
     protected abstract String getRutaMapa();

@@ -92,6 +92,13 @@ public class PantallaJuego implements Screen {
 
             if (pausado) {
                 MENU_PAUSA.activar();
+                // Enviar entrada nula al servidor para detener el movimiento
+                cliente.enviarMensaje("INPUT;NOIZQUIERDA");
+                cliente.enviarMensaje("INPUT;NODERECHA");
+                cliente.enviarMensaje("INPUT;NOARRIBA");
+                cliente.enviarMensaje("INPUT;NOABAJO");
+                cliente.enviarMensaje("INPUT;NOATACA");
+                cliente.enviarMensaje("INPUT;NOE");
             } else {
                 MENU_PAUSA.desactivar();
             }
@@ -99,153 +106,160 @@ public class PantallaJuego implements Screen {
 
         if (!pausado) {
             actualizarEnvioEntrada(delta);
+        } else {
+            // Cuando está pausado, limpiar la entrada para que el jugador se detenga
+            ENTRADA.limpiar();
+        }
 
-            if (hub != null) {
-                hub.update(delta, ENTRADA);
+        // Actualizar entidades siempre, aunque esté pausado, para que reciban el estado del servidor
+        if (hub != null) {
+            hub.update(delta, ENTRADA);
 
-                if (ENTRADA.aprietaE()) {
+            if (!pausado && ENTRADA.aprietaE()) {
 
-                    if (estadoRedLocal.estaEsperandoSeleccion()) {
+                if (estadoRedLocal.estaEsperandoSeleccion()) {
 
-                        cliente.enviarMensaje("SELECCION_NIVEL;false");
+                    cliente.enviarMensaje("SELECCION_NIVEL;false");
 
-                    } else if (hub.puedeInteractuarPancrasio()) {
+                } else if (hub.puedeInteractuarPancrasio()) {
 
-                        hub.interactuarPancrasio();
+                    hub.interactuarPancrasio();
 
-                    } else if (estadoRedLocal.estaEnCentroHub()) {
+                } else if (estadoRedLocal.estaEnCentroHub()) {
 
-                        cliente.enviarMensaje("SELECCION_NIVEL;true");
-                    }
+                    cliente.enviarMensaje("SELECCION_NIVEL;true");
                 }
+            }
 
-                if (cliente.sePuedeSeleccionarNivel()) {
+            if (!pausado && cliente.sePuedeSeleccionarNivel()) {
 
-                    guardarPosicionCamara();
-                    ENTRADA.limpiar();
+                guardarPosicionCamara();
+                ENTRADA.limpiar();
 
-                    NAV.cambiarPantalla(new SeleccionNivel(NAV, cliente, this));
-                    return;
+                NAV.cambiarPantalla(new SeleccionNivel(NAV, cliente, this));
+                return;
+            }
+        } else {
+            NIVEL.update(delta, ENTRADA);
+        }
+
+        // Actualizaciones de estado de red que siguen ejecutándose aunque esté pausado
+        if (hub == null) {
+            for (EnemigoRed e : cliente.getEnemigosRecibidos()) {
+                NIVEL.agregarEnemigos(e);
+                cliente.registrarEstadoEnemigo(e);
+            }
+
+            for (EnemigoRed e : cliente.getEstadoEnemigos()) {
+                NIVEL.actualizarEstadoEnemigos(e);
+            }
+
+            for (Integer id : cliente.getEnemigosEliminados()) {
+                NIVEL.eliminarEnemigo(id);
+            }
+
+            for (ProyectilRed p : cliente.getProyectilesNuevos()) {
+                NIVEL.agregarProyectil(p);
+                cliente.registrarEstadoProyectil(p);
+            }
+
+            for (ProyectilRed p : cliente.getEstadoProyectiles()) {
+                NIVEL.actualizarEstadoProyectil(p);
+            }
+
+            for (Integer id : cliente.getProyectilesEliminados()) {
+                NIVEL.eliminarProyectil(id);
+            }
+
+            JefeRed jefeRecibido = cliente.getJefeRecibido();
+
+            if(jefeRecibido != null)
+            {
+                NIVEL.crearJefe(jefeRecibido);
+                HUD.setJefe(NIVEL.getJefe());
+            }
+
+            JefeRed estadoJefe = cliente.getEstadoJefe();
+
+            if(estadoJefe != null)
+            {
+                NIVEL.actualizarEstadoJefe(estadoJefe);
+            }
+
+            ManoRed izquierda = cliente.getEstadoMano(Mano.Lado.IZQUIERDA);
+            ManoRed derecha = cliente.getEstadoMano(Mano.Lado.DERECHA);
+
+            if (izquierda != null && izquierda.recibioEstado()) {
+                NIVEL.actualizarEstadoMano(izquierda);
+            }
+
+            if (derecha != null && derecha.recibioEstado()) {
+                NIVEL.actualizarEstadoMano(derecha);
+            }
+
+            FuegoSueloRed estadoFuegoSuelo = cliente.getEstadoFuegoSuelo();
+
+            if(estadoFuegoSuelo != null && estadoFuegoSuelo.tieneEstadoRecibido())
+            {
+                NIVEL.actualizarEstadoFuegoSuelo(estadoFuegoSuelo);
+            }
+
+            RayosRed rayos = cliente.getEstadoRayos();
+
+            if (rayos != null && rayos.tieneEstadoRecibido()) {
+                NIVEL.actualizarEstadoRayos(rayos);
+            }
+
+            LasersRed lasers = cliente.getEstadoLasers();
+
+            if (lasers != null && lasers.tieneEstadoRecibido()) {
+                NIVEL.actualizarEstadoLasers(lasers);
+            }
+
+            for (MeteoritoRed meteorito : cliente.getMeteoritosNuevos()) {
+                NIVEL.crearMeteorito(meteorito);
+            }
+
+            for (MeteoritoRed meteorito : cliente.getEstadoMeteoritos()) {
+                if (meteorito.tieneEstadoRecibido()) {
+                    NIVEL.actualizarEstadoMeteorito(meteorito);
                 }
-            } else {
-                NIVEL.update(delta, ENTRADA);
+            }
 
-                for (EnemigoRed e : cliente.getEnemigosRecibidos()) {
-                    NIVEL.agregarEnemigos(e);
-                    cliente.registrarEstadoEnemigo(e);
-                }
+            for (int id : cliente.getMeteoritosEliminados()) {
+                NIVEL.eliminarMeteorito(id);
+            }
 
-                for (EnemigoRed e : cliente.getEstadoEnemigos()) {
-                    NIVEL.actualizarEstadoEnemigos(e);
-                }
+            LaserJefeRed estadoLaserJefe = cliente.getEstadoLaserJefe();
 
-                for (Integer id : cliente.getEnemigosEliminados()) {
-                    NIVEL.eliminarEnemigo(id);
-                }
+            if (estadoLaserJefe.tieneEstadoRecibido()) {
+                NIVEL.actualizarEstadoLaserJefe(estadoLaserJefe);
+            }
 
-                for (ProyectilRed p : cliente.getProyectilesNuevos()) {
-                    NIVEL.agregarProyectil(p);
-                    cliente.registrarEstadoProyectil(p);
-                }
+            for (FueguitoRed fueguito : cliente.getFueguitosNuevos()) {
+                NIVEL.crearFueguito(fueguito);
+            }
 
-                for (ProyectilRed p : cliente.getEstadoProyectiles()) {
-                    NIVEL.actualizarEstadoProyectil(p);
-                }
+            for (FueguitoRed fueguito : cliente.getEstadoFueguitos()) {
+                NIVEL.actualizarEstadoFueguito(fueguito);
+            }
 
-                for (Integer id : cliente.getProyectilesEliminados()) {
-                    NIVEL.eliminarProyectil(id);
-                }
+            for (FueguitoRed fueguito : cliente.getFueguitosEliminados()) {
+                NIVEL.eliminarFueguito(
+                    fueguito.getId(),
+                    fueguito.getTipo()
+                );
+            }
 
-                JefeRed jefeRecibido = cliente.getJefeRecibido();
+            if(cliente.jefeMuerto())
+            {
+                NIVEL.eliminarJefe();
+                HUD.setJefe(null);
+            }
 
-                if(jefeRecibido != null)
-                {
-                    NIVEL.crearJefe(jefeRecibido);
-                    HUD.setJefe(NIVEL.getJefe());
-                }
-
-                JefeRed estadoJefe = cliente.getEstadoJefe();
-
-                if(estadoJefe != null)
-                {
-                    NIVEL.actualizarEstadoJefe(estadoJefe);
-                }
-
-                ManoRed izquierda = cliente.getEstadoMano(Mano.Lado.IZQUIERDA);
-                ManoRed derecha = cliente.getEstadoMano(Mano.Lado.DERECHA);
-
-                if (izquierda != null && izquierda.recibioEstado()) {
-                    NIVEL.actualizarEstadoMano(izquierda);
-                }
-
-                if (derecha != null && derecha.recibioEstado()) {
-                    NIVEL.actualizarEstadoMano(derecha);
-                }
-
-                FuegoSueloRed estadoFuegoSuelo = cliente.getEstadoFuegoSuelo();
-
-                if(estadoFuegoSuelo != null && estadoFuegoSuelo.tieneEstadoRecibido())
-                {
-                    NIVEL.actualizarEstadoFuegoSuelo(estadoFuegoSuelo);
-                }
-
-                RayosRed rayos = cliente.getEstadoRayos();
-
-                if (rayos != null && rayos.tieneEstadoRecibido()) {
-                    NIVEL.actualizarEstadoRayos(rayos);
-                }
-
-                LasersRed lasers = cliente.getEstadoLasers();
-
-                if (lasers != null && lasers.tieneEstadoRecibido()) {
-                    NIVEL.actualizarEstadoLasers(lasers);
-                }
-
-                for (MeteoritoRed meteorito : cliente.getMeteoritosNuevos()) {
-                    NIVEL.crearMeteorito(meteorito);
-                }
-
-                for (MeteoritoRed meteorito : cliente.getEstadoMeteoritos()) {
-                    if (meteorito.tieneEstadoRecibido()) {
-                        NIVEL.actualizarEstadoMeteorito(meteorito);
-                    }
-                }
-
-                for (int id : cliente.getMeteoritosEliminados()) {
-                    NIVEL.eliminarMeteorito(id);
-                }
-
-                LaserJefeRed estadoLaserJefe = cliente.getEstadoLaserJefe();
-
-                if (estadoLaserJefe.tieneEstadoRecibido()) {
-                    NIVEL.actualizarEstadoLaserJefe(estadoLaserJefe);
-                }
-
-                for (FueguitoRed fueguito : cliente.getFueguitosNuevos()) {
-                    NIVEL.crearFueguito(fueguito);
-                }
-
-                for (FueguitoRed fueguito : cliente.getEstadoFueguitos()) {
-                    NIVEL.actualizarEstadoFueguito(fueguito);
-                }
-
-                for (FueguitoRed fueguito : cliente.getFueguitosEliminados()) {
-                    NIVEL.eliminarFueguito(
-                        fueguito.getId(),
-                        fueguito.getTipo()
-                    );
-                }
-
-                if(cliente.jefeMuerto())
-                {
-                    NIVEL.eliminarJefe();
-                    HUD.setJefe(null);
-                }
-
-                if (NIVEL.enemigoReliquiaDerrotado()) {
-                    NAV.cambiarPantalla(new PantallaFinal(NAV));
-                    return;
-                }
+            if (NIVEL.enemigoReliquiaDerrotado()) {
+                NAV.cambiarPantalla(new PantallaFinal(NAV));
+                return;
             }
         }
 
