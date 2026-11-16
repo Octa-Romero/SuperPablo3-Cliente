@@ -30,6 +30,20 @@ public class Cliente {
         return hilo.isConexionEstablecida();
     }
 
+    public boolean busquedaFallida()
+    {
+        return hilo.busquedaFallida();
+    }
+
+    public boolean encontroServidor()
+    {
+        return hilo.encontroServidor();
+    }
+
+    public String getPersonajeOcupado() {
+        return hilo.getPersonajeOcupado();
+    }
+
     public boolean sePuedeSeleccionarNivel()
     {
         return hilo.sePuedeSeleccionarNivel();

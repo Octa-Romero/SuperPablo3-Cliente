@@ -18,11 +18,16 @@ public class HiloCliente extends Thread{
 
     private DatagramSocket socket;
     private boolean fin = false;
+    private volatile boolean servidorEncontrado = false;
     private volatile boolean conexionEstablecida = false;
+    private volatile boolean busquedaFallida = false;
+    private static final long INTERVALO_BUSQUEDA = 5000;
+    private long ultimoIntentoConexion;
     private volatile boolean seleccionarNivel = false;
     private volatile int votoLocalNivel = 0;
     private volatile int votoRemotoNivel = 0;
     private volatile int nivelParaIniciar;
+    private volatile String personajeOcupado;
     private volatile String personajeRemoto;
     private InetAddress ipServer;
     private int puerto = 9990;
@@ -50,30 +55,62 @@ public class HiloCliente extends Thread{
     private final ArrayList<FueguitoRed> fueguitosNuevos = new ArrayList<>();
     private final ArrayList<FueguitoRed> fueguitosEliminados = new ArrayList<>();
 
-    public HiloCliente()
-    {
+    public HiloCliente() {
         try {
             socket = new DatagramSocket();
+            socket.setBroadcast(true);
+            socket.setSoTimeout(500);
             ipServer = InetAddress.getByName("255.255.255.255");
-            enviarMensaje("Conectar");
-        } catch (SocketException | UnknownHostException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void run()
-    {
-        while(!fin)
-        {
-            byte[] data = new byte[1024];
-            DatagramPacket dp = new DatagramPacket(data, data.length);
+    public void run() {
+        while (!fin) {
+            actualizarBusquedaServidor();
+            byte[] datos = new byte[1024];
+            DatagramPacket dp = new DatagramPacket(datos, datos.length);
             try {
                 socket.receive(dp);
                 procesarMensaje(dp);
+
+            } catch (SocketTimeoutException e) {
+                actualizarBusquedaServidor();
+            } catch (SocketException e) {
+                if (!fin) {
+                    System.out.println(
+                        "Error en el socket del cliente: " + e.getMessage()
+                    );
+                }
+                break;
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                if (!fin) {
+                    System.out.println(
+                        "Error de recepción: " + e.getMessage()
+                    );
+                }
             }
+        }
+    }
+
+    private void actualizarBusquedaServidor() {
+        if (conexionEstablecida) {
+            return;
+        }
+
+        long ahora = System.currentTimeMillis();
+
+        if (ultimoIntentoConexion == 0 ||
+            ahora - ultimoIntentoConexion >= INTERVALO_BUSQUEDA) {
+
+            if (ultimoIntentoConexion != 0) {
+                busquedaFallida = true;
+            }
+
+            ultimoIntentoConexion = ahora;
+            enviarMensaje("Conectar");
         }
     }
 
@@ -82,12 +119,16 @@ public class HiloCliente extends Thread{
 
         if(msj.equals("Conexion recibida")) {
             ipServer = dp.getAddress();
+            servidorEncontrado = true;
+            busquedaFallida = false;
         } else if(msj.equals("Conexion establecida")) {
             conexionEstablecida = true;
         }else if(msj.equals("Empieza juego")) {
             Global.empieza = true;
         }else if(msj.equals("PABLO") || msj.equals("WALTER")) {
             personajeRemoto = msj;
+        } else if (msj.startsWith("PERSONAJE_OCUPADO;")) {
+            procesarPersonajeOcupado(msj);
         } else if (msj.startsWith("POS")) {
             procesarPosicion(msj);
         } else if (msj.startsWith("ATAQUE")) {
@@ -144,6 +185,15 @@ public class HiloCliente extends Thread{
             procesarEstadoFueguito(msj);
         } else if (msj.startsWith("ELIMINAR_FUEGUITO;")) {
             procesarEliminacionFueguito(msj);
+        }
+    }
+
+    private void procesarPersonajeOcupado(String msj)
+    {
+        String[] mensajeParametrizado = msj.split(";");
+
+        if (mensajeParametrizado.length == 2) {
+            personajeOcupado = mensajeParametrizado[1];
         }
     }
 
@@ -769,6 +819,19 @@ public class HiloCliente extends Thread{
 
     public boolean isConexionEstablecida() {
         return conexionEstablecida;
+    }
+
+    public boolean busquedaFallida() {
+        return busquedaFallida;
+    }
+
+    public boolean encontroServidor()
+    {
+        return servidorEncontrado;
+    }
+
+    public String getPersonajeOcupado() {
+        return personajeOcupado;
     }
 
     public synchronized boolean sePuedeSeleccionarNivel()

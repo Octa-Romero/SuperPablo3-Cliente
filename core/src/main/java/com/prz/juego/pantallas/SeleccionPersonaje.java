@@ -82,7 +82,7 @@ public class SeleccionPersonaje implements Screen {
 
         Label titulo = new Label("Selección de personaje", new Label.LabelStyle(font, Color.WHITE));
 
-        lblEstado = new Label("Elegí tu personaje", new Label.LabelStyle(font, Color.WHITE));
+        lblEstado = new Label("Buscando servidor...", new Label.LabelStyle(fontBoton, Color.WHITE));
 
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
         style.font = fontBoton;
@@ -152,7 +152,7 @@ public class SeleccionPersonaje implements Screen {
             });
 
         table.add(titulo).colspan(2).center().padBottom(40).row();
-
+        table.add(lblEstado).colspan(2).center().padBottom(25).row();
         table.add(btnPablo).width(250).height(60).padRight(255).padBottom(20);
         table.add(btnWalter).width(250).height(60).padLeft(255).padBottom(20).row();
 
@@ -184,7 +184,19 @@ public class SeleccionPersonaje implements Screen {
             return;
         }
 
-        if (cliente.isConexionEstablecida() && !conexionLista) {
+        if (!cliente.encontroServidor()) {
+
+            if (cliente.busquedaFallida()) {
+                lblEstado.setText("Servidor no encontrado. Reintentando...");
+            } else {
+                lblEstado.setText("Buscando servidor...");
+            }
+
+        } else if (!cliente.isConexionEstablecida()) {
+
+            lblEstado.setText("Servidor encontrado. Esperando otro jugador...");
+
+        } else if (!conexionLista) {
 
             btnPablo.setVisible(true);
             btnWalter.setVisible(true);
@@ -193,6 +205,21 @@ public class SeleccionPersonaje implements Screen {
             btnWalter.setDisabled(false);
 
             lblEstado.setText("Elegí tu personaje");
+        }
+
+        String ocupado = cliente.getPersonajeOcupado();
+
+        if (ocupado != null && !conexionLista) {
+
+            if (ocupado.equals("PABLO")) {
+                btnPablo.setDisabled(true);
+                btnWalter.setDisabled(false);
+            } else if (ocupado.equals("WALTER")) {
+                btnWalter.setDisabled(true);
+                btnPablo.setDisabled(false);
+            }
+
+            lblEstado.setText(ocupado + " ya fue elegido por el otro jugador");
         }
     }
 
