@@ -12,4 +12,14 @@ public class Nivel2 extends Nivel {
     protected String getRutaMapa() {
         return RUTA;
     }
+
+    @Override
+    protected float getPosicionInicialX() {
+        return 500;
+    }
+
+    @Override
+    protected float getPosicionInicialY() {
+        return 150;
+    }
 }

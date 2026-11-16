@@ -6,6 +6,8 @@ import com.prz.juego.entidades.jefes.Mano;
 import com.prz.juego.entidades.jugadores.Personajes;
 import com.prz.juego.red.*;
 import com.prz.juego.utilidades.Global;
+import com.prz.juego.utilidades.Musica;
+import com.prz.juego.utilidades.Sonido;
 
 import java.io.IOException;
 import java.net.*;
@@ -185,6 +187,12 @@ public class HiloCliente extends Thread{
             procesarEstadoFueguito(msj);
         } else if (msj.startsWith("ELIMINAR_FUEGUITO;")) {
             procesarEliminacionFueguito(msj);
+        } else if (msj.startsWith("SONIDO;")) {
+            procesarSonido(msj);
+        } else if (msj.startsWith("MUSICA;")) {
+            procesarMusica(msj);
+        } else if (msj.startsWith("INVENCIBILIDAD;")) {
+            procesarEstadoInvencibilidad(msj);
         }
     }
 
@@ -223,10 +231,19 @@ public class HiloCliente extends Thread{
         try {
             String personaje = mensajeParametrizado[1];
             boolean estadoAtaque = Boolean.parseBoolean(mensajeParametrizado[2]);
+            int tipoAnimacion = 0;
+            float tiempoAnimacion = 0f;
+
+            if (mensajeParametrizado.length > 3) {
+                tipoAnimacion = Integer.parseInt(mensajeParametrizado[3]);
+            }
+            if (mensajeParametrizado.length > 4) {
+                tiempoAnimacion = Float.parseFloat(mensajeParametrizado[4]);
+            }
 
             JugadorEstadoRed estado = obtenerEstadoJugador(personaje);
 
-            estado.actualizarAtaque(estadoAtaque);
+            estado.actualizarAtaque(estadoAtaque, tipoAnimacion, tiempoAnimacion);
         } catch (NumberFormatException e) {
             System.out.println("Estado del ataque recibido invalido");
         }
@@ -259,12 +276,24 @@ public class HiloCliente extends Thread{
             int direccion = Integer.parseInt(mensajeParametrizado[4]);
             boolean estaAtacando = Boolean.parseBoolean(mensajeParametrizado[5]);
             double vida = Double.parseDouble(mensajeParametrizado[6]);
+            boolean spriteVisible = true;
+            if (mensajeParametrizado.length > 7) {
+                spriteVisible = Boolean.parseBoolean(mensajeParametrizado[7]);
+            }
+            int tipoAnimacion = 0;
+            if (mensajeParametrizado.length > 8) {
+                tipoAnimacion = Integer.parseInt(mensajeParametrizado[8]);
+            }
+            float tiempoAnimacion = 0f;
+            if (mensajeParametrizado.length > 9) {
+                tiempoAnimacion = Float.parseFloat(mensajeParametrizado[9]);
+            }
 
             EnemigoRed encontrado = buscarEnemigo(id);
 
             if (encontrado != null)
             {
-                encontrado.actualizarEstado(x, y, direccion, estaAtacando, vida);
+                encontrado.actualizarEstado(x, y, direccion, estaAtacando, vida, spriteVisible, tipoAnimacion, tiempoAnimacion);
             }
 
         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
@@ -436,9 +465,13 @@ public class HiloCliente extends Thread{
             double vida = Double.parseDouble(mensajeParametrizado[3]);
             boolean visible = Boolean.parseBoolean(mensajeParametrizado[4]);
             float escala = Float.parseFloat(mensajeParametrizado[5]);
+            String faseEspecial = "NORMAL";
+            if (mensajeParametrizado.length > 6) {
+                faseEspecial = mensajeParametrizado[6];
+            }
 
             if (estadoJefe != null) {
-                estadoJefe.actualizarEstado(x, y, vida, visible, escala);
+                estadoJefe.actualizarEstado(x, y, vida, visible, escala, faseEspecial);
             }
 
         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
@@ -989,5 +1022,113 @@ public class HiloCliente extends Thread{
         fueguitos.clear();
         fueguitosNuevos.clear();
         fueguitosEliminados.clear();
+    }
+
+    private void procesarSonido(String msj) {
+        String[] partes = msj.split(";");
+        if (partes.length < 2) {
+            return;
+        }
+
+        String nombreSonido = partes[1];
+
+        // Verificar si es LOOP con posición (SONIDO;nombre;LOOP;x;y)
+        if (partes.length >= 5 && partes[2].equals("LOOP")) {
+            try {
+                float sonidoX = Float.parseFloat(partes[3]);
+                float sonidoY = Float.parseFloat(partes[4]);
+                float distX = Math.abs(estadoLocal.getX() - sonidoX);
+                float distY = Math.abs(estadoLocal.getY() - sonidoY);
+                if (distX <= 1200 && distY <= 1200) {
+                    Sonido.reproducirLoopPorNombre(nombreSonido);
+                } else {
+                    // El jugador se alejó, detener el loop para que se reinicie al volver a acercar
+                    Sonido.detenerLoopPorNombre(nombreSonido);
+                }
+            } catch (NumberFormatException e) {
+                Sonido.reproducirLoopPorNombre(nombreSonido);
+            }
+            return;
+        }
+
+        // LOOP sin posición (siempre reproducir)
+        if (partes.length >= 3 && partes[2].equals("LOOP")) {
+            Sonido.reproducirLoopPorNombre(nombreSonido);
+            return;
+        }
+
+        // Verificar si es DETENER_LOOP con posición (SONIDO;nombre;DETENER_LOOP;x;y)
+        if (partes.length >= 5 && partes[2].equals("DETENER_LOOP")) {
+            try {
+                float sonidoX = Float.parseFloat(partes[3]);
+                float sonidoY = Float.parseFloat(partes[4]);
+                float distX = Math.abs(estadoLocal.getX() - sonidoX);
+                float distY = Math.abs(estadoLocal.getY() - sonidoY);
+                if (distX <= 1200 && distY <= 1200) {
+                    Sonido.detenerLoopPorNombre(nombreSonido);
+                }
+            } catch (NumberFormatException e) {
+                Sonido.detenerLoopPorNombre(nombreSonido);
+            }
+            return;
+        }
+
+        // DETENER_LOOP sin posición (siempre detener)
+        if (partes.length >= 3 && partes[2].equals("DETENER_LOOP")) {
+            Sonido.detenerLoopPorNombre(nombreSonido);
+            return;
+        }
+
+        // Si el sonido tiene posición, filtrar por distancia
+        if (partes.length >= 4) {
+            try {
+                float sonidoX = Float.parseFloat(partes[2]);
+                float sonidoY = Float.parseFloat(partes[3]);
+                float distX = Math.abs(estadoLocal.getX() - sonidoX);
+                float distY = Math.abs(estadoLocal.getY() - sonidoY);
+                if (distX > 1200 || distY > 1200) {
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                // Si no se puede parsear, reproducir de todos modos
+            }
+        }
+
+        Sonido.reproducirPorNombre(nombreSonido);
+    }
+
+    private void procesarMusica(String msj) {
+        String[] partes = msj.split(";");
+        if (partes.length < 2) {
+            return;
+        }
+
+        String nombreMusica = partes[1];
+
+        if ("PARAR".equals(nombreMusica)) {
+            Musica.parar();
+            return;
+        }
+
+        Musica.reproducirPorNombre(nombreMusica);
+    }
+
+    private void procesarEstadoInvencibilidad(String msj) {
+        String[] mensajeParametrizado = msj.split(";");
+
+        try {
+            String personaje = mensajeParametrizado[1];
+            boolean invencible = Boolean.parseBoolean(mensajeParametrizado[2]);
+            boolean spriteVisible = true;
+            if (mensajeParametrizado.length > 3) {
+                spriteVisible = Boolean.parseBoolean(mensajeParametrizado[3]);
+            }
+
+            JugadorEstadoRed estado = obtenerEstadoJugador(personaje);
+
+            estado.actualizarInvencibilidad(invencible, spriteVisible);
+        } catch (NumberFormatException e) {
+            System.out.println("Estado de invencibilidad recibido invalido");
+        }
     }
 }

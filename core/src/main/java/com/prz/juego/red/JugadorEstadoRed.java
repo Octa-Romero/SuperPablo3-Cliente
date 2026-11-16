@@ -15,6 +15,12 @@ public class JugadorEstadoRed {
     private boolean estaTrepando;
     private volatile boolean enCentroHub;
     private volatile boolean esperandoSeleccion;
+    private boolean invencible;
+    private boolean spriteVisible;
+    private boolean invencibilidadRecibida = false;
+    private int tipoAnimacion;
+    private float tiempoAnimacion;
+    private boolean animacionRecibida = false;
 
 
     public void actualizarPosicion(float x, float y, int direccion, boolean estaEnSuelo, boolean estaTrepando) {
@@ -31,9 +37,18 @@ public class JugadorEstadoRed {
         this.vidaRecibida = true;
     }
 
-    public void actualizarAtaque(boolean atacando) {
+    public void actualizarAtaque(boolean atacando, int tipoAnimacion, float tiempoAnimacion) {
         this.atacando = atacando;
+        this.tipoAnimacion = tipoAnimacion;
+        this.tiempoAnimacion = tiempoAnimacion;
         this.estadoAtaqueRecibida = true;
+        this.animacionRecibida = true;
+    }
+
+    public void actualizarInvencibilidad(boolean invencible, boolean spriteVisible) {
+        this.invencible = invencible;
+        this.spriteVisible = spriteVisible;
+        this.invencibilidadRecibida = true;
     }
 
     public float getX() {
@@ -94,5 +109,29 @@ public class JugadorEstadoRed {
 
     public boolean estaEsperandoSeleccion() {
         return this.esperandoSeleccion;
+    }
+
+    public boolean esInvencible() {
+        return invencible;
+    }
+
+    public boolean esSpriteVisible() {
+        return spriteVisible;
+    }
+
+    public boolean recibioInvencibilidad() {
+        return invencibilidadRecibida;
+    }
+
+    public int getTipoAnimacion() {
+        return tipoAnimacion;
+    }
+
+    public float getTiempoAnimacion() {
+        return tiempoAnimacion;
+    }
+
+    public boolean recibioAnimacion() {
+        return animacionRecibida;
     }
 }

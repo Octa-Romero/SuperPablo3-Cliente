@@ -38,10 +38,6 @@ public class Walter extends Jugador {
 
     @Override
     public void actualizarEstadoAtaque(boolean estaAtacando) {
-        if (!this.atacando && estaAtacando) {
-            Sonido.BOLA_FUEGO.sonar();
-        }
-
         this.atacando = estaAtacando;
     }
 

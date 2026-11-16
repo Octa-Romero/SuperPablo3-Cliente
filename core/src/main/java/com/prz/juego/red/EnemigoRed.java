@@ -10,6 +10,10 @@ public class EnemigoRed {
     private double vida;
     private int direccion;
     private boolean estaAtacando;
+    private boolean spriteVisible = true;
+    private int tipoAnimacion;
+    private float tiempoAnimacion;
+    private boolean animacionRecibida = false;
 
     public EnemigoRed(int id, TipoEnemigo tipo, float x, float y, double vida)
     {
@@ -20,13 +24,16 @@ public class EnemigoRed {
         this.vida = vida;
     }
 
-    public void actualizarEstado(float x, float y, int direccion, boolean estaAtacando, double vida)
-    {
+    public void actualizarEstado(float x, float y, int direccion, boolean estaAtacando, double vida, boolean spriteVisible, int tipoAnimacion, float tiempoAnimacion) {
         this.x = x;
         this.y = y;
         this.direccion = direccion;
         this.estaAtacando = estaAtacando;
         this.vida = vida;
+        this.spriteVisible = spriteVisible;
+        this.tipoAnimacion = tipoAnimacion;
+        this.tiempoAnimacion = tiempoAnimacion;
+        this.animacionRecibida = true;
     }
 
     public int getId()
@@ -64,4 +71,19 @@ public class EnemigoRed {
         return this.vida;
     }
 
+    public boolean esSpriteVisible() {
+        return spriteVisible;
+    }
+
+    public int getTipoAnimacion() {
+        return tipoAnimacion;
+    }
+
+    public float getTiempoAnimacion() {
+        return tiempoAnimacion;
+    }
+
+    public boolean recibioAnimacion() {
+        return animacionRecibida;
+    }
 }

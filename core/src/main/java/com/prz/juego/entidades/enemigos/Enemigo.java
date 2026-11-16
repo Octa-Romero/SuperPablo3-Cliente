@@ -41,20 +41,31 @@ public abstract class Enemigo extends Entidad {
     public void update(float delta) {
         if (muerto) return;
 
-        actualizarInvencibilidad(delta);
+        // No actualizar invencibilidad local, viene de red
 
-        ANIMACION.actualizar(
-            sprite,
-            delta,
-            x != xAnterior,
-            !enSuelo,
-            atacando
-        );
+        if (recibioAnimacionDeRed) {
+            ANIMACION.actualizarConEstado(
+                sprite,
+                tipoAnimacionRed,
+                tiempoAnimacionRed);
+        } else {
+            ANIMACION.actualizar(
+                sprite,
+                delta,
+                x != xAnterior,
+                !enSuelo,
+                atacando
+            );
+        }
 
         actualizarSpriteVisual();
 
         guardarPosicionAnterior();
     }
+
+    private boolean recibioAnimacionDeRed = false;
+    private int tipoAnimacionRed;
+    private float tiempoAnimacionRed;
 
     public int getId()
     {
@@ -65,13 +76,16 @@ public abstract class Enemigo extends Entidad {
         orientarSprite(sprite, direccion);
     }
 
-    public void actualizarEstadoRed(float x, float y, int direccion, boolean estaAtacando, double vida)
-    {
+    public void actualizarEstadoRed(float x, float y, int direccion, boolean estaAtacando, double vida, boolean spriteVisible, int tipoAnimacion, float tiempoAnimacion) {
         this.x = x;
         this.y = y;
         this.direccion = direccion;
         this.atacando = estaAtacando;
         setVida(vida);
+        this.spriteVisible = spriteVisible;
+        this.tipoAnimacionRed = tipoAnimacion;
+        this.tiempoAnimacionRed = tiempoAnimacion;
+        this.recibioAnimacionDeRed = true;
 
         bounds.setPosition(x, y);
         actualizarOrientacionSprites();
