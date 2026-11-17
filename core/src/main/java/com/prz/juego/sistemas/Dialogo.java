@@ -1,4 +1,4 @@
-package com.prz.juego.utilidades;
+package com.prz.juego.sistemas;
 
 public class Dialogo {
 

@@ -1,132 +1,50 @@
 package com.prz.juego.entidades.enemigos;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.prz.juego.entidades.Entidad;
-import com.prz.juego.entidades.jugadores.Jugador;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.prz.juego.recursos.GestorRecursos;
 import com.prz.juego.utilidades.Render;
 
-public abstract class Enemigo extends Entidad {
+public class Enemigo {
 
-    protected int id;
-    protected float velocidad;
-    protected float distanciaDeteccion = 500;
-    protected float distanciaDeteccionVertical = 150;
-    protected float tiempoPatrulla = 0;
-    protected boolean caminandoPatrulla = false;
-    protected boolean atacando = false;
-    protected Jugador jugador;
-    protected boolean sueltaReliquia = false;
+    private final int ID;
+    private final TipoEnemigo TIPO;
 
-    protected Enemigo(
-            float x,
-            float y,
-            float ancho,
-            float alto,
-            int velocidadX,
-            double vida,
-            double danio,
-            Jugador jugador,
-            Texture textura) {
-        super(x, y, ancho, alto, velocidadX, vida, danio, textura);
-        this.id = id;
-        this.jugador = jugador;
-        velocidad = velocidadX;
-        duracionInvencibilidad = 1f;
-        orientarSprite(sprite, direccion);
+    private float x;
+    private float y;
+    private int direccion = 1;
+    private boolean spriteVisible = true;
+    private Sprite sprite;
+
+    public Enemigo(int id, TipoEnemigo tipo, float x, float y) {
+        ID = id;
+        TIPO = tipo;
+        this.x = x;
+        this.y = y;
     }
 
-    @Override
-    public void update(float delta) {
-        if (muerto) return;
-
-        // No actualizar invencibilidad local, viene de red
-
-        if (recibioAnimacionDeRed) {
-            ANIMACION.actualizarConEstado(
-                sprite,
-                tipoAnimacionRed,
-                tiempoAnimacionRed);
-        } else {
-            boolean saltandoTemp = !enSuelo;
-            boolean saltando = saltandoTemp && velocidadY > 0;
-            boolean cayendo = saltandoTemp && velocidadY <= 0;
-            ANIMACION.actualizar(
-                sprite,
-                delta,
-                x != xAnterior,
-                saltando,
-                cayendo,
-                atacando
-            );
-        }
-
-        actualizarSpriteVisual();
-
-        guardarPosicionAnterior();
-    }
-
-    private boolean recibioAnimacionDeRed = false;
-    private int tipoAnimacionRed;
-    private float tiempoAnimacionRed;
-
-    public int getId()
-    {
-        return this.id;
-    }
-
-    protected void actualizarOrientacionSprites() {
-        orientarSprite(sprite, direccion);
-    }
-
-    public void actualizarEstadoRed(float x, float y, int direccion, boolean estaAtacando, double vida, boolean spriteVisible, int tipoAnimacion, float tiempoAnimacion) {
+    public void actualizarEstado(float x, float y, int direccion, boolean spriteVisible) {
         this.x = x;
         this.y = y;
         this.direccion = direccion;
-        this.atacando = estaAtacando;
-        setVida(vida);
         this.spriteVisible = spriteVisible;
-        this.tipoAnimacionRed = tipoAnimacion;
-        this.tiempoAnimacionRed = tiempoAnimacion;
-        this.recibioAnimacionDeRed = true;
-
-        bounds.setPosition(x, y);
-        actualizarOrientacionSprites();
     }
 
-    @Override
     public void dibujar() {
-        if (spriteVisible) {
-            sprite.draw(Render.batch);
+        if (!spriteVisible) {
+            return;
         }
+
+        if (sprite == null) {
+            sprite = new Sprite(GestorRecursos.obtenerTextura(TIPO.getRutaTextura()));
+            sprite.setSize(TIPO.getAncho(), TIPO.getAlto());
+        }
+
+        sprite.setFlip(direccion < 0, false);
+        sprite.setPosition(x, y);
+        sprite.draw(Render.batch);
     }
 
-    @Override
-    public void dibujarHitbox(ShapeRenderer shapeRenderer) {
-        shapeRenderer.setColor(Color.YELLOW);
-        shapeRenderer.rect(bounds.x, bounds.y, bounds.width, bounds.height);
+    public int getId() {
+        return ID;
     }
-
-    public float getDireccion() {
-        return direccion;
-    }
-
-    public void setId(int id)
-    {
-        this.id = id;
-    }
-
-    public void setSueltaReliquia(boolean valor) {
-        this.sueltaReliquia = valor;
-    }
-
-    public boolean sueltaReliquia() {
-        return sueltaReliquia;
-    }
-
-	@Override
-	public void dispose() {
-		super.dispose();
-	}
 }

@@ -9,32 +9,34 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.*;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.prz.juego.principal.Navegable;
 import com.prz.juego.red.Cliente;
 import com.prz.juego.utilidades.Config;
 import com.prz.juego.utilidades.FuenteJuego;
-import com.prz.juego.utilidades.Render;
 import com.prz.juego.utilidades.Sonido;
 
 public class MenuPausa {
 
+    private static final float ALPHA_FONDO = 0.45f;
+    private static final float ALPHA_PANEL = 0.65f;
+    private static final float ANCHO_BOTON = 250;
+    private static final float ALTO_BOTON = 50;
+    private static final float SEPARACION_BOTONES = 20;
+    private static final String TEXTO_VOLVER_HUB = "Volver al hub";
+
     private final Stage STAGE;
     private final Navegable NAV;
-    private boolean activo = false;
     private final PantallaJuego PANTALLA_JUEGO;
     private final Cliente CLIENTE;
-    private TextButton botonVolverHub;
-    private boolean yoVoyAlHub = false;
-    private boolean ambosVienen = false;
     private final BitmapFont FONT_TITULO;
     private final BitmapFont FONT_BOTONES;
-    private Texture texturaFondoOscuro;
-    private Texture texturaPanelOscuro;
-    private Image fondoOscuro;
-    private Image panelOscuro;
+    private final Texture texturaBlanca;
+    private TextButton botonVolverHub;
+    private boolean activo = false;
+    private boolean yoVoyAlHub = false;
 
     public MenuPausa(Navegable NAV, PantallaJuego anteriorPantalla, Cliente cliente) {
         this.NAV = NAV;
@@ -42,28 +44,40 @@ public class MenuPausa {
         this.CLIENTE = cliente;
 
         STAGE = new Stage(new FitViewport(Config.ANCHO_BASE, Config.ALTO_BASE));
-
         STAGE.setKeyboardFocus(null);
         STAGE.setScrollFocus(null);
 
-        FONT_TITULO = crearFuente(42);
-        FONT_BOTONES = crearFuente(28);
+        FONT_TITULO = FuenteJuego.generar(42);
+        FONT_BOTONES = FuenteJuego.generar(28);
 
-        mostrar();
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(Color.WHITE);
+        pixmap.fill();
+        texturaBlanca = new Texture(pixmap);
+        pixmap.dispose();
 
-        // El menu empieza desactivado
+        crearInterfaz();
         desactivar();
     }
 
-    private void mostrar() {
-        crearFondos();
+    private void crearInterfaz() {
+        TextureRegionDrawable base = new TextureRegionDrawable(new TextureRegion(texturaBlanca));
+        Drawable fondoOscuro = base.tint(new Color(0, 0, 0, ALPHA_FONDO));
+        Drawable panelOscuro = base.tint(new Color(0, 0, 0, ALPHA_PANEL));
 
-        Table contenedor = new Table();
+        Table raiz = new Table();
+        raiz.setFillParent(true);
+        raiz.setBackground(fondoOscuro);
+        raiz.setTouchable(Touchable.enabled);
+        raiz.addListener(new ClickListener());
+
+        Table panel = new Table();
+        panel.setBackground(panelOscuro);
+        panel.pad(40, 50, 40, 50);
 
         Label titulo = new Label("Pausa", new Label.LabelStyle(FONT_TITULO, Color.GOLD));
 
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-
         style.font = FONT_BOTONES;
         style.fontColor = Color.WHITE;
         style.overFontColor = Color.YELLOW;
@@ -71,103 +85,61 @@ public class MenuPausa {
 
         TextButton reanudar = new TextButton("Reanudar", style);
         TextButton opciones = new TextButton("Opciones", style);
-        botonVolverHub = new TextButton("Volver al hub", style);
+        botonVolverHub = new TextButton(TEXTO_VOLVER_HUB, style);
         TextButton menu = new TextButton("Salir al menú", style);
 
-        reanudar.addListener(
-                new ClickListener() {
-                    @Override
-                    public void clicked(InputEvent event, float x, float y) {
-                        Sonido.CLICK.sonar();
-                        PANTALLA_JUEGO.setPausa(false);
-                        desactivar();
-                        // Al sacar la pausa, cancelar el volver al hub
-                        cancelarVolverHub();
-                    }
-                });
+        reanudar.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Sonido.CLICK.sonar();
+                PANTALLA_JUEGO.setPausa(false);
+                desactivar();
+                cancelarVolverHub();
+            }
+        });
 
-        opciones.addListener(
-                new ClickListener() {
-                    @Override
-                    public void clicked(InputEvent event, float x, float y) {
-                        Sonido.CLICK.sonar();
-                        PANTALLA_JUEGO.guardarPosicionCamara();
-                        NAV.cambiarPantalla(new PantallaOpciones(NAV, PANTALLA_JUEGO, true));
-                    }
-                });
+        opciones.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Sonido.CLICK.sonar();
+                PANTALLA_JUEGO.guardarPosicionCamara();
+                NAV.cambiarPantalla(new PantallaOpciones(NAV, PANTALLA_JUEGO, true));
+            }
+        });
 
-        botonVolverHub.addListener(
-                new ClickListener() {
-                    @Override
-                    public void clicked(InputEvent event, float x, float y) {
-                        Sonido.CLICK.sonar();
-                        if (!yoVoyAlHub) {
-                            // Detener el sonido del laser giratorio antes de volver al hub
-                            Sonido.detenerLoopPorNombre("FUEGO_SOSTENIDO");
-                            // Confirmar volver al hub
-                            yoVoyAlHub = true;
-                            CLIENTE.enviarMensaje("VOLVER_HUB");
-                            botonVolverHub.setText("Volver al hub (1/2)");
-                        } else {
-                            // Cancelar (toggle)
-                            cancelarVolverHub();
-                        }
-                    }
-                });
+        botonVolverHub.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Sonido.CLICK.sonar();
+                if (!yoVoyAlHub) {
+                    Sonido.detenerLoopPorNombre("FUEGO_SOSTENIDO");
+                    yoVoyAlHub = true;
+                    CLIENTE.enviarMensaje("VOLVER_HUB");
+                    botonVolverHub.setText(TEXTO_VOLVER_HUB + " (1/2)");
+                } else {
+                    cancelarVolverHub();
+                }
+            }
+        });
 
-        menu.addListener(
-                new ClickListener() {
-                    @Override
-                    public void clicked(InputEvent event, float x, float y) {
-                        Sonido.CLICK.sonar();
-                        NAV.volverAMenu();
-                    }
-                });
+        menu.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Sonido.CLICK.sonar();
+                NAV.volverAMenu();
+            }
+        });
 
-        contenedor.add(titulo).padBottom(40).row();
-        contenedor.add(reanudar).width(250).height(50).padBottom(20).row();
-        contenedor.add(opciones).width(250).height(50).padBottom(20).row();
+        panel.add(titulo).padBottom(35).row();
+        panel.add(reanudar).width(ANCHO_BOTON).height(ALTO_BOTON).padBottom(SEPARACION_BOTONES).row();
+        panel.add(opciones).width(ANCHO_BOTON).height(ALTO_BOTON).padBottom(SEPARACION_BOTONES).row();
         if (!PANTALLA_JUEGO.estaEnHub()) {
-            contenedor.add(botonVolverHub).width(250).height(50).padBottom(20).row();
+            panel.add(botonVolverHub).width(ANCHO_BOTON).height(ALTO_BOTON).padBottom(SEPARACION_BOTONES).row();
         }
-        contenedor.add(menu).width(250).height(50).padBottom(20).row();
-        contenedor.pack();
+        panel.add(menu).width(ANCHO_BOTON).height(ALTO_BOTON);
 
-        float anchoPanel = contenedor.getWidth() + 100;
-        float altoPanel = contenedor.getHeight() + 80;
-
-        panelOscuro.setSize(anchoPanel, altoPanel);
-
-        panelOscuro.setPosition(
-                (Config.ANCHO_BASE - anchoPanel) / 2f, (Config.ALTO_BASE - altoPanel) / 2f);
-
-        contenedor.setPosition(Config.ANCHO_BASE / 2f, Config.ALTO_BASE / 2f, Align.center);
-
-        STAGE.addActor(fondoOscuro);
-        STAGE.addActor(panelOscuro);
-        STAGE.addActor(contenedor);
-    }
-
-    private BitmapFont crearFuente(int tamano) {
-        return FuenteJuego.generar(tamano);
-    }
-
-    private void crearFondos() {
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(new Color(0, 0, 0, 0.45f));
-        pixmap.fill();
-
-        texturaFondoOscuro = new Texture(pixmap);
-        fondoOscuro = new Image(new TextureRegionDrawable(new TextureRegion(texturaFondoOscuro)));
-        fondoOscuro.setFillParent(true);
-
-        pixmap.setColor(new Color(0, 0, 0, 0.65f));
-        pixmap.fill();
-
-        texturaPanelOscuro = new Texture(pixmap);
-        panelOscuro = new Image(new TextureRegionDrawable(new TextureRegion(texturaPanelOscuro)));
-
-        pixmap.dispose();
+        raiz.add(panel);
+        STAGE.addActor(raiz);
     }
 
     public void activar() {
@@ -183,38 +155,28 @@ public class MenuPausa {
     }
 
     public void cancelarVolverHub() {
-        yoVoyAlHub = false;
-        ambosVienen = false;
-        CLIENTE.enviarMensaje("CANCELAR_HUB");
-        if (botonVolverHub != null) {
-            botonVolverHub.setText("Volver al hub");
+        if (!yoVoyAlHub) {
+            return;
         }
+        yoVoyAlHub = false;
+        CLIENTE.enviarMensaje("CANCELAR_HUB");
         CLIENTE.resetearVolverHub();
+        botonVolverHub.setText(TEXTO_VOLVER_HUB);
     }
 
     public void actualizarBotonHub() {
         if (CLIENTE.ambosJugadoresVuelvenHub()) {
-            // No volver al hub si ya estamos en el hub (evita mensajes residuales del servidor)
             if (!PANTALLA_JUEGO.estaEnHub()) {
-                ambosVienen = true;
-                if (botonVolverHub != null) {
-                    botonVolverHub.setText("Volver al hub (2/2)");
-                }
+                botonVolverHub.setText(TEXTO_VOLVER_HUB + " (2/2)");
                 Sonido.CLICK.sonar();
                 NAV.volverAHub();
             }
             CLIENTE.resetearVolverHub();
         } else if (CLIENTE.otroJugadorCanceloHub()) {
-            // El otro jugador cancelo, resetear
-            if (botonVolverHub != null) {
-                botonVolverHub.setText("Volver al hub");
-            }
+            botonVolverHub.setText(TEXTO_VOLVER_HUB);
             CLIENTE.resetearVolverHub();
         } else if (CLIENTE.otroJugadorVaAlHub() && !yoVoyAlHub) {
-            // El otro jugador quiere volver, mostrar (1/2) a ambos
-            if (botonVolverHub != null) {
-                botonVolverHub.setText("Volver al hub (1/2)");
-            }
+            botonVolverHub.setText(TEXTO_VOLVER_HUB + " (1/2)");
         }
     }
 
@@ -228,7 +190,6 @@ public class MenuPausa {
     public void render() {
         if (activo) {
             STAGE.getViewport().update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
-            Render.batch.setProjectionMatrix(STAGE.getCamera().combined);
             STAGE.draw();
         }
     }
@@ -239,17 +200,9 @@ public class MenuPausa {
 
     public void dispose() {
         STAGE.dispose();
-
         FONT_TITULO.dispose();
         FONT_BOTONES.dispose();
-
-        if (texturaFondoOscuro != null) {
-            texturaFondoOscuro.dispose();
-        }
-
-        if (texturaPanelOscuro != null) {
-            texturaPanelOscuro.dispose();
-        }
+        texturaBlanca.dispose();
     }
 
     public Stage getStage() {

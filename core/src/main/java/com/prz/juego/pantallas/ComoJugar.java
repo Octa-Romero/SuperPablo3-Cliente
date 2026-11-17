@@ -3,24 +3,43 @@ package com.prz.juego.pantallas;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.prz.juego.principal.Navegable;
 import com.prz.juego.recursos.Imagen;
 import com.prz.juego.utilidades.Config;
 import com.prz.juego.utilidades.FuenteJuego;
 import com.prz.juego.utilidades.Render;
+import com.prz.juego.utilidades.Sonido;
 
 public class ComoJugar implements Screen {
 
-    private Imagen fondo;
+    private static final String[][] CONTROLES = {
+        {"Movimiento", "A/D o Flecha Izquierda/Flecha Derecha"},
+        {"Salto", "W, Z o Flecha Arriba"},
+        {"Ataque", "X, J o Espacio"},
+        {"Pausa", "Esc"}
+    };
+
+    private static final float ALPHA_PANEL = 0.6f;
+
     private final Navegable NAV;
     private Stage stage;
-    private BitmapFont font;
+    private Imagen fondo;
+    private BitmapFont fontTitulo;
+    private BitmapFont fontAccion;
+    private BitmapFont fontTeclas;
+    private BitmapFont fontBoton;
+    private Texture texturaBlanca;
 
     public ComoJugar(Navegable NAV) {
         this.NAV = NAV;
@@ -28,102 +47,79 @@ public class ComoJugar implements Screen {
 
     @Override
     public void show() {
-        inicializarStage();
-        inicializarFondo();
+        stage = new Stage(new FitViewport(Config.ANCHO_BASE, Config.ALTO_BASE));
         inicializarFuentes();
+        inicializarFondo();
         crearInterfaz();
-
         Gdx.input.setInputProcessor(stage);
+    }
+
+    private void inicializarFuentes() {
+        fontTitulo = FuenteJuego.generar(52);
+        fontAccion = FuenteJuego.generar(34);
+        fontTeclas = FuenteJuego.generar(28);
+        fontBoton = FuenteJuego.generar(32);
     }
 
     private void inicializarFondo() {
         fondo = new Imagen("Menu/fondoComoJugar.png");
-        actualizarFondo();
-    }
-
-    private void actualizarFondo() {
-        float w = stage.getViewport().getWorldWidth();
-        float h = stage.getViewport().getWorldHeight();
-
-        fondo.setSize(w, h);
+        fondo.setSize(stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
         fondo.setPosition(0, 0);
     }
 
-    private void inicializarStage() {
-        stage = new Stage(new FitViewport(Config.ANCHO_BASE, Config.ALTO_BASE));
+    private Drawable crearFondoPanel() {
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(Color.WHITE);
+        pixmap.fill();
+        texturaBlanca = new Texture(pixmap);
+        pixmap.dispose();
+
+        return new TextureRegionDrawable(new TextureRegion(texturaBlanca))
+            .tint(new Color(0, 0, 0, ALPHA_PANEL));
     }
 
-    private void inicializarFuentes() {
-        font = FuenteJuego.generar(32);
-    }
-
-    private void crearInterfaz() {
-
-        Table table = new Table();
-        table.setFillParent(true);
-        table.center();
-
-        table.defaults().pad(6);
-
-        Label titulo = new Label("Cómo jugar", new Label.LabelStyle(font, Color.WHITE));
-        titulo.setFontScale(1.6f);
-
-        Label movTitulo = new Label("Movimiento", new Label.LabelStyle(font, Color.WHITE));
-        movTitulo.setFontScale(1.2f);
-
-        Label mov =
-                new Label(
-                        "A/D o Flecha Izquierda/Flecha Derecha",
-                        new Label.LabelStyle(font, Color.WHITE));
-
-        Label saltoTitulo = new Label("Salto", new Label.LabelStyle(font, Color.WHITE));
-        saltoTitulo.setFontScale(1.2f);
-
-        Label salto = new Label("W, Z o Flecha Arriba", new Label.LabelStyle(font, Color.WHITE));
-
-        Label ataqueTitulo = new Label("Ataque", new Label.LabelStyle(font, Color.WHITE));
-        ataqueTitulo.setFontScale(1.2f);
-
-        Label ataque = new Label("X, J o Espacio", new Label.LabelStyle(font, Color.WHITE));
-
-        Label pausaTitulo = new Label("Pausa", new Label.LabelStyle(font, Color.WHITE));
-        pausaTitulo.setFontScale(1.2f);
-
-        Label pausa = new Label("Esc", new Label.LabelStyle(font, Color.WHITE));
-
+    private TextButton crearBotonVolver() {
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = font;
+        style.font = fontBoton;
         style.fontColor = Color.WHITE;
         style.overFontColor = Color.GOLD;
         style.downFontColor = Color.RED;
 
         TextButton volver = new TextButton("VOLVER", style);
+        volver.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Sonido.CLICK.sonar();
+                NAV.volverAMenu();
+            }
+        });
+        return volver;
+    }
 
-        volver.addListener(
-                new ClickListener() {
-                    @Override
-                    public void clicked(InputEvent event, float x, float y) {
-                        NAV.volverAMenu();
-                    }
-                });
+    private void crearInterfaz() {
+        Table raiz = new Table();
+        raiz.setFillParent(true);
+        raiz.center();
 
-        table.add(titulo).padBottom(10).row();
+        Table panel = new Table();
+        panel.setBackground(crearFondoPanel());
+        panel.pad(30, 60, 30, 60);
 
-        table.add(movTitulo).padTop(10).row();
-        table.add(mov).padBottom(10).row();
+        Label titulo = new Label("Cómo jugar", new Label.LabelStyle(fontTitulo, Color.WHITE));
+        panel.add(titulo).colspan(2).padBottom(30).row();
 
-        table.add(saltoTitulo).row();
-        table.add(salto).padBottom(10).row();
+        Label.LabelStyle estiloAccion = new Label.LabelStyle(fontAccion, Color.GOLD);
+        Label.LabelStyle estiloTeclas = new Label.LabelStyle(fontTeclas, Color.WHITE);
 
-        table.add(ataqueTitulo).row();
-        table.add(ataque).padBottom(10).row();
+        for (String[] control : CONTROLES) {
+            panel.add(new Label(control[0], estiloAccion)).right().padRight(40).padBottom(18);
+            panel.add(new Label(control[1], estiloTeclas)).left().padBottom(18).row();
+        }
 
-        table.add(pausaTitulo).row();
-        table.add(pausa).padBottom(20).row();
+        panel.add(crearBotonVolver()).colspan(2).width(250).height(50).padTop(20);
 
-        table.add(volver).width(250).height(50);
-
-        stage.addActor(table);
+        raiz.add(panel);
+        stage.addActor(raiz);
     }
 
     @Override
@@ -131,9 +127,7 @@ public class ComoJugar implements Screen {
         Render.limpiarPantalla();
 
         Render.begin(stage.getCamera());
-
         fondo.dibujar(Render.batch);
-
         Render.end();
 
         stage.act(delta);
@@ -161,9 +155,17 @@ public class ComoJugar implements Screen {
         if (stage != null) {
             stage.dispose();
         }
-
-        if (font != null) {
-            font.dispose();
+        if (fondo != null) {
+            fondo.dispose();
+        }
+        if (fontTitulo != null) {
+            fontTitulo.dispose();
+            fontAccion.dispose();
+            fontTeclas.dispose();
+            fontBoton.dispose();
+        }
+        if (texturaBlanca != null) {
+            texturaBlanca.dispose();
         }
     }
 }

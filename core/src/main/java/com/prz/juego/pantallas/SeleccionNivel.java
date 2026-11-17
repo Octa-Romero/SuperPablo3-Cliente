@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
@@ -16,7 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.prz.juego.entidades.jugadores.Personajes;
+import com.prz.juego.niveles.Nivel;
 import com.prz.juego.principal.Navegable;
 import com.prz.juego.recursos.GestorRecursos;
 import com.prz.juego.recursos.Imagen;
@@ -28,23 +29,30 @@ import com.prz.juego.utilidades.Sonido;
 
 public class SeleccionNivel implements Screen {
 
-    private Cliente cliente;
+    private static final int CANTIDAD_NIVELES = 7;
+    private static final int PORTALES_GRILLA = CANTIDAD_NIVELES - 1;
+    private static final int COLUMNAS = 3;
+    private static final int COLUMNAS_TOTALES = COLUMNAS + 2;
+
+    private static final float TAMANO_PORTAL = 170;
+    private static final float TAMANO_PORTAL_EXTRA = 100;
+    private static final float PADDING_PORTAL = 5;
+    private static final float ANCHO_LATERAL = TAMANO_PORTAL_EXTRA + PADDING_PORTAL * 2;
+
+    private static final float RETRASO_INICIAL = 0.15f;
+    private static final float PASO_ENTRE_PORTALES = 0.07f;
+    private static final float DURACION_FADE = 0.25f;
+
+    private final Cliente cliente;
     private final Navegable NAV;
     private final PantallaJuego PANTALLA_HUB;
 
     private Stage stage;
-    private BitmapFont font;
+    private BitmapFont fontTitulo;
+    private BitmapFont fontCancelar;
     private Imagen fondo;
 
-    private ImageButton[] portales = new ImageButton[7];
-    private Texture texturaPortal1;
-    private Texture texturaPortal2;
-    private Texture texturaPortal3;
-    private Texture texturaPortal4;
-    private Texture texturaPortal5;
-    private Texture texturaPortal6;
-    private Texture texturaPortal7;
-
+    private final ImageButton[] portales = new ImageButton[CANTIDAD_NIVELES];
 
     public SeleccionNivel(Navegable NAV, Cliente cliente, PantallaJuego PANTALLA_HUB) {
         this.NAV = NAV;
@@ -54,214 +62,156 @@ public class SeleccionNivel implements Screen {
 
     @Override
     public void show() {
-
         stage = new Stage(new FitViewport(Config.ANCHO_BASE, Config.ALTO_BASE));
-
         Gdx.input.setInputProcessor(stage);
 
         inicializarFuentes();
         inicializarFondo();
-        inicializarPortales();
         crearInterfaz();
     }
 
     private void inicializarFuentes() {
-        font = FuenteJuego.generar(48);
+        fontTitulo = FuenteJuego.generar(48);
+        fontCancelar = FuenteJuego.generar(31);
     }
 
     private void inicializarFondo() {
-
         fondo = new Imagen("Menu/seleccionNivel.png");
-
-        float ancho = stage.getViewport().getWorldWidth();
-        float alto = stage.getViewport().getWorldHeight();
-
-        fondo.setSize(ancho, alto);
+        fondo.setSize(stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
         fondo.setPosition(0, 0);
     }
 
-    private void inicializarPortales() {
-        texturaPortal1 = GestorRecursos.obtenerTextura("Menu/Portales/portal1.png");
-        texturaPortal2 = GestorRecursos.obtenerTextura("Menu/Portales/portal2.png");
-        texturaPortal3 = GestorRecursos.obtenerTextura("Menu/Portales/portal3.png");
-        texturaPortal4 = GestorRecursos.obtenerTextura("Menu/Portales/portal4.png");
-        texturaPortal5 = GestorRecursos.obtenerTextura("Menu/Portales/portal5.png");
-        texturaPortal6 = GestorRecursos.obtenerTextura("Menu/Portales/portal6.png");
-        texturaPortal7 = GestorRecursos.obtenerTextura("Menu/Portales/portal7.png");
-    }
-
-    private ImageButton crearPortal(Texture textura, final int NUMERO_NIVEL) {
+    private ImageButton crearPortal(final int numeroNivel) {
+        Texture textura = GestorRecursos.obtenerTextura("Menu/Portales/portal" + numeroNivel + ".png");
 
         ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
-
         style.imageUp = new TextureRegionDrawable(new TextureRegion(textura));
 
         ImageButton portal = new ImageButton(style);
+        portal.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Sonido.CLICK.sonar();
+                cliente.enviarMensaje("VOTAR_NIVEL;" + numeroNivel);
+            }
+        });
 
-        portal.addListener(
-                new ClickListener() {
-                    @Override
-                    public void clicked(InputEvent event, float x, float y) {
-                        Sonido.CLICK.sonar();
-
-                        cliente.enviarMensaje("VOTAR_NIVEL;" + NUMERO_NIVEL);
-                    }
-                });
+        animarAparicion(
+            portal,
+            RETRASO_INICIAL + (numeroNivel - 1) * PASO_ENTRE_PORTALES,
+            DURACION_FADE);
 
         return portal;
     }
 
-    private void iniciarNivel(int numeroNivel) {
-
-        String rutaNivel;
-
-        switch (numeroNivel) {
-            case 1:
-                rutaNivel = "Niveles/Niveles/Level1.tmx";
-                break;
-            case 2:
-                rutaNivel = "Niveles/Niveles/Nivel2.1.tmx";
-                break;
-            case 3:
-                rutaNivel = "Niveles/Niveles/Nivel3.tmx";
-                break;
-            case 4:
-                rutaNivel = "Niveles/Niveles/nivel4.tmx";
-                break;
-            case 5:
-                rutaNivel = "Niveles/Niveles/Nivel5.tmx";
-                break;
-            case 6:
-                rutaNivel = "Niveles/Niveles/Nivel6.tmx";
-                break;
-            case 7:
-                rutaNivel = "Niveles/Niveles/Nivel7.tmx";
-                break;
-            default:
-                return;
-        }
-
-        NAV.iniciarJuego(rutaNivel);
+    private void animarAparicion(Actor actor, float retraso, float duracion) {
+        actor.getColor().a = 0f;
+        actor.addAction(Actions.sequence(Actions.delay(retraso), Actions.fadeIn(duracion)));
     }
 
-    private void animarPortal(ImageButton portal, float retraso) {
+    private TextButton crearBotonCancelar() {
+        TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
+        style.font = fontCancelar;
+        style.fontColor = Color.WHITE;
+        style.overFontColor = Color.GOLD;
+        style.downFontColor = Color.RED;
 
-        portal.getColor().a = 0f;
+        TextButton boton = new TextButton("Cancelar", style);
+        boton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Sonido.CLICK.sonar();
+                cliente.enviarMensaje("CANCELAR_SELECCION_NIVEL");
+            }
+        });
 
-        portal.addAction(Actions.sequence(Actions.delay(retraso), Actions.fadeIn(0.6f)));
+        return boton;
     }
 
     private void crearInterfaz() {
-
         Table principal = new Table();
         principal.setFillParent(true);
 
-        Label titulo = new Label("Selección de nivel", new Label.LabelStyle(font, Color.WHITE));
+        Label titulo = new Label("Selección de nivel", new Label.LabelStyle(fontTitulo, Color.WHITE));
+        principal.add(titulo).colspan(COLUMNAS_TOTALES).padBottom(20).row();
 
-        titulo.getColor().a = 0f;
+        for (int i = 0; i < PORTALES_GRILLA; i++) {
+            if (i % COLUMNAS == 0) {
+                principal.add().width(ANCHO_LATERAL);
+            }
 
-        titulo.addAction(Actions.sequence(Actions.delay(0.2f), Actions.fadeIn(0.6f)));
+            portales[i] = crearPortal(i + 1);
+            principal.add(portales[i]).size(TAMANO_PORTAL).pad(PADDING_PORTAL);
 
-        ImageButton portal1 = crearPortal(texturaPortal1, 1);
-        ImageButton portal2 = crearPortal(texturaPortal2, 2);
-        ImageButton portal3 = crearPortal(texturaPortal3, 3);
-        ImageButton portal4 = crearPortal(texturaPortal4, 4);
-        ImageButton portal5 = crearPortal(texturaPortal5, 5);
-        ImageButton portal6 = crearPortal(texturaPortal6, 6);
-        ImageButton portal7 = crearPortal(texturaPortal7, 7);
+            if ((i + 1) % COLUMNAS == 0) {
+                if (i + 1 == PORTALES_GRILLA) {
+                    portales[CANTIDAD_NIVELES - 1] = crearPortal(CANTIDAD_NIVELES);
+                    principal
+                        .add(portales[CANTIDAD_NIVELES - 1])
+                        .size(TAMANO_PORTAL_EXTRA)
+                        .pad(PADDING_PORTAL);
+                }
+                principal.row();
+            }
+        }
 
-        portales[0] = portal1;
-        portales[1] = portal2;
-        portales[2] = portal3;
-        portales[3] = portal4;
-        portales[4] = portal5;
-        portales[5] = portal6;
-        portales[6] = portal7;
-
-        TextButton.TextButtonStyle estiloCancelar = new TextButton.TextButtonStyle();
-        estiloCancelar.font = font;
-        estiloCancelar.fontColor = Color.WHITE;
-        estiloCancelar.overFontColor = Color.GOLD;
-        estiloCancelar.downFontColor = Color.RED;
-
-        TextButton botonCancelar = new TextButton("Cancelar", estiloCancelar);
-        botonCancelar.getLabel().setFontScale(0.65f);
-        botonCancelar.addListener(
-                new ClickListener() {
-                    @Override
-                    public void clicked(InputEvent event, float x, float y) {
-                        Sonido.CLICK.sonar();
-                        cliente.enviarMensaje("VOTAR_NIVEL;0");
-                    }
-                });
-
-        animarPortal(portal1, 0.5f);
-        animarPortal(portal2, 0.7f);
-        animarPortal(portal3, 0.9f);
-        animarPortal(portal4, 1.1f);
-        animarPortal(portal5, 1.3f);
-        animarPortal(portal6, 1.5f);
-        animarPortal(portal7, 1.7f);
-
-        principal.add(titulo).colspan(3).padBottom(20).row();
-        principal.add(portal1).width(170).height(170).pad(5);
-        principal.add(portal2).width(170).height(170).pad(5);
-        principal.add(portal3).width(170).height(170).pad(5).row();
-        principal.add(portal4).width(170).height(170).pad(5);
-        principal.add(portal5).width(170).height(170).pad(5);
-        principal.add(portal6).width(170).height(170).pad(5).row();
-        principal.add(portal7).width(170).height(170).pad(5);
-
-        principal.add(botonCancelar).colspan(3).width(200).height(48).padTop(12);
+        principal.add(crearBotonCancelar()).colspan(COLUMNAS_TOTALES).width(200).height(48).padTop(12);
 
         stage.addActor(principal);
     }
 
-    private void actualizarColoresPortales() {
+    private void iniciarNivel(int numeroNivel) {
+        if (numeroNivel < 1 || numeroNivel > CANTIDAD_NIVELES) {
+            return;
+        }
 
+        NAV.iniciarJuego(Nivel.getRuta(numeroNivel));
+    }
+
+    private void volverAlHub() {
+        PANTALLA_HUB.reanudarDespuesDeSeleccion();
+        NAV.cambiarPantalla(PANTALLA_HUB);
+    }
+
+    private void actualizarColoresPortales() {
         int miVoto = cliente.getVotoLocal();
         int votoRemoto = cliente.getVotoRemoto();
 
         for (int i = 0; i < portales.length; i++) {
-
             int nivel = i + 1;
-            ImageButton portal = portales[i];
-
             Color color = Color.WHITE;
 
             if (nivel == miVoto && nivel == votoRemoto) {
                 color = Color.GREEN;
-
             } else if (nivel == miVoto) {
                 color = Color.CYAN;
-
             } else if (nivel == votoRemoto) {
                 color = Color.GOLD;
             }
 
-            portal.getImage().setColor(color);
+            portales[i].getImage().setColor(color);
         }
     }
 
     @Override
     public void render(float delta) {
-
         Render.limpiarPantalla();
 
-        int nivel = cliente.getNivelIniciado();
+        if (cliente.consumirSeleccionCancelada()) {
+            volverAlHub();
+            return;
+        }
 
-        if(nivel != 0)
-        {
+        int nivel = cliente.getNivelIniciado();
+        if (nivel != 0) {
             iniciarNivel(nivel);
             return;
         }
 
-        // Dibujar el fondo.
         Render.begin(stage.getCamera());
         fondo.dibujar(Render.batch);
         Render.end();
 
-        // Actualizar y dibujar las animaciones de la interfaz.
         stage.act(delta);
         actualizarColoresPortales();
         stage.draw();
@@ -269,7 +219,6 @@ public class SeleccionNivel implements Screen {
 
     @Override
     public void resize(int width, int height) {
-
         stage.getViewport().update(width, height, true);
     }
 
@@ -281,21 +230,18 @@ public class SeleccionNivel implements Screen {
 
     @Override
     public void hide() {
-
         Gdx.input.setInputProcessor(null);
     }
 
     @Override
     public void dispose() {
-
         if (stage != null) {
             stage.dispose();
         }
-
-        if (font != null) {
-            font.dispose();
+        if (fontTitulo != null) {
+            fontTitulo.dispose();
+            fontCancelar.dispose();
         }
-
         if (fondo != null) {
             fondo.dispose();
         }

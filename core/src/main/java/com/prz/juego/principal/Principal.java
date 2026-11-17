@@ -49,6 +49,9 @@ public class Principal extends Game implements Navegable {
 
     @Override
     public void cambiarPantalla(Screen screen) {
+        if (screen instanceof PantallaJuego juego) {
+            pantallaJuego = juego;
+        }
         setScreen(screen);
     }
 
@@ -60,6 +63,8 @@ public class Principal extends Game implements Navegable {
 
     @Override
     public void volverAMenu() {
+        pantallaJuego = null;
+        cliente.desconectar();
         setScreen(new PantallaMenu(this, cliente));
     }
 

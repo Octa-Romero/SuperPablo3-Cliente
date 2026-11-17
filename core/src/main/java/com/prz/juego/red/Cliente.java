@@ -1,21 +1,36 @@
 package com.prz.juego.red;
 
-import com.prz.juego.entidades.jefes.Mano;
+import com.prz.juego.entidades.Proyectil;
+import com.prz.juego.entidades.Tumba;
+import com.prz.juego.entidades.enemigos.Enemigo;
 import com.prz.juego.entidades.jugadores.Personajes;
-import com.prz.juego.hilos.HiloCliente;
+import com.prz.juego.entidades.retumbar.Fueguito;
+import com.prz.juego.entidades.retumbar.Retumbar;
+import com.prz.juego.entidades.retumbar.Meteorito;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class Cliente {
 
     private HiloCliente hilo;
     private Personajes personajeLocal;
+    private int idCliente = 0;
+
+    public void setClienteId(int id) {
+        this.idCliente = id;
+    }
 
     public void conectar() {
         if (hilo == null) {
-            hilo = new HiloCliente();
+            hilo = new HiloCliente(idCliente);
             hilo.start();
+        }
+    }
+
+    public void desconectar() {
+        if (hilo != null) {
+            hilo.cerrar();
+            hilo = null;
         }
     }
 
@@ -25,166 +40,135 @@ public class Cliente {
         }
     }
 
-    public boolean isConexionEstablecida()
-    {
-        return hilo.isConexionEstablecida();
+    public boolean isConexionEstablecida() {
+        return hilo != null && hilo.isConexionEstablecida();
     }
 
-    public boolean busquedaFallida()
-    {
-        return hilo.busquedaFallida();
+    public boolean busquedaFallida() {
+        return hilo != null && hilo.busquedaFallida();
     }
 
-    public boolean encontroServidor()
-    {
-        return hilo.encontroServidor();
+    public boolean encontroServidor() {
+        return hilo != null && hilo.encontroServidor();
     }
 
     public String getPersonajeOcupado() {
         return hilo.getPersonajeOcupado();
     }
 
-    public boolean sePuedeSeleccionarNivel()
-    {
+    public String getPersonajeRemotoElegido() {
+        return hilo != null ? hilo.getPersonajeRemotoElegido() : null;
+    }
+
+    public int getContadorComenzar() {
+        return hilo != null ? hilo.getContadorComenzar() : 0;
+    }
+
+    public boolean isListoParaComenzar() {
+        return hilo != null && hilo.isListoParaComenzar();
+    }
+
+    public void setListoParaComenzar(boolean listo) {
+        if (hilo != null) {
+            hilo.setListoParaComenzar(listo);
+        }
+    }
+
+    public boolean sePuedeSeleccionarNivel() {
         return hilo.sePuedeSeleccionarNivel();
     }
 
-    public int getVotoLocal()
-    {
+    public int getVotoLocal() {
         return hilo.getMiVotoNivel();
     }
 
-    public int getVotoRemoto()
-    {
+    public int getVotoRemoto() {
         return hilo.getVotoRemotoNivel();
     }
 
-    public int getNivelIniciado()
-    {
+    public int getNivelIniciado() {
         return hilo.getNivelParaIniciar();
     }
 
-    public void setPersonsajeLocal(Personajes personajeLocal)
-    {
+    public void setPersonsajeLocal(Personajes personajeLocal) {
         this.personajeLocal = personajeLocal;
     }
 
     public Personajes getPersonajeLocal() {
+        if (personajeLocal == null && hilo != null) {
+            Personajes remoto = hilo.getPersonajeRemoto();
+            if (remoto != null) {
+                personajeLocal = remoto == Personajes.PABLO ? Personajes.WALTER : Personajes.PABLO;
+            }
+        }
         return personajeLocal;
     }
 
-    public Personajes getPersonajeRemoto()
-    {
+    public boolean consumirSeleccionCancelada() {
+        return hilo != null && hilo.consumirSeleccionCancelada();
+    }
+
+    public Personajes getPersonajeRemoto() {
         return hilo.getPersonajeRemoto();
     }
 
-    public JugadorEstadoRed getEstadoLocal()
-    {
+    public JugadorEstado getEstadoLocal() {
         return hilo.getEstadoLocal();
     }
 
-    public JugadorEstadoRed getEstadoRemoto()
-    {
+    public JugadorEstado getEstadoRemoto() {
         return hilo.getEstadoRemoto();
     }
 
-    public ArrayList<EnemigoRed> getEnemigosRecibidos() {
+    public ArrayList<Enemigo> getEnemigosRecibidos() {
         return hilo.getEnemigosRecibidos();
     }
 
-    public ArrayList<EnemigoRed> getEstadoEnemigos() {
-        return hilo.getEstadoEnemigos();
-    }
-
-    public ArrayList<Integer> getEnemigosEliminados()
-    {
+    public ArrayList<Integer> getEnemigosEliminados() {
         return hilo.getEnemigosEliminados();
     }
 
-    public void registrarEstadoEnemigo(EnemigoRed estado)
-    {
+    public void registrarEstadoEnemigo(Enemigo estado) {
         hilo.registrarEstadoEnemigo(estado);
     }
 
-    public ArrayList<ProyectilRed> getProyectilesNuevos() {
+    public ArrayList<Proyectil> getProyectilesNuevos() {
         return hilo.getProyectilesNuevos();
     }
 
-    public ArrayList<ProyectilRed> getEstadoProyectiles() {
+    public ArrayList<Proyectil> getEstadoProyectiles() {
         return hilo.getEstadoProyectiles();
     }
 
-    public ArrayList<Integer> getProyectilesEliminados()
-    {
+    public ArrayList<Integer> getProyectilesEliminados() {
         return hilo.getProyectilesEliminados();
     }
 
-    public void registrarEstadoProyectil(ProyectilRed estado)
-    {
+    public void registrarEstadoProyectil(Proyectil estado) {
         hilo.registrarEstadoProyectil(estado);
     }
 
-    public JefeRed getJefeRecibido()
-    {
+    public ArrayList<Tumba> getEstadoTumbas() {
+        return hilo.getEstadoTumbas();
+    }
+
+    public Retumbar getJefeRecibido() {
         return hilo.getJefeNuevo();
     }
 
-    public JefeRed getEstadoJefe()
-    {
-        return hilo.getEstadoJefe();
-    }
-
-    public boolean jefeMuerto()
-    {
-        return hilo.getJefeEliminado();
-    }
-
-    public ManoRed getEstadoMano(Mano.Lado lado)
-    {
-        return hilo.getEstadoMano(lado);
-    }
-
-    public FuegoSueloRed getEstadoFuegoSuelo()
-    {
-        return hilo.getEstadoFuegoSuelo();
-    }
-
-    public RayosRed getEstadoRayos() {
-        return hilo.getEstadoRayos();
-    }
-
-    public LasersRed getEstadoLasers() {
-        return hilo.getEstadoLasers();
-    }
-
-    public ArrayList<MeteoritoRed> getMeteoritosNuevos()
-    {
-        return hilo.getMeteoritosNuevos();
-    }
-
-    public ArrayList<MeteoritoRed> getEstadoMeteoritos()
-    {
+    public ArrayList<Meteorito> getEstadoMeteoritos() {
         return hilo.getEstadoMeteoritos();
     }
 
-    public ArrayList<Integer> getMeteoritosEliminados()
-    {
+    public ArrayList<Integer> getMeteoritosEliminados() {
         return hilo.getMeteoritosEliminados();
     }
 
-    public LaserJefeRed getEstadoLaserJefe() {
-        return hilo.getEstadoLaserJefe();
-    }
-
-    public ArrayList<FueguitoRed> getFueguitosNuevos() {
-        return hilo.getFueguitosNuevos();
-    }
-
-    public ArrayList<FueguitoRed> getEstadoFueguitos() {
+    public ArrayList<Fueguito> getEstadoFueguitos() {
         return hilo.getEstadoFueguitos();
     }
 
-    public ArrayList<FueguitoRed> getFueguitosEliminados() {
+    public ArrayList<Fueguito> getFueguitosEliminados() {
         return hilo.getFueguitosEliminados();
     }
 
@@ -195,17 +179,11 @@ public class Cliente {
     }
 
     public boolean otroJugadorVaAlHub() {
-        if (hilo != null) {
-            return hilo.getOtroJugadorVaAlHub();
-        }
-        return false;
+        return hilo != null && hilo.getOtroJugadorVaAlHub();
     }
 
     public boolean ambosJugadoresVuelvenHub() {
-        if (hilo != null) {
-            return hilo.getAmbosJugadoresVuelvenHub();
-        }
-        return false;
+        return hilo != null && hilo.getAmbosJugadoresVuelvenHub();
     }
 
     public void resetearVolverHub() {
@@ -220,30 +198,64 @@ public class Cliente {
         }
     }
 
-    public boolean otroJugadorCanceloHub() {
+    public void solicitarSnapshotEntidades() {
         if (hilo != null) {
-            return hilo.getOtroJugadorCanceloHub();
+            hilo.solicitarSnapshotEntidades();
         }
-        return false;
+    }
+
+    public boolean necesitaSnapshot() {
+        return hilo != null && hilo.necesitaSnapshot();
+    }
+
+    public boolean isExpulsado() {
+        return hilo != null && hilo.isExpulsado();
+    }
+
+    public int getSegundosReconexion() {
+        return hilo != null ? hilo.getSegundosReconexion() : 0;
+    }
+
+    public boolean otroJugadorCanceloHub() {
+        return hilo != null && hilo.getOtroJugadorCanceloHub();
     }
 
     public boolean getMostrarCreditos() {
-        if (hilo != null) {
-            return hilo.getMostrarCreditos();
-        }
-        return false;
+        return hilo != null && hilo.getMostrarCreditos();
     }
 
     public boolean getEliminarAtaquesJefe() {
-        if (hilo != null) {
-            return hilo.getEliminarAtaquesJefe();
-        }
-        return false;
+        return hilo != null && hilo.getEliminarAtaquesJefe();
     }
 
-    public void cerrar()
-    {
-        if(hilo != null) {
+    public boolean isServidorPerdido() {
+        return hilo != null && hilo.isServidorPerdido();
+    }
+
+    public boolean isJugadorRemotoDesconectado() {
+        return hilo != null && hilo.isJugadorRemotoDesconectado();
+    }
+
+    public void resetearJugadorRemotoDesconectado() {
+        if (hilo != null) {
+            hilo.resetearJugadorRemotoDesconectado();
+        }
+    }
+
+    public String getEstadoReconexion() {
+        return hilo != null ? hilo.getEstadoReconexion() : null;
+    }
+
+    public boolean isJugadorRemotoReconecto() {
+        return hilo != null && hilo.isJugadorRemotoReconecto();
+    }
+
+    public String getNivelReconexion() {
+        return hilo != null ? hilo.getNivelReconexion() : null;
+    }
+
+    public void cerrar() {
+        if (hilo != null) {
             hilo.cerrar();
         }
     }

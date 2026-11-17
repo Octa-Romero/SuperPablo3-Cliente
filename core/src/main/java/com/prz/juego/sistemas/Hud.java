@@ -11,11 +11,12 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.prz.juego.entidades.jefes.Mano;
-import com.prz.juego.entidades.jefes.Retumbar;
-import com.prz.juego.entidades.jugadores.Jugador;
 import com.prz.juego.recursos.GestorRecursos;
 import com.prz.juego.recursos.Imagen;
+import com.prz.juego.entidades.retumbar.Retumbar;
+import com.prz.juego.red.JugadorEstado;
+import com.prz.juego.entidades.retumbar.Mano;
+import com.prz.juego.utilidades.BarraVida;
 import com.prz.juego.utilidades.Config;
 import com.prz.juego.utilidades.FuenteJuego;
 
@@ -23,7 +24,7 @@ import java.util.ArrayList;
 
 public class Hud {
 
-    private final Jugador JUGADOR;
+    private final JugadorEstado JUGADOR;
     private final Stage STAGE;
     private final FitViewport VIEWPORT = new FitViewport(1280, 720, new OrthographicCamera());
 
@@ -54,9 +55,6 @@ public class Hud {
     private final float TAMANO_CORAZON = 50;
     private final float ESPACIO_CORAZONES = 5;
 
-    private final Imagen imagenReliquia;
-    private boolean tieneReliquia = false;;
-
     private double ultimaVida = -1;
 
     private final SpriteBatch BATCH;
@@ -70,7 +68,7 @@ public class Hud {
     private final float ESPACIO_BARRAS_MANO = 60;
     private Retumbar jefe;
 
-    public Hud(Jugador JUGADOR, SpriteBatch batch) {
+    public Hud(JugadorEstado JUGADOR, SpriteBatch batch) {
         this.JUGADOR = JUGADOR;
         BATCH = batch;
 
@@ -85,22 +83,12 @@ public class Hud {
         tablaPrincipal.setFillParent(true);
         tablaPrincipal.pad(20);
 
-        Imagen imagenCara = new Imagen(JUGADOR.getTEXTURA_HUD(), true);
-
-        imagenReliquia = new Imagen(
-            GestorRecursos.obtenerTextura("Reliquia/reliquia.png"),
-            true
-        );
-        imagenReliquia.setVisible(false);
+        Imagen imagenCara = new Imagen(JUGADOR.getTexturaHud(), true);
 
         contenedorCorazones = new Table();
 
         tablaPrincipal.add(imagenCara).size(TAMANO_CARA, TAMANO_CARA);
         tablaPrincipal.add(contenedorCorazones).padLeft(10).center();
-
-        tablaPrincipal.add(imagenReliquia)
-            .size(48, 48)
-            .padLeft(15);
 
         STAGE.addActor(tablaPrincipal);
 
@@ -117,9 +105,9 @@ public class Hud {
             CORAZONES.add(corazon);
 
             contenedorCorazones
-                    .add(corazon)
-                    .size(TAMANO_CORAZON, TAMANO_CORAZON)
-                    .padRight(ESPACIO_CORAZONES);
+                .add(corazon)
+                .size(TAMANO_CORAZON, TAMANO_CORAZON)
+                .padRight(ESPACIO_CORAZONES);
         }
     }
 
@@ -156,16 +144,16 @@ public class Hud {
 
         if (jefe.debeDibujarBarraVida()) {
             BarraVida.dibujar(
-                    BATCH,
-                    FUENTE_JEFE,
-                    "El Retumbar",
-                    (Config.ANCHO_BASE - ANCHO_BARRA_JEFE) / 2f,
-                    Y_BARRAS,
-                    ANCHO_BARRA_JEFE,
-                    ALTO_BARRA_JEFE,
-                    jefe.getVida(),
-                    jefe.getVidaMaxima(),
-                    Color.RED);
+                BATCH,
+                FUENTE_JEFE,
+                "El Retumbar",
+                (Config.ANCHO_BASE - ANCHO_BARRA_JEFE) / 2f,
+                Y_BARRAS,
+                ANCHO_BARRA_JEFE,
+                ALTO_BARRA_JEFE,
+                jefe.getVida(),
+                jefe.getVidaMaxima(),
+                Color.RED);
         } else {
             float centro = Config.ANCHO_BASE / 2f;
             float xIzquierda = centro - ESPACIO_BARRAS_MANO / 2f - ANCHO_BARRA_MANO;
@@ -178,34 +166,25 @@ public class Hud {
     }
 
     private void dibujarBarraMano(Mano mano, float x) {
-        if (mano.estaMuerto()) {
+        if (!mano.recibioEstado() || mano.estaMuerta()) {
             return;
         }
 
         BarraVida.dibujar(
-                BATCH,
-                FUENTE_MANO,
-                "Mano de El Retumbar",
-                x,
-                Y_BARRAS,
-                ANCHO_BARRA_MANO,
-                ALTO_BARRA_MANO,
-                mano.getVida(),
-                mano.getVidaMaxima(),
-                Color.RED);
+            BATCH,
+            FUENTE_MANO,
+            "Mano de El Retumbar",
+            x,
+            Y_BARRAS,
+            ANCHO_BARRA_MANO,
+            ALTO_BARRA_MANO,
+            mano.getVida(),
+            mano.getVidaMaxima(),
+            Color.RED);
     }
 
     public void actualizarTamano(int width, int height) {
         VIEWPORT.update(width, height, true);
-    }
-
-    public void setTieneReliquia(boolean valor) {
-        if (tieneReliquia == valor) {
-            return;
-        }
-
-        tieneReliquia = valor;
-        imagenReliquia.setVisible(valor);
     }
 
     public void setEstadoMuerte(boolean localMuerto, boolean remotoMuerto, String nombreVivo, String nombreMuerto) {

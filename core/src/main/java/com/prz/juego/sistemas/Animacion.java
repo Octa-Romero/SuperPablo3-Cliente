@@ -1,4 +1,4 @@
-package com.prz.juego.utilidades;
+package com.prz.juego.sistemas;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -6,6 +6,11 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class Animacion {
+
+    private static final int TIPO_CAMINAR = 1;
+    private static final int TIPO_SALTO = 2;
+    private static final int TIPO_ATAQUE = 3;
+    private static final int TIPO_CAIDA = 4;
 
     private Animation<TextureRegion> reposo;
     private Animation<TextureRegion> caminar;
@@ -24,15 +29,15 @@ public class Animacion {
     }
 
     public void configurar(
-            Texture spritesheet,
-            int anchoFrame,
-            int altoFrame,
-            int[] indicesReposo,
-            int[] indicesCaminar,
-            int[] indicesSalto,
-            int[] indicesCaida,
-            int[] indicesAtaque,
-            float duracionFrame) {
+        Texture spritesheet,
+        int anchoFrame,
+        int altoFrame,
+        int[] indicesReposo,
+        int[] indicesCaminar,
+        int[] indicesSalto,
+        int[] indicesCaida,
+        int[] indicesAtaque,
+        float duracionFrame) {
         validarConfiguracion(spritesheet, anchoFrame, altoFrame, indicesReposo, duracionFrame);
 
         TextureRegion[][] grilla = TextureRegion.split(spritesheet, anchoFrame, altoFrame);
@@ -40,25 +45,17 @@ public class Animacion {
         validarIndices(frames.length, indicesReposo, indicesCaminar, indicesSalto, indicesCaida, indicesAtaque);
 
         reposo = crearAnimacion(frames, indicesReposo, duracionFrame, Animation.PlayMode.LOOP);
-        caminar =
-                crearAnimacionSiConfigurada(
-                        frames, indicesCaminar, duracionFrame, Animation.PlayMode.LOOP);
-        salto =
-                crearAnimacionSiConfigurada(
-                        frames, indicesSalto, duracionFrame, Animation.PlayMode.LOOP);
-        caida =
-                crearAnimacionSiConfigurada(
-                        frames, indicesCaida, duracionFrame, Animation.PlayMode.LOOP);
-        ataque =
-                crearAnimacionSiConfigurada(
-                        frames, indicesAtaque, duracionFrame, Animation.PlayMode.NORMAL);
+        caminar = crearAnimacionSiConfigurada(frames, indicesCaminar, duracionFrame, Animation.PlayMode.LOOP);
+        salto = crearAnimacionSiConfigurada(frames, indicesSalto, duracionFrame, Animation.PlayMode.LOOP);
+        caida = crearAnimacionSiConfigurada(frames, indicesCaida, duracionFrame, Animation.PlayMode.LOOP);
+        ataque = crearAnimacionSiConfigurada(frames, indicesAtaque, duracionFrame, Animation.PlayMode.NORMAL);
 
         actual = null;
         tiempo = 0f;
     }
 
     public void actualizar(
-            Sprite sprite, float delta, boolean caminando, boolean saltando, boolean cayendo, boolean atacando) {
+        Sprite sprite, float delta, boolean caminando, boolean saltando, boolean cayendo, boolean atacando) {
         Animation<TextureRegion> siguiente;
 
         if (atacando && ataque != null) {
@@ -73,10 +70,6 @@ public class Animacion {
             siguiente = reposo;
         }
 
-        if (siguiente == null) {
-            return;
-        }
-
         if (actual != siguiente) {
             actual = siguiente;
             tiempo = 0f;
@@ -87,45 +80,33 @@ public class Animacion {
         sprite.setRegion(actual.getKeyFrame(tiempo));
     }
 
-    public void establecerTiempo(float tiempoExterno) {
-        this.tiempo = tiempoExterno;
-    }
-
-    public float getTiempo() {
-        return tiempo;
-    }
-
-    public int getTipoActual() {
-        if (actual == ataque) return 3;
-        if (actual == salto) return 2;
-        if (actual == caida) return 4;
-        if (actual == caminar) return 1;
-        return 0; // reposo
-    }
-
-    public void actualizarConEstado(
-            Sprite sprite, int tipoAnimacion, float tiempoAnimacion) {
+    public void actualizarConEstado(Sprite sprite, int tipoAnimacion, float tiempoAnimacion) {
         Animation<TextureRegion> siguiente;
 
         switch (tipoAnimacion) {
-            case 3: siguiente = ataque; break;
-            case 2: siguiente = salto; break;
-            case 4: siguiente = caida; break;
-            case 1: siguiente = caminar != null ? caminar : reposo; break;
-            default: siguiente = reposo; break;
+            case TIPO_ATAQUE:
+                siguiente = ataque;
+                break;
+            case TIPO_SALTO:
+                siguiente = salto;
+                break;
+            case TIPO_CAIDA:
+                siguiente = caida;
+                break;
+            case TIPO_CAMINAR:
+                siguiente = caminar != null ? caminar : reposo;
+                break;
+            default:
+                siguiente = reposo;
+                break;
         }
 
         if (siguiente == null) {
             return;
         }
 
-        if (actual != siguiente) {
-            actual = siguiente;
-            tiempo = tiempoAnimacion;
-        } else {
-            tiempo = tiempoAnimacion;
-        }
-
+        actual = siguiente;
+        tiempo = tiempoAnimacion;
         sprite.setRegion(actual.getKeyFrame(tiempo));
     }
 
@@ -137,36 +118,26 @@ public class Animacion {
         }
     }
 
-    public void dispose() {
-        reposo = null;
-        caminar = null;
-        salto = null;
-        caida = null;
-        ataque = null;
-        actual = null;
-    }
-
     private void validarConfiguracion(
-            Texture spritesheet,
-            int anchoFrame,
-            int altoFrame,
-            int[] indicesReposo,
-            float duracionFrame) {
+        Texture spritesheet,
+        int anchoFrame,
+        int altoFrame,
+        int[] indicesReposo,
+        float duracionFrame) {
         if (spritesheet == null
-                || anchoFrame <= 0
-                || altoFrame <= 0
-                || duracionFrame <= 0
-                || indicesReposo == null
-                || indicesReposo.length == 0
-                || spritesheet.getWidth() < anchoFrame
-                || spritesheet.getHeight() < altoFrame) {
-            throw new IllegalArgumentException(
-                    "La spritesheet debe incluir una animacion de reposo valida");
+            || anchoFrame <= 0
+            || altoFrame <= 0
+            || duracionFrame <= 0
+            || indicesReposo == null
+            || indicesReposo.length == 0
+            || spritesheet.getWidth() < anchoFrame
+            || spritesheet.getHeight() < altoFrame) {
+            throw new IllegalArgumentException("La spritesheet debe incluir una animacion de reposo valida");
         }
     }
 
     private Animation<TextureRegion> crearAnimacionSiConfigurada(
-            TextureRegion[] frames, int[] indices, float duracionFrame, Animation.PlayMode modo) {
+        TextureRegion[] frames, int[] indices, float duracionFrame, Animation.PlayMode modo) {
         if (indices == null || indices.length == 0) {
             return null;
         }
@@ -174,7 +145,7 @@ public class Animacion {
     }
 
     private Animation<TextureRegion> crearAnimacion(
-            TextureRegion[] frames, int[] indices, float duracionFrame, Animation.PlayMode modo) {
+        TextureRegion[] frames, int[] indices, float duracionFrame, Animation.PlayMode modo) {
         TextureRegion[] regiones = new TextureRegion[indices.length];
         for (int i = 0; i < indices.length; i++) {
             regiones[i] = frames[indices[i]];
@@ -192,8 +163,7 @@ public class Animacion {
             }
             for (int indice : grupo) {
                 if (indice < 0 || indice >= totalFrames) {
-                    throw new IllegalArgumentException(
-                            "El spritesheet no contiene el frame " + indice);
+                    throw new IllegalArgumentException("El spritesheet no contiene el frame " + indice);
                 }
             }
         }

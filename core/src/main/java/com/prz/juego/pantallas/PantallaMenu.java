@@ -3,32 +3,60 @@ package com.prz.juego.pantallas;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.prz.juego.principal.Navegable;
 import com.prz.juego.recursos.Imagen;
 import com.prz.juego.red.Cliente;
 import com.prz.juego.utilidades.Config;
 import com.prz.juego.utilidades.FuenteJuego;
+import com.prz.juego.utilidades.Global;
 import com.prz.juego.utilidades.Musica;
 import com.prz.juego.utilidades.Render;
 import com.prz.juego.utilidades.Sonido;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PantallaMenu implements Screen {
 
-    private Cliente cliente;
+    private static final long TIEMPO_MOSTRAR_BUSCANDO = 1000;
+    private static final float ANCHO_BOTON = 250;
+    private static final float ALTO_BOTON = 50;
+    private static final float SEPARACION_BOTONES = 25;
+    private static final float ANCHO_TEXTO_ESPERA = 560;
+    private static final float ALPHA_FONDO_ESPERA = 0.45f;
+    private static final float ALPHA_PANEL_ESPERA = 0.65f;
+    private static final String TEXTO_BUSCANDO = "Buscando servidor...";
+    private static final String TEXTO_ESPERANDO = "Esperando a otro jugador...";
+
+    private final Navegable NAV;
+    private final Cliente cliente;
+
     private Stage stage;
+    private Stage stageEspera;
     private Imagen fondo;
     private BitmapFont fontTitulo;
     private BitmapFont fontSubtitulo;
     private BitmapFont fontBoton;
-    private final Navegable NAV;
+    private TextButton.TextButtonStyle estiloBoton;
+    private Texture texturaBlanca;
+    private Label lblEspera;
+
+    private boolean esperandoConexion = false;
+    private boolean buscandoServidor = false;
+    private long tiempoInicioBusqueda = 0;
 
     public PantallaMenu(Navegable NAV, Cliente cliente) {
         this.NAV = NAV;
@@ -37,18 +65,15 @@ public class PantallaMenu implements Screen {
 
     @Override
     public void show() {
-        inicializarStage();
+        stage = new Stage(new ExtendViewport(Config.ANCHO_BASE, Config.ALTO_BASE));
         inicializarFondo();
         inicializarFuentes();
+        crearTexturaBlanca();
         crearInterfaz();
 
         Musica.MENU.sonar();
 
         Gdx.input.setInputProcessor(stage);
-    }
-
-    private void inicializarStage() {
-        stage = new Stage(new ExtendViewport(Config.ANCHO_BASE, Config.ALTO_BASE));
     }
 
     private void inicializarFondo() {
@@ -57,10 +82,7 @@ public class PantallaMenu implements Screen {
     }
 
     private void actualizarFondo() {
-        float w = stage.getViewport().getWorldWidth();
-        float h = stage.getViewport().getWorldHeight();
-
-        fondo.setSize(w, h);
+        fondo.setSize(stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
         fondo.setPosition(0, 0);
     }
 
@@ -68,73 +90,88 @@ public class PantallaMenu implements Screen {
         fontTitulo = FuenteJuego.generar(64);
         fontSubtitulo = FuenteJuego.generar(36);
         fontBoton = FuenteJuego.generar(28);
-    }
 
-    private void crearInterfaz() {
-
-        Label titulo = new Label("Super Pablo 3", new Label.LabelStyle(fontTitulo, Color.GOLD));
-        Label subtitulo =
-            new Label("~ La Última Batalla ~", new Label.LabelStyle(fontSubtitulo, Color.RED));
-
-        TextButton.TextButtonStyle estiloBoton = new TextButton.TextButtonStyle();
-
+        estiloBoton = new TextButton.TextButtonStyle();
         estiloBoton.font = fontBoton;
         estiloBoton.fontColor = Color.WHITE;
         estiloBoton.overFontColor = Color.GOLD;
         estiloBoton.downFontColor = Color.RED;
+    }
 
-        TextButton btnJugar = new TextButton("Jugar", estiloBoton);
-        TextButton btnOpciones = new TextButton("Opciones", estiloBoton);
-        TextButton btnComoJugar = new TextButton("Cómo jugar", estiloBoton);
-        TextButton btnSalir = new TextButton("Salir", estiloBoton);
+    private void crearTexturaBlanca() {
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(Color.WHITE);
+        pixmap.fill();
+        texturaBlanca = new Texture(pixmap);
+        pixmap.dispose();
+    }
 
-        btnJugar.addListener(
-            new ClickListener() {
-                @Override
-                public void clicked(InputEvent event, float x, float y) {
-                    cliente.conectar();
-                    Sonido.CLICK.sonar();
-                    NAV.cambiarPantalla(new SeleccionPersonaje(NAV, cliente, PantallaMenu.this));
-                }
-            });
+    private TextButton crearBoton(String texto, Runnable accion) {
+        TextButton boton = new TextButton(texto, estiloBoton);
+        boton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Sonido.CLICK.sonar();
+                accion.run();
+            }
+        });
+        return boton;
+    }
 
-        btnOpciones.addListener(
-            new ClickListener() {
-                @Override
-                public void clicked(InputEvent event, float x, float y) {
-                    Sonido.CLICK.sonar();
-                    NAV.cambiarPantalla(new PantallaOpciones(NAV, PantallaMenu.this, false));
-                }
-            });
+    private void crearInterfaz() {
+        Label titulo = new Label("Super Pablo 3", new Label.LabelStyle(fontTitulo, Color.GOLD));
+        Label subtitulo = new Label("~ La Última Batalla ~", new Label.LabelStyle(fontSubtitulo, Color.RED));
 
-        btnComoJugar.addListener(
-            new ClickListener() {
-                @Override
-                public void clicked(InputEvent event, float x, float y) {
-                    NAV.cambiarPantalla(new ComoJugar(NAV));
-                }
-            });
+        List<TextButton> botones = new ArrayList<>();
 
-        btnSalir.addListener(
-            new ClickListener() {
-                @Override
-                public void clicked(InputEvent event, float x, float y) {
-                    Sonido.CLICK.sonar();
-                    Gdx.app.exit();
-                }
-            });
+        if (Config.DEMO_MODE) {
+            botones.add(crearBoton("Jugar (Jugador 1)", () -> jugarComoCliente(1)));
+            botones.add(crearBoton("Jugar (Jugador 2)", () -> jugarComoCliente(2)));
+        } else {
+            botones.add(crearBoton("Jugar", this::iniciarBusqueda));
+        }
+
+        botones.add(crearBoton("Opciones", () ->
+            NAV.cambiarPantalla(new PantallaOpciones(NAV, PantallaMenu.this, false))));
+        botones.add(crearBoton("Cómo jugar", () -> NAV.cambiarPantalla(new ComoJugar(NAV))));
+        botones.add(crearBoton("Salir", () -> Gdx.app.exit()));
 
         Table contenedor = new Table();
         contenedor.setFillParent(true);
 
         contenedor.add(titulo).padBottom(5).row();
         contenedor.add(subtitulo).padBottom(60).row();
-        contenedor.add(btnJugar).width(250).height(50).padBottom(25).row();
-        contenedor.add(btnOpciones).width(250).height(50).padBottom(25).row();
-        contenedor.add(btnComoJugar).width(250).height(50).padBottom(25).row();
-        contenedor.add(btnSalir).width(250).height(50);
+
+        for (int i = 0; i < botones.size(); i++) {
+            float separacion = i < botones.size() - 1 ? SEPARACION_BOTONES : 0;
+            contenedor.add(botones.get(i)).width(ANCHO_BOTON).height(ALTO_BOTON).padBottom(separacion).row();
+        }
 
         stage.addActor(contenedor);
+    }
+
+    private void jugarComoCliente(int id) {
+        cliente.setClienteId(id);
+        iniciarBusqueda();
+    }
+
+    private void iniciarBusqueda() {
+        esperandoConexion = true;
+        buscandoServidor = true;
+        tiempoInicioBusqueda = System.currentTimeMillis();
+        mostrarCartelEspera();
+    }
+
+    private void cancelarBusqueda() {
+        esperandoConexion = false;
+        buscandoServidor = false;
+        cliente.desconectar();
+        cerrarCartelEspera();
+    }
+
+    private void finalizarEspera() {
+        esperandoConexion = false;
+        cerrarCartelEspera();
     }
 
     @Override
@@ -142,18 +179,122 @@ public class PantallaMenu implements Screen {
         Render.limpiarPantalla();
 
         Render.begin(stage.getCamera());
-
         fondo.dibujar(Render.batch);
-
         Render.end();
 
         stage.act(delta);
         stage.draw();
+
+        if (esperandoConexion) {
+            verificarConexion();
+            if (stageEspera != null) {
+                stageEspera.act(delta);
+                stageEspera.draw();
+            }
+        }
+    }
+
+    private void verificarConexion() {
+        if (buscandoServidor) {
+            long transcurrido = System.currentTimeMillis() - tiempoInicioBusqueda;
+            if (transcurrido < TIEMPO_MOSTRAR_BUSCANDO) {
+                setTextoEspera(TEXTO_BUSCANDO);
+                return;
+            }
+            cliente.conectar();
+            buscandoServidor = false;
+        }
+
+        String estadoReconexion = cliente.getEstadoReconexion();
+        if (estadoReconexion != null) {
+            finalizarEspera();
+            navegarPorEstadoReconexion(estadoReconexion, cliente.getNivelReconexion());
+            return;
+        }
+
+        if (cliente.isConexionEstablecida()) {
+            finalizarEspera();
+            NAV.cambiarPantalla(new SeleccionPersonaje(NAV, cliente, PantallaMenu.this));
+        } else if (cliente.encontroServidor()) {
+            setTextoEspera(TEXTO_ESPERANDO);
+        } else {
+            setTextoEspera(TEXTO_BUSCANDO);
+        }
+    }
+
+    private void navegarPorEstadoReconexion(String estado, String nivelReconexion) {
+        switch (estado) {
+            case "HUB":
+            case "SELECCION_NIVEL":
+            case "CREDITOS":
+                Global.empieza = true;
+                NAV.cambiarPantalla(new PantallaJuego(NAV, cliente, null));
+                break;
+            case "JUGANDO":
+                Global.empieza = true;
+                NAV.cambiarPantalla(new PantallaJuego(NAV, cliente, nivelReconexion));
+                break;
+            case "SELECCION_PERSONAJE":
+            default:
+                NAV.cambiarPantalla(new SeleccionPersonaje(NAV, cliente, PantallaMenu.this));
+                break;
+        }
+    }
+
+    private void setTextoEspera(String texto) {
+        if (lblEspera != null) {
+            lblEspera.setText(texto);
+        }
+    }
+
+    private void mostrarCartelEspera() {
+        liberarCartelEspera();
+
+        stageEspera = new Stage(new ExtendViewport(Config.ANCHO_BASE, Config.ALTO_BASE));
+
+        TextureRegionDrawable base = new TextureRegionDrawable(new TextureRegion(texturaBlanca));
+
+        Table raiz = new Table();
+        raiz.setFillParent(true);
+        raiz.setBackground(base.tint(new Color(0, 0, 0, ALPHA_FONDO_ESPERA)));
+
+        Table panel = new Table();
+        panel.setBackground(base.tint(new Color(0, 0, 0, ALPHA_PANEL_ESPERA)));
+        panel.pad(40, 100, 40, 100);
+
+        lblEspera = new Label(TEXTO_BUSCANDO, new Label.LabelStyle(fontSubtitulo, Color.WHITE));
+        lblEspera.setAlignment(Align.center);
+
+        TextButton btnCancelar = crearBoton("Cancelar", this::cancelarBusqueda);
+
+        panel.add(lblEspera).width(ANCHO_TEXTO_ESPERA).padBottom(30).row();
+        panel.add(btnCancelar).width(ANCHO_BOTON).height(ALTO_BOTON);
+
+        raiz.add(panel);
+        stageEspera.addActor(raiz);
+
+        Gdx.input.setInputProcessor(stageEspera);
+    }
+
+    private void liberarCartelEspera() {
+        if (stageEspera != null) {
+            stageEspera.dispose();
+            stageEspera = null;
+        }
+        lblEspera = null;
+    }
+
+    private void cerrarCartelEspera() {
+        liberarCartelEspera();
+        Gdx.input.setInputProcessor(stage);
     }
 
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
+        if (stageEspera != null) {
+            stageEspera.getViewport().update(width, height, true);
+        }
         actualizarFondo();
     }
 
@@ -170,24 +311,21 @@ public class PantallaMenu implements Screen {
 
     @Override
     public void dispose() {
+        liberarCartelEspera();
+
         if (stage != null) {
             stage.dispose();
         }
-
         if (fondo != null) {
             fondo.dispose();
         }
-
         if (fontTitulo != null) {
             fontTitulo.dispose();
-        }
-
-        if (fontSubtitulo != null) {
             fontSubtitulo.dispose();
-        }
-
-        if (fontBoton != null) {
             fontBoton.dispose();
+        }
+        if (texturaBlanca != null) {
+            texturaBlanca.dispose();
         }
     }
 }

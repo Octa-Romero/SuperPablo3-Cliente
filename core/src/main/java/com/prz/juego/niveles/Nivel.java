@@ -1,167 +1,94 @@
 package com.prz.juego.niveles;
 
 import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
-
-import com.prz.juego.entidades.Entidad;
-import com.prz.juego.entidades.Lanzable;
-import com.prz.juego.entidades.Reliquia;
+import com.prz.juego.entidades.Proyectil;
 import com.prz.juego.entidades.Tumba;
 import com.prz.juego.entidades.enemigos.Enemigo;
-import com.prz.juego.entidades.enemigos.TipoEnemigo;
-import com.prz.juego.entidades.enemigos.rango.Proyectil;
-import com.prz.juego.entidades.jefes.FuegoSuelo;
-import com.prz.juego.entidades.jefes.Mano;
-import com.prz.juego.entidades.jefes.Retumbar;
-import com.prz.juego.entidades.jugadores.*;
-
+import com.prz.juego.red.JugadorEstado;
+import com.prz.juego.entidades.retumbar.Fueguito;
+import com.prz.juego.entidades.retumbar.Retumbar;
+import com.prz.juego.entidades.retumbar.Meteorito;
 import com.prz.juego.red.*;
 import com.prz.juego.sistemas.Camara;
-import com.prz.juego.sistemas.Colisiones;
-import com.prz.juego.utilidades.Debug;
-import com.prz.juego.utilidades.Entrada;
-import com.prz.juego.utilidades.Musica;
 import com.prz.juego.utilidades.Render;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
-public abstract class Nivel {
+public class Nivel {
+
+    private static final String[] RUTAS_NIVELES = {
+        "Niveles/Niveles/Level1.tmx",
+        "Niveles/Niveles/Nivel2.1.tmx",
+        "Niveles/Niveles/Nivel3.tmx",
+        "Niveles/Niveles/nivel4.tmx",
+        "Niveles/Niveles/Nivel5.tmx",
+        "Niveles/Niveles/Nivel6.tmx",
+        "Niveles/Niveles/Nivel7.tmx"
+    };
+    private static final int CANTIDAD_NIVELES = RUTAS_NIVELES.length;
+
+    private final String RUTA_MAPA;
+    private final ArrayList<Enemigo> ENEMIGOS = new ArrayList<>();
+    private final ArrayList<Proyectil> PROYECTILES = new ArrayList<>();
+    private final HashMap<String, Tumba> TUMBAS = new HashMap<>();
 
     private Camara camara;
     private TiledMap mapa;
     private OrthogonalTiledMapRenderer mapRenderer;
 
-    private Jugador jugadorLocal;
-    private Jugador jugadorRemoto;
+    private JugadorEstado jugadorLocal;
+    private JugadorEstado jugadorRemoto;
+    private Retumbar jefe;
 
-    private Pablo pablo;
-    private Walter walter;
-
-    private Colisiones colision;
-    private ShapeRenderer shapeRenderer;
-
-    private final ArrayList<Entidad> ENTIDADES = new ArrayList<>();
-    private final ArrayList<Entidad> ENTIDADES_PENDIENTES = new ArrayList<>();
-    private final ArrayList<Entidad> ENTIDADES_PENDIENTES_ELIMINAR = new ArrayList<>();
-    private final ArrayList<Lanzable> PROYECTILES = new ArrayList<>();
-    private final ArrayList<Reliquia> RELIQUIAS = new ArrayList<>();
-    private final ArrayList<Tumba> TUMBAS = new ArrayList<>();
-
-    private boolean enemigoReliquiaDerrotado = false;
+    private float anchoMapa;
+    private float altoMapa;
     private boolean gameOver = false;
-    private boolean tieneReliquia = false;
-    private boolean tumbaLocalCreada = false;
-    private boolean tumbaRemotoCreada = false;
 
-    public static Nivel crear(String ruta) {
-        switch (ruta) {
-            case Nivel1.RUTA:
-                return new Nivel1();
-            case Nivel2.RUTA:
-                return new Nivel2();
-            case Nivel3.RUTA:
-                return new Nivel3();
-            case Nivel4.RUTA:
-                return new Nivel4();
-            case Nivel5.RUTA:
-                return new Nivel5();
-            case Nivel6.RUTA:
-                return new Nivel6();
-            case Nivel7.RUTA:
-                return new Nivel7();
-            default:
-                throw new IllegalArgumentException(
-                    "No existe una clase para el nivel: " + ruta
-                );
+    public Nivel(String rutaMapa) {
+        if (rutaMapa == null) {
+            throw new IllegalArgumentException("La ruta del mapa no puede ser null");
         }
+        this.RUTA_MAPA = rutaMapa;
     }
 
-    public void cargar(Jugador jugadorLocal, Jugador jugadorRemoto) {
+    public static String getRuta(int numero) {
+        if (numero < 1 || numero > CANTIDAD_NIVELES) {
+            throw new IllegalArgumentException("No existe el nivel: " + numero);
+        }
+        return RUTAS_NIVELES[numero - 1];
+    }
+
+    public void cargar(JugadorEstado jugadorLocal, JugadorEstado jugadorRemoto) {
         camara = new Camara();
 
         this.jugadorLocal = jugadorLocal;
         this.jugadorRemoto = jugadorRemoto;
 
-        ENTIDADES.add(jugadorLocal);
-        ENTIDADES.add(jugadorRemoto);
-
-        Jugador[] jugadores = {jugadorLocal, jugadorRemoto};
-
-        for (Jugador jugador : jugadores) {
-            if (jugador instanceof Pablo p) {
-                pablo = p;
-            } else if (jugador instanceof Walter w) {
-                walter = w;
-            }
-        }
-
-        shapeRenderer = new ShapeRenderer();
-
-        TmxMapLoader mapLoader = new TmxMapLoader();
-        mapa = mapLoader.load(getRutaMapa());
-
-        colision = new Colisiones(mapa);
-
-        // Los enemigos llegan desde el servidor.
+        mapa = new TmxMapLoader().load(RUTA_MAPA);
 
         MapProperties props = mapa.getProperties();
+        anchoMapa = props.get("tilewidth", Integer.class) * props.get("width", Integer.class);
+        altoMapa = props.get("tileheight", Integer.class) * props.get("height", Integer.class);
 
-        int tileWidth = props.get("tilewidth", Integer.class);
-        int tileHeight = props.get("tileheight", Integer.class);
-        int mapWidthTiles = props.get("width", Integer.class);
-        int mapHeightTiles = props.get("height", Integer.class);
-
-        float mapTotalWidth = tileWidth * mapWidthTiles;
-        float mapTotalHeight = tileHeight * mapHeightTiles;
-
-        camara.setLimitesMapa(mapTotalWidth, mapTotalHeight);
-
-        configurarEntornoEspecifico(mapTotalWidth, mapTotalHeight);
+        camara.setLimitesMapa(anchoMapa, altoMapa);
 
         mapRenderer = new OrthogonalTiledMapRenderer(mapa, 1f);
     }
 
-    protected abstract String getRutaMapa();
-
-    protected float getPosicionInicialX() {
-        return 50;
-    }
-
-    protected float getPosicionInicialY() {
-        return 150;
-    }
-
-    protected void agregarEntidad(Entidad entidad) {
-        ENTIDADES.add(entidad);
-    }
-
-    protected void agregarEntidadAlFondo(Entidad entidad) {
-        ENTIDADES.add(0, entidad);
-    }
-
-    protected void eliminarEntidad(Entidad entidad) {
-        ENTIDADES.remove(entidad);
-    }
-    protected void agregarEntidadDiferida(Entidad entidad) {
-        ENTIDADES_PENDIENTES.add(entidad);
-    }
-
-    protected void eliminarEntidadDiferida(Entidad entidad) {
-        if (!ENTIDADES_PENDIENTES_ELIMINAR.contains(entidad)) {
-            ENTIDADES_PENDIENTES_ELIMINAR.add(entidad);
-        }
-    }
-
-    protected void configurarEntornoEspecifico(float ancho, float alto) {
-    }
-
     public Retumbar getJefe() {
-        return null;
+        return jefe;
+    }
+
+    public void limpiarEntidades() {
+        jefe = null;
+        ENEMIGOS.clear();
+        PROYECTILES.clear();
+        TUMBAS.clear();
     }
 
     public void renderMapa() {
@@ -172,413 +99,193 @@ public abstract class Nivel {
     public void render() {
         Render.batch.setProjectionMatrix(camara.getCamera().combined);
 
-        // Dibujar enemigos y jefes primero (todo lo que no sea jugador)
-        for (Entidad entidad : ENTIDADES) {
-            if (entidad == pablo || entidad == walter) {
-                continue;
-            }
-            entidad.dibujar();
+        if (jefe != null) {
+            jefe.dibujar();
         }
 
-        // Dibujar jugador remoto sobre los enemigos
-        if (jugadorRemoto != null) {
-            jugadorRemoto.dibujar();
+        for (Enemigo enemigo : ENEMIGOS) {
+            enemigo.dibujar();
         }
 
-        // Dibujar jugador local encima de todo
-        if (jugadorLocal != null) {
-            jugadorLocal.dibujar();
-        }
+        jugadorRemoto.dibujar();
+        jugadorLocal.dibujar();
 
-        for (Lanzable proyectil : PROYECTILES) {
+        for (Proyectil proyectil : PROYECTILES) {
             proyectil.dibujar();
         }
 
-        for (Reliquia reliquia : RELIQUIAS) {
-            reliquia.dibujar();
-        }
-
-        for (Tumba tumba : TUMBAS) {
+        for (Tumba tumba : TUMBAS.values()) {
             tumba.dibujar();
         }
     }
 
-    public void renderDebug() {
-        if (!Debug.mostrarHitboxes()) {
-            return;
+    public void update(float delta) {
+        jugadorLocal.actualizar(delta);
+        jugadorRemoto.actualizar(delta);
+
+        if (jefe != null) {
+            jefe.actualizar(delta);
         }
 
-        shapeRenderer.setProjectionMatrix(camara.getCamera().combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-
-        colision.dibujarHitboxes(shapeRenderer);
-
-        for (Entidad entidad : ENTIDADES) {
-            entidad.dibujarHitbox(shapeRenderer);
-        }
-
-        if (getJefe() != null) {
-            //getJefe().dibujarHitboxesAtaquesExtra(shapeRenderer);
-        }
-
-        for (Lanzable proyectil : PROYECTILES) {
-            proyectil.dibujarHitbox(shapeRenderer);
-        }
-
-        shapeRenderer.end();
-    }
-
-    public void update(float delta, Entrada entrada) {
-
-        // Actualización visual de las entidades.
-        for (Entidad entidad : ENTIDADES) {
-            entidad.update(delta);
-        }
-
-        for (Entidad entidad : ENTIDADES_PENDIENTES_ELIMINAR) {
-            if (ENTIDADES.remove(entidad)) {
-                entidad.dispose();
-            }
-            ENTIDADES_PENDIENTES.remove(entidad);
-        }
-
-        ENTIDADES_PENDIENTES_ELIMINAR.clear();
-
-        ENTIDADES.addAll(ENTIDADES_PENDIENTES);
-        ENTIDADES_PENDIENTES.clear();
-
-        for (Lanzable proyectil : PROYECTILES) {
+        for (Proyectil proyectil : PROYECTILES) {
             proyectil.update(delta);
         }
 
-        // Determinar qué jugador sigue la cámara
-        Jugador jugadorParaCamara;
-        if (jugadorLocal.estaMuerto() && !jugadorRemoto.estaMuerto()) {
-            jugadorParaCamara = jugadorRemoto;
-        } else if (jugadorRemoto.estaMuerto() && !jugadorLocal.estaMuerto()) {
-            jugadorParaCamara = jugadorLocal;
-        } else if (jugadorLocal.estaMuerto() && jugadorRemoto.estaMuerto()) {
-            // Ambos muertos: seguir al que tiene X más alta
-            jugadorParaCamara = jugadorLocal.getX() >= jugadorRemoto.getX()
-                ? jugadorLocal : jugadorRemoto;
-        } else {
-            jugadorParaCamara = jugadorLocal;
-        }
-
+        JugadorEstado seguido = getJugadorParaCamara();
         camara.seguirPersonaje(
-            jugadorParaCamara.getX() + jugadorParaCamara.getAncho() / 2f,
-            jugadorParaCamara.getY() + jugadorParaCamara.getAlto() / 2f,
-            delta
-        );
+            seguido.getX() + seguido.getAncho() / 2f,
+            seguido.getY() + seguido.getAlto() / 2f,
+            delta);
 
-        if (entrada != null && entrada.aprietaF1()) {
-            Debug.cambiarHitboxes();
-        }
-
-        // Crear tumbas cuando los jugadores mueren
-        boolean localMuerto = jugadorLocal.estaMuerto();
-        boolean remotoMuerto = jugadorRemoto.estaMuerto();
-
-        if (localMuerto && remotoMuerto && !gameOver) {
+        if (jugadorLocal.estaMuerto() && jugadorRemoto.estaMuerto()) {
             gameOver = true;
         }
-
-        if (localMuerto && !tumbaLocalCreada) {
-            tumbaLocalCreada = true;
-            Tumba tumba = new Tumba(
-                jugadorLocal.getX() + jugadorLocal.getAncho() / 2f,
-                jugadorLocal.getY(),
-                colision
-            );
-            TUMBAS.add(tumba);
-        }
-        if (remotoMuerto && !tumbaRemotoCreada) {
-            tumbaRemotoCreada = true;
-            Tumba tumba = new Tumba(
-                jugadorRemoto.getX() + jugadorRemoto.getAncho() / 2f,
-                jugadorRemoto.getY(),
-                colision
-            );
-            TUMBAS.add(tumba);
-        }
-
-        // Actualizar tumbas
-        for (int i = TUMBAS.size() - 1; i >= 0; i--) {
-            Tumba tumba = TUMBAS.get(i);
-            if (tumba.actualizar(delta)) {
-                tumba.dispose();
-                TUMBAS.remove(i);
-            }
-        }
     }
 
-    public void agregarEnemigos(EnemigoRed estadoRed) {
+    public boolean sincronizar(Cliente cliente) {
+        for (Enemigo e : cliente.getEnemigosRecibidos()) {
+            agregarEnemigos(e);
+            cliente.registrarEstadoEnemigo(e);
+        }
 
-        for (Entidad entidad : ENTIDADES) {
-            if (entidad instanceof Enemigo existente
-                && !(entidad instanceof Retumbar)
-                && !(entidad instanceof Mano)
-                && !(entidad instanceof FuegoSuelo)
-                && existente.getId() == estadoRed.getId()) {
+        for (Integer id : cliente.getEnemigosEliminados()) {
+            eliminarEnemigo(id);
+        }
+
+        for (Proyectil p : cliente.getProyectilesNuevos()) {
+            agregarProyectil(p);
+            cliente.registrarEstadoProyectil(p);
+        }
+
+        for (Proyectil p : cliente.getEstadoProyectiles()) {
+            actualizarEstadoProyectil(p);
+        }
+
+        for (Integer id : cliente.getProyectilesEliminados()) {
+            eliminarProyectil(id);
+        }
+
+        for (Tumba tumba : cliente.getEstadoTumbas()) {
+            actualizarEstadoTumba(tumba);
+        }
+
+        Retumbar jefeRecibido = cliente.getJefeRecibido();
+        if (jefeRecibido != null) {
+            crearJefe(jefeRecibido);
+        }
+
+        for (Meteorito meteorito : cliente.getEstadoMeteoritos()) {
+            crearMeteorito(meteorito);
+        }
+
+        for (int id : cliente.getMeteoritosEliminados()) {
+            eliminarMeteorito(id);
+        }
+
+        for (Fueguito fueguito : cliente.getEstadoFueguitos()) {
+            crearFueguito(fueguito);
+        }
+
+        for (Fueguito fueguito : cliente.getFueguitosEliminados()) {
+            eliminarFueguito(fueguito.getId(), fueguito.getTipo());
+        }
+
+        if (cliente.getEliminarAtaquesJefe()) {
+            eliminarAtaquesJefe();
+        }
+
+        return cliente.getMostrarCreditos();
+    }
+
+    private JugadorEstado getJugadorParaCamara() {
+        boolean localMuerto = jugadorLocal.estaMuerto();
+
+        if (localMuerto && !jugadorRemoto.estaMuerto()) {
+            return jugadorRemoto;
+        }
+        if (localMuerto) {
+            return jugadorLocal.getX() >= jugadorRemoto.getX() ? jugadorLocal : jugadorRemoto;
+        }
+        return jugadorLocal;
+    }
+
+    private void agregarEnemigos(Enemigo estadoRed) {
+        for (Enemigo existente : ENEMIGOS) {
+            if (existente.getId() == estadoRed.getId()) {
                 return;
             }
         }
-
-        Enemigo enemigo = estadoRed.getTipo().crear(estadoRed, jugadorLocal);
-
-        if (enemigo != null) {
-            enemigo.setId(estadoRed.getId());
-            agregarEntidad(enemigo);
-        }
+        ENEMIGOS.add(estadoRed);
     }
 
-    public void actualizarEstadoEnemigos(EnemigoRed estado) {
+    private void eliminarEnemigo(int id) {
+        ENEMIGOS.removeIf(enemigo -> enemigo.getId() == id);
+    }
 
-        for (Entidad entidad : ENTIDADES) {
-            if (entidad instanceof Enemigo enemigo
-                && !(entidad instanceof Retumbar)
-                && !(entidad instanceof Mano)
-                && !(entidad instanceof FuegoSuelo)
-                && enemigo.getId() == estado.getId()) {
-
-                enemigo.actualizarEstadoRed(
-                    estado.getX(),
-                    estado.getY(),
-                    estado.getDireccion(),
-                    estado.estaAtacando(),
-                    estado.getVida(),
-                    estado.esSpriteVisible(),
-                    estado.getTipoAnimacion(),
-                    estado.getTiempoAnimacion()
-                );
-
+    private void agregarProyectil(Proyectil proyectil) {
+        for (Proyectil existente : PROYECTILES) {
+            if (existente.getId() == proyectil.getId()) {
                 return;
             }
         }
-    }
-
-    public void eliminarEnemigo(int id) {
-        for (int i = 0; i < ENTIDADES.size(); i++) {
-            Entidad entidad = ENTIDADES.get(i);
-
-            if (entidad instanceof Enemigo enemigo
-                && !(entidad instanceof Retumbar)
-                && !(entidad instanceof Mano)
-                && !(entidad instanceof FuegoSuelo)
-                && enemigo.getId() == id) {
-
-                enemigo.dispose();
-                ENTIDADES.remove(i);
-                return;
-            }
-        }
-    }
-
-
-    public void agregarProyectil(ProyectilRed datos) {
-
-        for (Lanzable existente : PROYECTILES) {
-            if (existente.getId() == datos.getId()) {
-                return;
-            }
-        }
-
-        Lanzable proyectil;
-
-        if (datos.getOrigen().equals("WALTER")) {
-
-            proyectil = new BolaFuego(
-                datos.getId(),
-                datos.getX(),
-                datos.getY(),
-                (int) datos.getDireccion()
-            );
-
-        } else if (datos.getOrigen().equals("ENEMIGO")) {
-
-            proyectil = new Proyectil(
-                datos.getId(),
-                datos.getX(),
-                datos.getY(),
-                datos.getDireccion()
-            );
-
-        } else {
-            return;
-        }
-
         PROYECTILES.add(proyectil);
     }
 
-    public void actualizarEstadoProyectil(ProyectilRed datos) {
-
-        for (Lanzable proyectil : PROYECTILES) {
+    private void actualizarEstadoProyectil(Proyectil datos) {
+        for (Proyectil proyectil : PROYECTILES) {
             if (proyectil.getId() == datos.getId()) {
-                proyectil.actualizarEstado(
-                    datos.getX(),
-                    datos.getY()
-                );
+                if (proyectil != datos) {
+                    proyectil.actualizarEstado(datos.getX(), datos.getY());
+                }
                 return;
             }
         }
     }
 
-    public void eliminarProyectil(int id) {
+    private void eliminarProyectil(int id) {
+        PROYECTILES.removeIf(proyectil -> proyectil.getId() == id);
+    }
 
-        for (int i = 0; i < PROYECTILES.size(); i++) {
-            if (PROYECTILES.get(i).getId() == id) {
-                PROYECTILES.remove(i);
-                return;
-            }
+    private void actualizarEstadoTumba(Tumba datos) {
+        Tumba existente = TUMBAS.get(datos.getPersonaje());
+
+        if (existente == null) {
+            TUMBAS.put(datos.getPersonaje(), datos);
+        } else if (existente != datos) {
+            existente.actualizarEstado(datos.getX(), datos.getY());
         }
     }
 
-    public void crearJefe(JefeRed estadoRed) {}
-
-    public void actualizarEstadoJefe(JefeRed estadoRed) {
-        Retumbar jefe = getJefe();
-
-        if (jefe != null) {
-            jefe.actualizarEstado(
-                estadoRed.getX(),
-                estadoRed.getY(),
-                estadoRed.getVida(),
-                estadoRed.esVisible(),
-                estadoRed.getEscalaSprite(),
-                estadoRed.getFaseEspecial()
-            );
-        }
+    private void crearJefe(Retumbar estadoRed) {
+        jefe = estadoRed;
+        jefe.configurar(anchoMapa, altoMapa);
     }
 
-    public void actualizarEstadoMano(ManoRed estadoRed) {
-        Retumbar jefe = getJefe();
-
-        if (jefe != null) {
-            jefe.actualizarEstadoMano(estadoRed);
-        }
-    }
-
-    public void actualizarEstadoFuegoSuelo(FuegoSueloRed estadoRed)
-    {
-        Retumbar jefe = getJefe();
-
-        if(jefe != null)
-        {
-            jefe.actualizarEstadoFuegoSuelo(estadoRed);
-        }
-    }
-
-    public void actualizarEstadoRayos(RayosRed datos) {
-        Retumbar jefe = getJefe();
-
-        if (jefe != null) {
-            jefe.actualizarEstadoRayos(datos);
-        }
-    }
-
-    public void actualizarEstadoLasers(LasersRed datos) {
-        Retumbar jefe = getJefe();
-
-        if (jefe != null) {
-            jefe.actualizarEstadoLasers(datos);
-        }
-    }
-
-    public void crearMeteorito(MeteoritoRed estado) {
-        Retumbar jefe = getJefe();
-
+    private void crearMeteorito(Meteorito estado) {
         if (jefe != null) {
             jefe.crearMeteorito(estado);
         }
     }
 
-    public void actualizarEstadoMeteorito(MeteoritoRed estado) {
-        Retumbar jefe = getJefe();
-
-        if (jefe != null) {
-            jefe.actualizarEstadoMeteorito(estado);
-        }
-    }
-
-    public void eliminarMeteorito(int id) {
-        Retumbar jefe = getJefe();
-
+    private void eliminarMeteorito(int id) {
         if (jefe != null) {
             jefe.eliminarMeteorito(id);
         }
     }
 
-    public void actualizarEstadoLaserJefe(LaserJefeRed estado) {
-        Retumbar jefe = getJefe();
-
+    private void crearFueguito(Fueguito estado) {
         if (jefe != null) {
-            jefe.actualizarEstadoLaserJefe(
-                estado.estaVisible(),
-                estado.debeMostrarAviso(),
-                estado.getAngulo(),
-                estado.getTiempoAnimacion()
-            );
-        }
-    }
-
-    public void crearFueguito(FueguitoRed estado) {
-        Retumbar jefe = getJefe();
-
-        if (jefe == null) {
-            return;
-        }
-
-        if (estado.getTipo() == FueguitoRed.Tipo.RADIAL) {
-            jefe.crearFueguitoRadial(
-                estado.getId(),
-                estado.getX(),
-                estado.getY(),
-                estado.getRotacion()
-            );
-        } else {
             jefe.crearFueguito(estado);
         }
     }
 
-    public void actualizarEstadoFueguito(FueguitoRed estado) {
-        Retumbar jefe = getJefe();
-
-        if (jefe == null) {
-            return;
-        }
-
-        if (estado.getTipo() == FueguitoRed.Tipo.RADIAL) {
-            jefe.actualizarEstadoFueguitoRadial(
-                estado.getId(),
-                estado.getX(),
-                estado.getY(),
-                estado.getRotacion()
-            );
-        } else {
-            jefe.actualizarEstadoFueguito(estado);
-        }
-    }
-    public void eliminarFueguito(
-        int id, FueguitoRed.Tipo tipo) {
-
-        Retumbar jefe = getJefe();
-
-        if (jefe == null) {
-            return;
-        }
-
-        if (tipo == FueguitoRed.Tipo.RADIAL) {
-            jefe.eliminarFueguitoRadial(id);
-        } else {
-            jefe.eliminarFueguito(id);
+    private void eliminarFueguito(int id, Fueguito.Tipo tipo) {
+        if (jefe != null) {
+            jefe.eliminarFueguito(id, tipo);
         }
     }
 
-    public void eliminarJefe() {}
-
-    public void eliminarAtaquesJefe() {
-        Retumbar jefe = getJefe();
-
+    private void eliminarAtaquesJefe() {
         if (jefe != null) {
             jefe.eliminarAtaques();
         }
@@ -604,14 +311,6 @@ public abstract class Nivel {
         return gameOver;
     }
 
-    public boolean tieneReliquia() {
-        return tieneReliquia;
-    }
-
-    public boolean enemigoReliquiaDerrotado() {
-        return enemigoReliquiaDerrotado;
-    }
-
     public void dispose() {
         if (mapa != null) {
             mapa.dispose();
@@ -621,30 +320,9 @@ public abstract class Nivel {
             mapRenderer.dispose();
         }
 
-        if (shapeRenderer != null) {
-            shapeRenderer.dispose();
-        }
-
-        for (Entidad entidad : ENTIDADES) {
-            if (entidad != jugadorLocal && entidad != jugadorRemoto) {
-                entidad.dispose();
-            }
-        }
-
-        ENTIDADES.clear();
-        ENTIDADES_PENDIENTES.clear();
-        ENTIDADES_PENDIENTES_ELIMINAR.clear();
+        jefe = null;
+        ENEMIGOS.clear();
         PROYECTILES.clear();
-
-        for (Reliquia reliquia : RELIQUIAS) {
-            reliquia.dispose();
-        }
-
-        RELIQUIAS.clear();
-
-        for (Tumba tumba : TUMBAS) {
-            tumba.dispose();
-        }
         TUMBAS.clear();
     }
 }

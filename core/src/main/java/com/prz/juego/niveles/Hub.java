@@ -3,7 +3,6 @@ package com.prz.juego.niveles;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.maps.objects.RectangleMapObject;
@@ -12,119 +11,88 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
 
-import com.prz.juego.entidades.jugadores.Jugador;
+import com.prz.juego.red.JugadorEstado;
 import com.prz.juego.sistemas.Camara;
-import com.prz.juego.sistemas.Colisiones;
 import com.prz.juego.sistemas.CuadroDialogo;
-import com.prz.juego.utilidades.Debug;
-import com.prz.juego.utilidades.Dialogo;
-import com.prz.juego.utilidades.Entrada;
+import com.prz.juego.sistemas.Dialogo;
 import com.prz.juego.utilidades.FuenteJuego;
 import com.prz.juego.utilidades.Render;
 
 public class Hub {
 
+    private static final int TAMANO_FUENTE_ALERTA = 28;
+    private static final float ESCALA_JUGADORES = 2f;
+    private static final float ALTURA_ALERTA_CENTRO = 100f;
+    private static final float MARGEN_ALERTA_PANCRASIO = 80f;
+    private static final String CAPA_PANCRASIO = "pancrasio";
+    private static final String CAPA_CENTRO = "centroHub";
+    private static final String MENSAJE_ESPERANDO = "Esperando al otro jugador... E para cancelar";
+    private static final String MENSAJE_ELEGIR_NIVEL = "Presioná E para elegir nivel";
+    private static final String MENSAJE_HABLAR = "Presioná E para hablar";
+
     private Camara camara;
     private TiledMap mapa;
     private OrthogonalTiledMapRenderer mapRenderer;
 
-    private Jugador jugadorLocal;
-    private Jugador jugadorRemoto;
-
-    private Colisiones colision;
-    private ShapeRenderer shapeRenderer;
+    private JugadorEstado jugadorLocal;
+    private JugadorEstado jugadorRemoto;
 
     private Rectangle centroHub;
     private Rectangle zonaPancrasio;
     private float mapaAncho;
-    private float mapaAlto;
 
     private BitmapFont fontAlerta;
     private Dialogo dialogoPancrasio;
     private CuadroDialogo cuadroDialogo;
 
-    public void cargar(
-        String ruta,
-        Jugador jugadorLocal,
-        Jugador jugadorRemoto) {
-
+    public void cargar(String ruta, JugadorEstado jugadorLocal, JugadorEstado jugadorRemoto) {
         camara = new Camara();
 
         this.jugadorLocal = jugadorLocal;
         this.jugadorRemoto = jugadorRemoto;
 
-        jugadorLocal.escalar(2f);
-        jugadorRemoto.escalar(2f);
+        jugadorLocal.escalar(ESCALA_JUGADORES);
+        jugadorRemoto.escalar(ESCALA_JUGADORES);
 
-        jugadorLocal.setAccionesHabilitadas(false);
-        jugadorRemoto.setAccionesHabilitadas(false);
+        fontAlerta = FuenteJuego.generar(TAMANO_FUENTE_ALERTA);
 
-        shapeRenderer = new ShapeRenderer();
+        mapa = new TmxMapLoader().load(ruta);
 
-        inicializarFuenteAlerta();
-
-        TmxMapLoader mapLoader = new TmxMapLoader();
-        mapa = mapLoader.load(ruta);
-
-        if (mapa.getLayers().get("pancrasio") != null) {
-            for (MapObject object :
-                mapa.getLayers().get("pancrasio").getObjects()) {
-
-                if (object instanceof RectangleMapObject) {
-                    zonaPancrasio =
-                        ((RectangleMapObject) object).getRectangle();
-                    break;
-                }
-            }
-        }
+        zonaPancrasio = buscarRectangulo(CAPA_PANCRASIO);
+        centroHub = buscarRectangulo(CAPA_CENTRO);
 
         dialogoPancrasio = new Dialogo(
             "¡Bienvenidos, aventureros!",
             "Pronto tendré mercancía para ustedes.",
-            "Vuelvan cuando esté todo preparado."
-        );
+            "Vuelvan cuando esté todo preparado.");
 
         cuadroDialogo = new CuadroDialogo();
 
-        if (mapa.getLayers().get("centroHub") != null) {
-            for (MapObject object :
-                mapa.getLayers().get("centroHub").getObjects()) {
-
-                if (object instanceof RectangleMapObject) {
-                    centroHub =
-                        ((RectangleMapObject) object).getRectangle();
-                    break;
-                }
-            }
-        }
-
-        colision = new Colisiones(mapa);
-
         MapProperties props = mapa.getProperties();
+        mapaAncho = props.get("tilewidth", Integer.class) * props.get("width", Integer.class);
+        float mapaAlto = props.get("tileheight", Integer.class) * props.get("height", Integer.class);
 
-        int tileWidth = props.get("tilewidth", Integer.class);
-        int tileHeight = props.get("tileheight", Integer.class);
-        int mapWidthTiles = props.get("width", Integer.class);
-        int mapHeightTiles = props.get("height", Integer.class);
-
-        float mapTotalWidth = tileWidth * mapWidthTiles;
-        float mapTotalHeight = tileHeight * mapHeightTiles;
-
-        mapaAncho = mapTotalWidth;
-        mapaAlto = mapTotalHeight;
-
-        camara.setLimitesMapa(mapTotalWidth, mapTotalHeight);
+        camara.setLimitesMapa(mapaAncho, mapaAlto);
 
         mapRenderer = new OrthogonalTiledMapRenderer(mapa, 1f);
     }
 
-    private boolean estaCercaPancrasio() {
-        return zonaPancrasio != null
-            && zonaPancrasio.overlaps(jugadorLocal.getBounds());
+    private Rectangle buscarRectangulo(String capa) {
+        if (mapa.getLayers().get(capa) == null) {
+            return null;
+        }
+
+        for (MapObject object : mapa.getLayers().get(capa).getObjects()) {
+            if (object instanceof RectangleMapObject rectangulo) {
+                return rectangulo.getRectangle();
+            }
+        }
+
+        return null;
     }
 
-    private void inicializarFuenteAlerta() {
-        fontAlerta = FuenteJuego.generar(28);
+    private boolean estaCercaPancrasio() {
+        return zonaPancrasio != null && zonaPancrasio.overlaps(jugadorLocal.getBounds());
     }
 
     public void renderMapa() {
@@ -139,55 +107,30 @@ public class Hub {
         jugadorLocal.dibujar();
 
         if (cuadroDialogo.estaVisible()) {
-            cuadroDialogo.dibujar(
-                Render.batch,
-                camara.getCamera()
-            );
+            cuadroDialogo.dibujar(Render.batch, camara.getCamera());
         } else if (estaCercaPancrasio()) {
             dibujarAlertaPancrasio();
         }
     }
 
-    public void renderDebug() {
-        if (!Debug.mostrarHitboxes()) {
-            return;
-        }
+    public void update(float delta) {
+        jugadorLocal.actualizar(delta);
+        jugadorRemoto.actualizar(delta);
 
-        shapeRenderer.setProjectionMatrix(
-            camara.getCamera().combined
-        );
-
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-
-        colision.dibujarHitboxes(shapeRenderer);
-
-        jugadorRemoto.dibujarHitbox(shapeRenderer);
-        jugadorLocal.dibujarHitbox(shapeRenderer);
-
-        shapeRenderer.end();
-    }
-
-    public void update(float delta, Entrada entrada) {
-        jugadorLocal.update(delta);
-        jugadorRemoto.update(delta);
-
-        // Restringir jugadores a los bordes laterales del mapa
         restringirBordes(jugadorLocal);
         restringirBordes(jugadorRemoto);
 
         camara.seguirPersonaje(
             jugadorLocal.getX() + jugadorLocal.getAncho() / 2f,
             jugadorLocal.getY() + jugadorLocal.getAlto() / 2f,
-            delta
-        );
+            delta);
     }
 
-    private void restringirBordes(Jugador jugador) {
-        // Borde izquierdo: no puede pasar de 0
+    private void restringirBordes(JugadorEstado jugador) {
         if (jugador.getX() < 0) {
             jugador.setX(0f);
         }
-        // Borde derecho: no puede pasar del ancho del mapa menos su propio ancho
+
         float bordeDerecho = mapaAncho - jugador.getAncho();
         if (jugador.getX() > bordeDerecho) {
             jugador.setX(bordeDerecho);
@@ -195,78 +138,48 @@ public class Hub {
     }
 
     public boolean puedeInteractuarPancrasio() {
-        return cuadroDialogo.estaVisible()
-            || estaCercaPancrasio();
+        return cuadroDialogo.estaVisible() || estaCercaPancrasio();
     }
 
     public void interactuarPancrasio() {
-
         if (cuadroDialogo.estaVisible()) {
-
             dialogoPancrasio.avanzar();
 
             if (dialogoPancrasio.estaActivo()) {
-                cuadroDialogo.mostrar(
-                    dialogoPancrasio.getMensajeActual()
-                );
+                cuadroDialogo.mostrar(dialogoPancrasio.getMensajeActual());
             } else {
                 cuadroDialogo.ocultar();
             }
-
         } else if (estaCercaPancrasio()) {
-
             dialogoPancrasio.iniciar();
-
-            cuadroDialogo.mostrar(
-                dialogoPancrasio.getMensajeActual()
-            );
+            cuadroDialogo.mostrar(dialogoPancrasio.getMensajeActual());
         }
     }
 
     public void dibujarAlertaCentro(boolean enCentroHub, boolean esperandoSeleccion) {
-
         if (!enCentroHub && !esperandoSeleccion) {
             return;
         }
 
-        String mensaje;
+        String mensaje = esperandoSeleccion ? MENSAJE_ESPERANDO : MENSAJE_ELEGIR_NIVEL;
+        GlyphLayout layout = new GlyphLayout(fontAlerta, mensaje);
 
-        if (esperandoSeleccion) {
-            mensaje = "Esperando al otro jugador... E para cancelar";
-        } else {
-            mensaje = "Presioná E para elegir nivel";
-        }
-
-        GlyphLayout layout =
-            new GlyphLayout(fontAlerta, mensaje);
-
-        float x = centroHub.x
-            + centroHub.width / 2f
-            - layout.width / 2f;
-
-        float y = centroHub.y
-            + centroHub.height + 100f;
+        float x = centroHub.x + centroHub.width / 2f - layout.width / 2f;
+        float y = centroHub.y + centroHub.height + ALTURA_ALERTA_CENTRO;
 
         fontAlerta.draw(Render.batch, mensaje, x, y);
     }
 
     private void dibujarAlertaPancrasio() {
-        String mensaje = "Presioná E para hablar";
-
-        GlyphLayout layout =
-            new GlyphLayout(fontAlerta, mensaje);
+        GlyphLayout layout = new GlyphLayout(fontAlerta, MENSAJE_HABLAR);
 
         float ancho = getCamara().viewportWidth;
         float alto = getCamara().viewportHeight;
 
-        float x = getCamara().position.x
-            - ancho / 2f
-            + (ancho - layout.width) / 2f;
+        float x = getCamara().position.x - ancho / 2f + (ancho - layout.width) / 2f;
+        float y = getCamara().position.y - alto / 2f + MARGEN_ALERTA_PANCRASIO;
 
-        float y = getCamara().position.y
-            - alto / 2f + 80;
-
-        fontAlerta.draw(Render.batch, mensaje, x, y);
+        fontAlerta.draw(Render.batch, MENSAJE_HABLAR, x, y);
     }
 
     public void resize(int width, int height) {
@@ -292,10 +205,6 @@ public class Hub {
 
         if (mapRenderer != null) {
             mapRenderer.dispose();
-        }
-
-        if (shapeRenderer != null) {
-            shapeRenderer.dispose();
         }
 
         if (fontAlerta != null) {

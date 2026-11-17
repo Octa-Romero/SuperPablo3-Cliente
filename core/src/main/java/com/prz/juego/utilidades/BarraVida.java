@@ -1,4 +1,4 @@
-package com.prz.juego.sistemas;
+package com.prz.juego.utilidades;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;

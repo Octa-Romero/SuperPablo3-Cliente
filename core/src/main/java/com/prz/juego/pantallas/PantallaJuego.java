@@ -1,463 +1,325 @@
 package com.prz.juego.pantallas;
 
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
-import com.prz.juego.entidades.jefes.Mano;
-import com.prz.juego.entidades.jugadores.Jugador;
-import com.prz.juego.entidades.jugadores.Pablo;
+import com.badlogic.gdx.graphics.Camera;
 import com.prz.juego.entidades.jugadores.Personajes;
 import com.prz.juego.principal.Navegable;
 import com.prz.juego.niveles.Hub;
 import com.prz.juego.niveles.Nivel;
-import com.prz.juego.red.*;
+import com.prz.juego.red.Cliente;
+import com.prz.juego.red.JugadorEstado;
 import com.prz.juego.sistemas.Hud;
-import com.prz.juego.utilidades.Entrada;
+import com.prz.juego.sistemas.Entrada;
 import com.prz.juego.utilidades.Render;
 import com.prz.juego.utilidades.Sonido;
 
 public class PantallaJuego implements Screen {
 
-    private Cliente cliente;
-    private final Navegable NAV;
-    private Jugador jugadorLocal;
-    private JugadorEstadoRed estadoRedLocal;
-    private Jugador jugadorRemoto;
+    private static final float INTERVALO_MENSAJE = 0.25f;
+    private static final int CANTIDAD_ENTRADAS = 4;
+    private static final String RUTA_HUB = "Niveles/Niveles/Hub.tmx";
+    private static final float X_INICIAL = 50f;
+    private static final float Y_INICIAL = 150f;
+    private static final String[] MENSAJES_ENTRADA_NULA = {
+        "INPUT;NOIZQUIERDA",
+        "INPUT;NODERECHA",
+        "INPUT;NOARRIBA",
+        "INPUT;NOABAJO"
+    };
 
-    private Nivel NIVEL;
+    private final Cliente CLIENTE;
+    private final Navegable NAV;
     private final Entrada ENTRADA;
-    private MenuPausa MENU_PAUSA;
-    private boolean pausado = false;
     private final Hud HUD;
+    private final CartelDesconexion CARTEL_DESCONEXION;
+    private final JugadorEstado ESTADO_RED_LOCAL;
+    private final JugadorEstado ESTADO_RED_REMOTO;
+    private final String[] ULTIMO_ESTADO_ENTRADA = new String[CANTIDAD_ENTRADAS];
+
+    private Nivel nivel;
     private Hub hub;
+    private MenuPausa menuPausa;
+    private boolean pausado = false;
     private boolean cambiarASeleccionNivel = false;
     private boolean envioEntradaActivo = true;
-
     private float tiempoMensaje = 0f;
-    private static final float INTERVALO_MENSAJE = 0.25f;
-
-    private String ultimoEstadoIzquierda = "";
-    private String ultimoEstadoDerecha = "";
-    private String ultimoEstadoArriba = "";
-    private String ultimoEstadoAbajo = "";
-    private String ultimoEstadoAtaque = "";
-    private String ultimoEstadoE = "";
 
     public PantallaJuego(Navegable NAV, Cliente cliente, String rutaNivel) {
         this.NAV = NAV;
+        this.CLIENTE = cliente;
         this.ENTRADA = new Entrada();
-        // Limpiar entidades del nivel anterior antes de cargar uno nuevo
+
         cliente.limpiarEntidades();
-        this.NIVEL = rutaNivel == null ? null : Nivel.crear(rutaNivel);
-        this.MENU_PAUSA = new MenuPausa(NAV, this, cliente);
-        this.cliente = cliente;
+        this.nivel = rutaNivel == null ? null : new Nivel(rutaNivel);
+        this.menuPausa = new MenuPausa(NAV, this, cliente);
+        this.CARTEL_DESCONEXION = new CartelDesconexion(NAV);
 
-        Personajes personajeElegido = cliente.getPersonajeLocal();
-        Personajes personajeRemoto = cliente.getPersonajeRemoto();
-
-        jugadorLocal = personajeElegido.crear(50, 150);
-        jugadorLocal.setEntrada(ENTRADA);
-        jugadorLocal.setEstadoRed(cliente.getEstadoLocal());
-
-        this.estadoRedLocal = jugadorLocal.getEstadoRed();
-
-        jugadorRemoto = personajeRemoto.crear(50, 150);
-        jugadorRemoto.setEstadoRed(cliente.getEstadoRemoto());
+        ESTADO_RED_LOCAL = cliente.getEstadoLocal();
+        ESTADO_RED_REMOTO = cliente.getEstadoRemoto();
+        prepararJugadores();
 
         if (rutaNivel == null) {
             hub = new Hub();
-            hub.cargar("Niveles/Niveles/Hub.tmx", jugadorLocal, jugadorRemoto);
+            hub.cargar(RUTA_HUB, ESTADO_RED_LOCAL, ESTADO_RED_REMOTO);
         } else {
             hub = null;
-            NIVEL.cargar(jugadorLocal, jugadorRemoto);
+            nivel.cargar(ESTADO_RED_LOCAL, ESTADO_RED_REMOTO);
         }
 
-        HUD = new Hud(jugadorLocal, Render.batch);
+        HUD = new Hud(ESTADO_RED_LOCAL, Render.batch);
+    }
+
+    private void prepararJugadores() {
+        ESTADO_RED_LOCAL.configurar(CLIENTE.getPersonajeLocal());
+        ESTADO_RED_REMOTO.configurar(CLIENTE.getPersonajeRemoto());
+        ESTADO_RED_LOCAL.reiniciar(X_INICIAL, Y_INICIAL);
+        ESTADO_RED_REMOTO.reiniciar(X_INICIAL, Y_INICIAL);
     }
 
     @Override
     public void show() {
-        //Gdx.input.setCursorCatched(!pausado);
+        configurarInput();
+    }
 
+    private void configurarInput() {
         InputMultiplexer mux = new InputMultiplexer();
-
-        mux.addProcessor(MENU_PAUSA.getStage());
+        mux.addProcessor(CARTEL_DESCONEXION.getStage());
+        mux.addProcessor(menuPausa.getStage());
         mux.addProcessor(ENTRADA);
-
         Gdx.input.setInputProcessor(mux);
     }
 
     @Override
     public void render(float delta) {
         Render.limpiarPantalla();
+        verificarConexion();
 
-        // Detectar Escape
-        if (ENTRADA.aprietaEscape()) {
-            setPausa(!pausado);
-
-            if (pausado) {
-                MENU_PAUSA.activar();
-                // Enviar entrada nula al servidor para detener el movimiento
-                cliente.enviarMensaje("INPUT;NOIZQUIERDA");
-                cliente.enviarMensaje("INPUT;NODERECHA");
-                cliente.enviarMensaje("INPUT;NOARRIBA");
-                cliente.enviarMensaje("INPUT;NOABAJO");
-                cliente.enviarMensaje("INPUT;NOATACA");
-                cliente.enviarMensaje("INPUT;NOE");
-            } else {
-                MENU_PAUSA.desactivar();
-                // Al cerrar el menú de pausa, cancelar el estado de volver al hub
-                MENU_PAUSA.cancelarVolverHub();
+        if (CLIENTE.isExpulsado()) {
+            if (CARTEL_DESCONEXION.estaActivo()) {
+                CARTEL_DESCONEXION.desactivar();
             }
+            NAV.volverAMenu();
+            return;
         }
 
-        if (!pausado && envioEntradaActivo) {
-            actualizarEnvioEntrada(delta);
-        } else if (pausado) {
-            // Cuando está pausado, limpiar la entrada para que el jugador se detenga
+        if (CARTEL_DESCONEXION.estaActivo()) {
+            dibujarEscena();
+            if (hub == null) {
+                HUD.dibujar();
+            }
+            CARTEL_DESCONEXION.actualizarTiempoReconexion(CLIENTE.getSegundosReconexion());
+            CARTEL_DESCONEXION.update(delta);
+            CARTEL_DESCONEXION.render();
+            return;
+        }
+
+        manejarPausa();
+
+        if (pausado) {
             ENTRADA.limpiar();
+        } else if (envioEntradaActivo) {
+            actualizarEnvioEntrada(delta);
         }
 
-        // Actualizar entidades siempre
         if (hub != null) {
-            hub.update(delta, ENTRADA);
-
-            if (!pausado && ENTRADA.aprietaE()) {
-
-                if (estadoRedLocal.estaEsperandoSeleccion()) {
-
-                    cliente.enviarMensaje("SELECCION_NIVEL;false");
-                    // Reactivar el envío de entrada al cancelar la selección
-                    envioEntradaActivo = true;
-                    // Limpiar entrada para evitar movimientos residuales que causen teletransporte
-                    ENTRADA.limpiar();
-
-                } else if (hub.puedeInteractuarPancrasio()) {
-
-                    hub.interactuarPancrasio();
-
-                } else if (estadoRedLocal.estaEnCentroHub()) {
-
-                    cliente.enviarMensaje("SELECCION_NIVEL;true");
-                    // Detener el envío de entrada para que el servidor procese los mensajes nulos
-                    envioEntradaActivo = false;
-                    // Limpiar entrada y forzar idle para que la animación no se congele
-                    ENTRADA.limpiar();
-                    cliente.enviarMensaje("INPUT;NOIZQUIERDA");
-                    cliente.enviarMensaje("INPUT;NODERECHA");
-                    cliente.enviarMensaje("INPUT;NOARRIBA");
-                    cliente.enviarMensaje("INPUT;NOABAJO");
-                    cliente.enviarMensaje("INPUT;NOATACA");
-                    cliente.enviarMensaje("INPUT;NOE");
-                    jugadorLocal.forzarIdle();
-                    estadoRedLocal.resetearAnimacionRecibida();
-                }
-            }
-
-            // Forzar idle mientras se espera al otro jugador (cada frame, no solo al presionar E)
-            if (estadoRedLocal.estaEsperandoSeleccion()) {
-                jugadorLocal.forzarIdle();
-            }
-
-            if (!pausado && cliente.sePuedeSeleccionarNivel()) {
-
-                guardarPosicionCamara();
-                ENTRADA.limpiar();
-                // Enviar entrada nula al servidor para que el jugador vuelva al idle
-                cliente.enviarMensaje("INPUT;NOIZQUIERDA");
-                cliente.enviarMensaje("INPUT;NODERECHA");
-                cliente.enviarMensaje("INPUT;NOARRIBA");
-                cliente.enviarMensaje("INPUT;NOABAJO");
-                cliente.enviarMensaje("INPUT;NOATACA");
-                cliente.enviarMensaje("INPUT;NOE");
-                // Forzar la animacion de idle localmente para que se renderice en este frame
-                jugadorLocal.forzarIdle();
-                jugadorRemoto.forzarIdle();
-                // Cambiar pantalla al siguiente frame para que el idle se vea
-                cambiarASeleccionNivel = true;
-            }
+            actualizarHub(delta);
         } else {
-            NIVEL.update(delta, ENTRADA);
-        }
-
-        // Actualizaciones de estado de red que siguen ejecutándose aunque esté pausado
-        if (hub == null) {
-            for (EnemigoRed e : cliente.getEnemigosRecibidos()) {
-                NIVEL.agregarEnemigos(e);
-                cliente.registrarEstadoEnemigo(e);
-            }
-
-            for (EnemigoRed e : cliente.getEstadoEnemigos()) {
-                NIVEL.actualizarEstadoEnemigos(e);
-            }
-
-            for (Integer id : cliente.getEnemigosEliminados()) {
-                NIVEL.eliminarEnemigo(id);
-            }
-
-            for (ProyectilRed p : cliente.getProyectilesNuevos()) {
-                NIVEL.agregarProyectil(p);
-                cliente.registrarEstadoProyectil(p);
-            }
-
-            for (ProyectilRed p : cliente.getEstadoProyectiles()) {
-                NIVEL.actualizarEstadoProyectil(p);
-            }
-
-            for (Integer id : cliente.getProyectilesEliminados()) {
-                NIVEL.eliminarProyectil(id);
-            }
-
-            JefeRed jefeRecibido = cliente.getJefeRecibido();
-
-            if(jefeRecibido != null)
-            {
-                NIVEL.crearJefe(jefeRecibido);
-                HUD.setJefe(NIVEL.getJefe());
-            }
-
-            JefeRed estadoJefe = cliente.getEstadoJefe();
-
-            if(estadoJefe != null)
-            {
-                NIVEL.actualizarEstadoJefe(estadoJefe);
-            }
-
-            ManoRed izquierda = cliente.getEstadoMano(Mano.Lado.IZQUIERDA);
-            ManoRed derecha = cliente.getEstadoMano(Mano.Lado.DERECHA);
-
-            if (izquierda != null && izquierda.recibioEstado()) {
-                NIVEL.actualizarEstadoMano(izquierda);
-            }
-
-            if (derecha != null && derecha.recibioEstado()) {
-                NIVEL.actualizarEstadoMano(derecha);
-            }
-
-            FuegoSueloRed estadoFuegoSuelo = cliente.getEstadoFuegoSuelo();
-
-            if(estadoFuegoSuelo != null && estadoFuegoSuelo.tieneEstadoRecibido())
-            {
-                NIVEL.actualizarEstadoFuegoSuelo(estadoFuegoSuelo);
-            }
-
-            RayosRed rayos = cliente.getEstadoRayos();
-
-            if (rayos != null && rayos.tieneEstadoRecibido()) {
-                NIVEL.actualizarEstadoRayos(rayos);
-            }
-
-            LasersRed lasers = cliente.getEstadoLasers();
-
-            if (lasers != null && lasers.tieneEstadoRecibido()) {
-                NIVEL.actualizarEstadoLasers(lasers);
-            }
-
-            for (MeteoritoRed meteorito : cliente.getMeteoritosNuevos()) {
-                NIVEL.crearMeteorito(meteorito);
-            }
-
-            for (MeteoritoRed meteorito : cliente.getEstadoMeteoritos()) {
-                if (meteorito.tieneEstadoRecibido()) {
-                    NIVEL.actualizarEstadoMeteorito(meteorito);
-                }
-            }
-
-            for (int id : cliente.getMeteoritosEliminados()) {
-                NIVEL.eliminarMeteorito(id);
-            }
-
-            LaserJefeRed estadoLaserJefe = cliente.getEstadoLaserJefe();
-
-            if (estadoLaserJefe.tieneEstadoRecibido()) {
-                NIVEL.actualizarEstadoLaserJefe(estadoLaserJefe);
-            }
-
-            for (FueguitoRed fueguito : cliente.getFueguitosNuevos()) {
-                NIVEL.crearFueguito(fueguito);
-            }
-
-            for (FueguitoRed fueguito : cliente.getEstadoFueguitos()) {
-                NIVEL.actualizarEstadoFueguito(fueguito);
-            }
-
-            for (FueguitoRed fueguito : cliente.getFueguitosEliminados()) {
-                NIVEL.eliminarFueguito(
-                    fueguito.getId(),
-                    fueguito.getTipo()
-                );
-            }
-
-            // No eliminar el jefe inmediatamente para que siga visible durante los 2 segundos
-            // antes de los créditos. El jefe se eliminará implícitamente al cambiar a PantallaFinal.
-
-            // Eliminar todos los ataques del jefe cuando el servidor lo indica
-            if (cliente.getEliminarAtaquesJefe()) {
-                NIVEL.eliminarAtaquesJefe();
-            }
-
-            if (cliente.getMostrarCreditos()) {
-                NAV.cambiarPantalla(new PantallaFinal(NAV));
+            nivel.update(delta);
+            if (sincronizarNivel()) {
                 return;
             }
         }
 
-        // Actualizar la posición de la cámara para el rango de escucha de sonidos
-        if (hub != null) {
-            com.badlogic.gdx.graphics.Camera cam = hub.getCamara();
-            cliente.actualizarCamara(cam.position.x, cam.position.y);
-        } else {
-            com.badlogic.gdx.graphics.Camera cam = NIVEL.getCamara();
-            cliente.actualizarCamara(cam.position.x, cam.position.y);
+        Camera camara = hub != null ? hub.getCamara() : nivel.getCamara();
+        CLIENTE.actualizarCamara(camara.position.x, camara.position.y);
+
+        dibujarEscena();
+
+        if (hub == null) {
+            if (nivel.isGameOver()) {
+                NAV.cambiarPantalla(new GameOver(NAV, nivel, CLIENTE));
+                return;
+            }
+            actualizarHud(delta);
+            HUD.dibujar();
         }
 
-        // Dibujar el Hub o el NIVEL seleccionado
+        if (pausado) {
+            menuPausa.update(delta);
+            menuPausa.render();
+        }
+
+        if (cambiarASeleccionNivel) {
+            cambiarASeleccionNivel = false;
+            NAV.cambiarPantalla(new SeleccionNivel(NAV, CLIENTE, this));
+        }
+    }
+
+    private void verificarConexion() {
+        if (CLIENTE.consumirSeleccionCancelada()) {
+            envioEntradaActivo = true;
+            ENTRADA.limpiar();
+        }
+
+        if (CLIENTE.necesitaSnapshot()) {
+            if (nivel != null) {
+                nivel.limpiarEntidades();
+            }
+            CLIENTE.solicitarSnapshotEntidades();
+        }
+
+        if (CLIENTE.isServidorPerdido() && !CARTEL_DESCONEXION.estaActivo()) {
+            CARTEL_DESCONEXION.mostrarServidorPerdido();
+        }
+
+        if (CLIENTE.isJugadorRemotoDesconectado() && !CARTEL_DESCONEXION.estaActivo()) {
+            CARTEL_DESCONEXION.mostrarJugadorDesconectado();
+            CLIENTE.resetearJugadorRemotoDesconectado();
+        }
+
+        if (CLIENTE.isJugadorRemotoReconecto() && CARTEL_DESCONEXION.estaActivo()) {
+            CARTEL_DESCONEXION.desactivar();
+        }
+    }
+
+    private void manejarPausa() {
+        if (!ENTRADA.aprietaEscape()) {
+            return;
+        }
+
+        setPausa(!pausado);
+
+        if (pausado) {
+            menuPausa.activar();
+            enviarEntradaNula();
+        } else {
+            menuPausa.desactivar();
+            menuPausa.cancelarVolverHub();
+        }
+    }
+
+    private void actualizarHub(float delta) {
+        hub.update(delta);
+
+        if (!pausado && ENTRADA.aprietaE()) {
+            manejarInteraccionHub();
+        }
+
+        if (ESTADO_RED_LOCAL.estaEsperandoSeleccion()) {
+            ESTADO_RED_LOCAL.forzarIdle();
+        }
+
+        if (!pausado && CLIENTE.sePuedeSeleccionarNivel()) {
+            guardarPosicionCamara();
+            ENTRADA.limpiar();
+            enviarEntradaNula();
+            ESTADO_RED_LOCAL.forzarIdle();
+            ESTADO_RED_REMOTO.forzarIdle();
+            cambiarASeleccionNivel = true;
+        }
+    }
+
+    private void manejarInteraccionHub() {
+        if (ESTADO_RED_LOCAL.estaEsperandoSeleccion()) {
+            CLIENTE.enviarMensaje("SELECCION_NIVEL;false");
+            envioEntradaActivo = true;
+            ENTRADA.limpiar();
+        } else if (hub.puedeInteractuarPancrasio()) {
+            hub.interactuarPancrasio();
+        } else if (ESTADO_RED_LOCAL.estaEnCentroHub()) {
+            CLIENTE.enviarMensaje("SELECCION_NIVEL;true");
+            envioEntradaActivo = false;
+            ENTRADA.limpiar();
+            enviarEntradaNula();
+            ESTADO_RED_LOCAL.forzarIdle();
+            ESTADO_RED_LOCAL.resetearAnimacionRecibida();
+        }
+    }
+
+    private boolean sincronizarNivel() {
+        boolean mostrarCreditos = nivel.sincronizar(CLIENTE);
+
+        if (nivel.getJefe() != null) {
+            HUD.setJefe(nivel.getJefe());
+        }
+
+        if (mostrarCreditos) {
+            NAV.cambiarPantalla(new PantallaFinal(NAV));
+            return true;
+        }
+
+        return false;
+    }
+
+    private void actualizarHud(float delta) {
+        HUD.update(delta);
+
+        boolean localMuerto = ESTADO_RED_LOCAL.estaMuerto();
+        boolean remotoMuerto = ESTADO_RED_REMOTO.estaMuerto();
+        String nombreLocal = nombreDe(CLIENTE.getPersonajeLocal());
+        String nombreRemoto = nombreDe(CLIENTE.getPersonajeRemoto());
+        String nombreVivo = localMuerto ? nombreRemoto : nombreLocal;
+        String nombreMuerto = remotoMuerto ? nombreRemoto : "";
+        HUD.setEstadoMuerte(localMuerto, remotoMuerto, nombreVivo, nombreMuerto);
+    }
+
+    private String nombreDe(Personajes personaje) {
+        return personaje == Personajes.PABLO ? "Pablo" : "Walter";
+    }
+
+    private void dibujarEscena() {
         if (hub != null) {
             hub.renderMapa();
 
             Render.begin(hub.getCamara());
             hub.render();
-            hub.dibujarAlertaCentro(estadoRedLocal.estaEnCentroHub(), estadoRedLocal.estaEsperandoSeleccion());
+            hub.dibujarAlertaCentro(
+                ESTADO_RED_LOCAL.estaEnCentroHub(), ESTADO_RED_LOCAL.estaEsperandoSeleccion());
             Render.end();
-
         } else {
-            NIVEL.renderMapa();
+            nivel.renderMapa();
 
-            Render.begin(NIVEL.getCamara());
-            NIVEL.render();
+            Render.begin(nivel.getCamara());
+            nivel.render();
             Render.end();
-
-            NIVEL.renderDebug();
-
-            if (NIVEL.isGameOver()) {
-                NAV.cambiarPantalla(new GameOver(NAV, NIVEL, cliente));
-                return;
-            }
-        }
-
-        if (hub == null) {
-            HUD.setTieneReliquia(NIVEL.tieneReliquia());
-            HUD.update(delta);
-
-            boolean localMuerto = jugadorLocal.estaMuerto();
-            boolean remotoMuerto = jugadorRemoto.estaMuerto();
-            String nombreVivo = localMuerto
-                ? (jugadorRemoto instanceof Pablo ? "Pablo" : "Walter")
-                : (jugadorLocal instanceof Pablo ? "Pablo" : "Walter");
-            String nombreMuerto = remotoMuerto
-                ? (jugadorRemoto instanceof Pablo ? "Pablo" : "Walter")
-                : "";
-            HUD.setEstadoMuerte(localMuerto, remotoMuerto, nombreVivo, nombreMuerto);
-
-            HUD.dibujar();
-        }
-
-        if (pausado) {
-            MENU_PAUSA.update(delta);
-            MENU_PAUSA.render();
-        }
-
-        // Cambiar a SeleccionNivel después de renderizar el frame con el idle
-        if (cambiarASeleccionNivel) {
-            cambiarASeleccionNivel = false;
-            NAV.cambiarPantalla(new SeleccionNivel(NAV, cliente, this));
         }
     }
 
     private void actualizarEnvioEntrada(float delta) {
         tiempoMensaje += delta;
+        boolean refrescar = tiempoMensaje >= INTERVALO_MENSAJE;
 
-        String estadoIzquierda = obtenerEstadoIzquierda();
-        String estadoDerecha = obtenerEstadoDerecha();
-        String estadoArriba = obtenerEstadoArriba();
-        String estadoAtaque = obtenerEstadoAtaque();
-        String estadoAbajo = obtenerEstadoAbajo();
-        String estadoE = obtenerEstadoE();
+        enviarEstadoEntrada(0, ENTRADA.mueveIzquierda() ? "INPUT;IZQUIERDA" : "INPUT;NOIZQUIERDA", refrescar);
+        enviarEstadoEntrada(1, ENTRADA.mueveDerecha() ? "INPUT;DERECHA" : "INPUT;NODERECHA", refrescar);
+        enviarEstadoEntrada(2, ENTRADA.mueveArriba() ? "INPUT;ARRIBA" : "INPUT;NOARRIBA", refrescar);
+        enviarEstadoEntrada(3, ENTRADA.mueveAbajo() ? "INPUT;ABAJO" : "INPUT;NOABAJO", refrescar);
 
-        if (!estadoIzquierda.equals(ultimoEstadoIzquierda)
-            || tiempoMensaje >= INTERVALO_MENSAJE) {
-            cliente.enviarMensaje(estadoIzquierda);
-            ultimoEstadoIzquierda = estadoIzquierda;
+        if (ENTRADA.ataca()) {
+            CLIENTE.enviarMensaje("INPUT;ATACA");
         }
 
-        if (!estadoDerecha.equals(ultimoEstadoDerecha)
-            || tiempoMensaje >= INTERVALO_MENSAJE) {
-            cliente.enviarMensaje(estadoDerecha);
-            ultimoEstadoDerecha = estadoDerecha;
+        if (ENTRADA.aprietaERed()) {
+            CLIENTE.enviarMensaje("INPUT;E");
         }
 
-        if (!estadoArriba.equals(ultimoEstadoArriba)
-            || tiempoMensaje >= INTERVALO_MENSAJE) {
-            cliente.enviarMensaje(estadoArriba);
-            ultimoEstadoArriba = estadoArriba;
-        }
-
-        if (!estadoAbajo.equals(ultimoEstadoAbajo)
-            || tiempoMensaje >= INTERVALO_MENSAJE) {
-
-            cliente.enviarMensaje(estadoAbajo);
-            ultimoEstadoAbajo = estadoAbajo;
-        }
-
-        if (!estadoAtaque.equals(ultimoEstadoAtaque)
-            || tiempoMensaje >= INTERVALO_MENSAJE) {
-            cliente.enviarMensaje(estadoAtaque);
-            ultimoEstadoAtaque = estadoAtaque;
-        }
-
-        if (!estadoE.equals(ultimoEstadoE)
-            || tiempoMensaje >= INTERVALO_MENSAJE) {
-            cliente.enviarMensaje(estadoE);
-            ultimoEstadoE = estadoE;
-        }
-
-        if (tiempoMensaje >= INTERVALO_MENSAJE) {
+        if (refrescar) {
             tiempoMensaje = 0f;
         }
     }
 
-
-    private String obtenerEstadoIzquierda() {
-        if (ENTRADA.mueveIzquierda()) {
-            return "INPUT;IZQUIERDA";
+    private void enviarEstadoEntrada(int indice, String estado, boolean refrescar) {
+        if (refrescar || !estado.equals(ULTIMO_ESTADO_ENTRADA[indice])) {
+            CLIENTE.enviarMensaje(estado);
+            ULTIMO_ESTADO_ENTRADA[indice] = estado;
         }
-        return "INPUT;NOIZQUIERDA";
     }
 
-    private String obtenerEstadoDerecha() {
-        if (ENTRADA.mueveDerecha()) {
-            return "INPUT;DERECHA";
+    private void enviarEntradaNula() {
+        for (String mensaje : MENSAJES_ENTRADA_NULA) {
+            CLIENTE.enviarMensaje(mensaje);
         }
-        return "INPUT;NODERECHA";
-    }
-
-    private String obtenerEstadoArriba() {
-        if (ENTRADA.mueveArriba()) {
-            return "INPUT;ARRIBA";
-        }
-        return "INPUT;NOARRIBA";
-    }
-
-    private String obtenerEstadoAbajo() {
-        if (ENTRADA.mueveAbajo()) {
-            return "INPUT;ABAJO";
-        }
-        return "INPUT;NOABAJO";
-    }
-
-    private String obtenerEstadoAtaque() {
-        if (ENTRADA.ataca()) {
-            return "INPUT;ATACA";
-        }
-        return "INPUT;NOATACA";
-    }
-
-    private String obtenerEstadoE() {
-        if (ENTRADA.ataca()) {
-            return "INPUT;E";
-        }
-        return "INPUT;NOE";
     }
 
     @Override
@@ -465,13 +327,13 @@ public class PantallaJuego implements Screen {
         if (hub != null) {
             hub.resize(width, height);
         } else {
-            NIVEL.resize(width, height);
+            nivel.resize(width, height);
         }
 
-        MENU_PAUSA.resize(width, height);
+        menuPausa.resize(width, height);
+        CARTEL_DESCONEXION.resize(width, height);
         HUD.actualizarTamano(width, height);
     }
-
 
     public void setPausa(boolean valor) {
         this.pausado = valor;
@@ -482,58 +344,58 @@ public class PantallaJuego implements Screen {
         if (hub != null) {
             hub.guardarPosicionCamara();
         } else {
-            NIVEL.guardarPosicionCamara();
+            nivel.guardarPosicionCamara();
         }
-    }
-
-    public boolean estaEnHub() {
-        return NIVEL == null;
-    }
-
-    public void cargarHub() {
-        // Desactivar pausa si estaba activa
-        if (pausado) {
-            pausado = false;
-            MENU_PAUSA.desactivar();
-        }
-        // Limpiar el nivel actual si existe
-        if (NIVEL != null) {
-            NIVEL.dispose();
-            NIVEL = null;
-        }
-        // Limpiar el hub actual si existe
-        if (hub != null) {
-            hub.dispose();
-        }
-        // Dispose del MenuPausa anterior
-        MENU_PAUSA.dispose();
-        // Reiniciar los jugadores a las posiciones iniciales del hub
-        jugadorLocal.reiniciar(50, 150);
-        jugadorRemoto.reiniciar(50, 150);
-        // Crear el hub
-        hub = new Hub();
-        hub.cargar("Niveles/Niveles/Hub.tmx", jugadorLocal, jugadorRemoto);
-        // Crear nuevo MenuPausa
-        MENU_PAUSA = new MenuPausa(NAV, this, cliente);
-        HUD.setJefe(null);
-        ENTRADA.limpiar();
-        // Limpiar cualquier mensaje residual de volver al hub
-        cliente.resetearVolverHub();
-        // Reconfigurar el InputMultiplexer con el nuevo MenuPausa
-        InputMultiplexer mux = new InputMultiplexer();
-        mux.addProcessor(MENU_PAUSA.getStage());
-        mux.addProcessor(ENTRADA);
-        Gdx.input.setInputProcessor(mux);
-        // Reactivar el envío de entrada al volver al hub
-        envioEntradaActivo = true;
     }
 
     public void restaurarPosicionCamara() {
         if (hub != null) {
             hub.restaurarPosicionCamara();
         } else {
-            NIVEL.restaurarPosicionCamara();
+            nivel.restaurarPosicionCamara();
         }
+    }
+
+    public boolean estaEnHub() {
+        return nivel == null;
+    }
+
+    public void reanudarDespuesDeSeleccion() {
+        envioEntradaActivo = true;
+        ENTRADA.limpiar();
+        restaurarPosicionCamara();
+    }
+
+    public void cargarHub() {
+        if (pausado) {
+            setPausa(false);
+            menuPausa.desactivar();
+        }
+
+        if (nivel != null) {
+            nivel.dispose();
+            nivel = null;
+        }
+
+        if (hub != null) {
+            hub.dispose();
+        }
+
+        menuPausa.dispose();
+
+        prepararJugadores();
+        CLIENTE.limpiarEntidades();
+
+        hub = new Hub();
+        hub.cargar(RUTA_HUB, ESTADO_RED_LOCAL, ESTADO_RED_REMOTO);
+
+        menuPausa = new MenuPausa(NAV, this, CLIENTE);
+        HUD.setJefe(null);
+        ENTRADA.limpiar();
+        CLIENTE.resetearVolverHub();
+
+        configurarInput();
+        envioEntradaActivo = true;
     }
 
     @Override
@@ -555,10 +417,11 @@ public class PantallaJuego implements Screen {
         if (hub != null) {
             hub.dispose();
         }
-        if (NIVEL != null) {
-            NIVEL.dispose();
+        if (nivel != null) {
+            nivel.dispose();
         }
-        MENU_PAUSA.dispose();
+        menuPausa.dispose();
+        CARTEL_DESCONEXION.dispose();
         HUD.dispose();
     }
 }

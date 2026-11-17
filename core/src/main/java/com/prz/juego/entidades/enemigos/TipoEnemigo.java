@@ -1,23 +1,28 @@
 package com.prz.juego.entidades.enemigos;
 
-import com.prz.juego.entidades.enemigos.melee.BichoMelee;
-import com.prz.juego.entidades.enemigos.rango.BichoRango;
-import com.prz.juego.entidades.jugadores.Jugador;
-import com.prz.juego.red.EnemigoRed;
-
 public enum TipoEnemigo {
-    BICHO_MELEE,
-    BICHO_RANGO;
+    BICHO_MELEE("Enemigos/BichoMelee/bichoMelee.png", 70f, 110f),
+    BICHO_RANGO("Enemigos/BichoRango/bichoRango.png", 70f, 110f);
 
-    public Enemigo crear(EnemigoRed datos, Jugador jugador) {
-        switch (this) {
-            case BICHO_MELEE:
-                return new BichoMelee(datos.getX(), datos.getY(), jugador);
+    private final String RUTA_TEXTURA;
+    private final float ANCHO;
+    private final float ALTO;
 
-            case BICHO_RANGO:
-                return new BichoRango(datos.getX(), datos.getY(), jugador);
-            default:
-                return null;
-        }
+    TipoEnemigo(String rutaTextura, float ancho, float alto) {
+        RUTA_TEXTURA = rutaTextura;
+        ANCHO = ancho;
+        ALTO = alto;
+    }
+
+    public String getRutaTextura() {
+        return RUTA_TEXTURA;
+    }
+
+    public float getAncho() {
+        return ANCHO;
+    }
+
+    public float getAlto() {
+        return ALTO;
     }
 }
