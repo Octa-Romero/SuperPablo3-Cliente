@@ -22,10 +22,10 @@ import java.util.HashMap;
 public class Nivel {
 
     private static final String[] RUTAS_NIVELES = {
-        "Niveles/Niveles/Level1.tmx",
+        "Niveles/Niveles/Nivel1.tmx",
         "Niveles/Niveles/Nivel2.1.tmx",
         "Niveles/Niveles/Nivel3.tmx",
-        "Niveles/Niveles/nivel4.tmx",
+        "Niveles/Niveles/Nivel4.tmx",
         "Niveles/Niveles/Nivel5.tmx",
         "Niveles/Niveles/Nivel6.tmx",
         "Niveles/Niveles/Nivel7.tmx"
