@@ -8,6 +8,7 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.prz.juego.entidades.Proyectil;
 import com.prz.juego.entidades.Tumba;
 import com.prz.juego.entidades.enemigos.Enemigo;
+import com.prz.juego.recursos.GestorRecursos;
 import com.prz.juego.red.JugadorEstado;
 import com.prz.juego.entidades.retumbar.Fueguito;
 import com.prz.juego.entidades.retumbar.Retumbar;
@@ -15,7 +16,7 @@ import com.prz.juego.entidades.retumbar.Meteorito;
 import com.prz.juego.red.*;
 import com.prz.juego.sistemas.Camara;
 import com.prz.juego.utilidades.Render;
-
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -48,6 +49,19 @@ public class Nivel {
     private float anchoMapa;
     private float altoMapa;
     private boolean gameOver = false;
+
+    private static final String TEXTURA_RELIQUIA = "Reliquia/reliquia.png";
+    private static final float TAMANO_RELIQUIA = 48f;
+
+    private static final float AMPLITUD_FLOTACION = 4f;
+    private static final float VELOCIDAD_FLOTACION = 3f;
+    private static final float VELOCIDAD_ROTACION = 90f;
+
+    private float reliquiaX;
+    private float reliquiaY;
+    private float tiempoAnimacionReliquia;
+
+    private Sprite reliquia;
 
     public Nivel(String rutaMapa) {
         if (rutaMapa == null) {
@@ -89,6 +103,10 @@ public class Nivel {
         ENEMIGOS.clear();
         PROYECTILES.clear();
         TUMBAS.clear();
+        reliquia = null;
+        reliquiaX = 0f;
+        reliquiaY = 0f;
+        tiempoAnimacionReliquia = 0f;
     }
 
     public void renderMapa() {
@@ -117,6 +135,15 @@ public class Nivel {
         for (Tumba tumba : TUMBAS.values()) {
             tumba.dibujar();
         }
+
+        if (reliquia != null) {
+            float flotacion = (float) Math.sin(
+                tiempoAnimacionReliquia * VELOCIDAD_FLOTACION
+            ) * AMPLITUD_FLOTACION;
+
+            reliquia.setPosition(reliquiaX, reliquiaY - 150f + flotacion);
+            reliquia.draw(Render.batch);
+        }
     }
 
     public void update(float delta) {
@@ -140,9 +167,24 @@ public class Nivel {
         if (jugadorLocal.estaMuerto() && jugadorRemoto.estaMuerto()) {
             gameOver = true;
         }
+
+        if (reliquia != null) {
+            tiempoAnimacionReliquia += delta;
+
+            reliquia.rotate(VELOCIDAD_ROTACION * delta);
+        }
+
     }
 
     public boolean sincronizar(Cliente cliente) {
+        if (cliente.hayReliquiaNueva()) {
+            crearReliquia(cliente.getReliquiaX(), cliente.getReliquiaY());
+        }
+
+        if (cliente.fueRecogidaLaReliquia()) {
+            eliminarReliquia();
+        }
+
         for (Enemigo e : cliente.getEnemigosRecibidos()) {
             agregarEnemigos(e);
             cliente.registrarEstadoEnemigo(e);
@@ -291,6 +333,26 @@ public class Nivel {
         }
     }
 
+    private void crearReliquia(float x, float y) {
+        reliquia = new Sprite(
+            GestorRecursos.obtenerTextura(TEXTURA_RELIQUIA)
+        );
+
+        reliquia.setSize(TAMANO_RELIQUIA, TAMANO_RELIQUIA);
+        reliquia.setOriginCenter();
+
+        reliquiaX = x;
+        reliquiaY = y;
+        tiempoAnimacionReliquia = 0f;
+
+        reliquia.setPosition(x, y);
+    }
+
+    private void eliminarReliquia() {
+        reliquia = null;
+        tiempoAnimacionReliquia = 0f;
+    }
+
     public void resize(int width, int height) {
         camara.actualizarTamano(width, height);
     }
@@ -324,5 +386,6 @@ public class Nivel {
         ENEMIGOS.clear();
         PROYECTILES.clear();
         TUMBAS.clear();
+        reliquia = null;
     }
 }

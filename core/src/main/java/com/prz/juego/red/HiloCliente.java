@@ -85,6 +85,10 @@ public class HiloCliente extends Thread {
     private volatile boolean expulsado = false;
     private volatile int segundosReconexion = 0;
     private volatile boolean seleccionCancelada = false;
+    private volatile boolean reliquiaNueva = false;
+    private volatile boolean reliquiaRecogida = false;
+    private volatile float reliquiaX;
+    private volatile float reliquiaY;
 
     public HiloCliente(int idCliente) {
         this.idCliente = idCliente;
@@ -256,6 +260,8 @@ public class HiloCliente extends Thread {
             procesarEliminacionFueguito(msj);
         } else if (msj.startsWith("ESTADO_TUMBA;")) {
             procesarEstadoTumba(msj);
+        } else if(msj.startsWith("RELIQUIA")){
+            procesarEstadoReliquia(msj);
         } else if (msj.startsWith("SONIDO;")) {
             procesarSonido(msj);
         } else if (msj.startsWith("MUSICA;")) {
@@ -598,6 +604,26 @@ public class HiloCliente extends Thread {
         limpiarFueguitos();
     }
 
+    private synchronized void procesarEstadoReliquia(String msj) {
+        String[] partes = msj.split(";");
+
+        try {
+            if (partes.length >= 2 && partes[1].equals("APARECER")) {
+                reliquiaX = Float.parseFloat(partes[2]);
+                reliquiaY = Float.parseFloat(partes[3]);
+
+                reliquiaNueva = true;
+                reliquiaRecogida = false;
+
+            } else if (partes.length >= 2 && partes[1].equals("RECOGIDA")) {
+                reliquiaNueva = false;
+                reliquiaRecogida = true;
+            }
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Estado de reliquia inválido");
+        }
+    }
+
     private synchronized void procesarEstadoMano(String msj) {
         String[] partes = msj.split(";");
 
@@ -811,6 +837,26 @@ public class HiloCliente extends Thread {
         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
             System.out.println("Estado de tumba inválido");
         }
+    }
+
+    public synchronized boolean hayReliquiaNueva() {
+        boolean nueva = reliquiaNueva;
+        reliquiaNueva = false;
+        return nueva;
+    }
+
+    public synchronized boolean fueRecogidaLaReliquia() {
+        boolean recogida = reliquiaRecogida;
+        reliquiaRecogida = false;
+        return recogida;
+    }
+
+    public float getReliquiaX() {
+        return reliquiaX;
+    }
+
+    public float getReliquiaY() {
+        return reliquiaY;
     }
 
     public synchronized ArrayList<Tumba> getEstadoTumbas() {
@@ -1169,6 +1215,10 @@ public class HiloCliente extends Thread {
         estadoJefe = null;
         METEORITOS.clear();
         METEORITOS_ELIMINADOS.clear();
+        reliquiaNueva = false;
+        reliquiaRecogida = false;
+        reliquiaX = 0f;
+        reliquiaY = 0f;
         limpiarFueguitos();
     }
 

@@ -9,7 +9,7 @@ public class Config {
 
     // Modo demo para probar en la misma PC con IDs en lugar de IP
     // Cambiar a false para producción (usar IP normal)
-    public static final boolean DEMO_MODE = false;
+    public static final boolean DEMO_MODE = true;
 
     public static boolean fullscreen = true;
 

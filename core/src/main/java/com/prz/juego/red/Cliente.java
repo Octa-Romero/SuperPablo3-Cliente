@@ -204,6 +204,22 @@ public class Cliente {
         }
     }
 
+    public boolean hayReliquiaNueva() {
+        return hilo.hayReliquiaNueva();
+    }
+
+    public boolean fueRecogidaLaReliquia() {
+        return hilo.fueRecogidaLaReliquia();
+    }
+
+    public float getReliquiaX() {
+        return hilo.getReliquiaX();
+    }
+
+    public float getReliquiaY() {
+        return hilo.getReliquiaY();
+    }
+
     public boolean necesitaSnapshot() {
         return hilo != null && hilo.necesitaSnapshot();
     }
