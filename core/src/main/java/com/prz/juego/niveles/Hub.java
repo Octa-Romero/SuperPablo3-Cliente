@@ -182,6 +182,11 @@ public class Hub {
         fontAlerta.draw(Render.batch, MENSAJE_HABLAR, x, y);
     }
 
+    public void cerrarDialogo() {
+        dialogoPancrasio.cerrar();
+        cuadroDialogo.ocultar();
+    }
+
     public void resize(int width, int height) {
         camara.actualizarTamano(width, height);
     }

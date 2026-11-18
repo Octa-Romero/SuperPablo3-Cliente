@@ -270,6 +270,26 @@ public class Cliente {
         return hilo != null ? hilo.getNivelReconexion() : null;
     }
 
+    public boolean[] getReliquiasRecogidas() {
+        return hilo != null ? hilo.getReliquiasRecogidas() : new boolean[5];
+    }
+
+    public boolean isNivel7Alcanzado() {
+        return hilo != null && hilo.isNivel7Alcanzado();
+    }
+
+    public float[] consumirPortalNuevo() {
+        return hilo != null ? hilo.consumirPortalNuevo() : null;
+    }
+
+    public boolean isEsperandoPortal() {
+        return hilo != null && hilo.isEsperandoPortal();
+    }
+
+    public boolean isConexionRechazada() {
+        return hilo != null && hilo.isConexionRechazada();
+    }
+
     public void cerrar() {
         if (hilo != null) {
             hilo.cerrar();

@@ -21,13 +21,14 @@ import com.prz.juego.utilidades.FuenteJuego;
 import com.prz.juego.utilidades.Render;
 import com.prz.juego.utilidades.Sonido;
 
-public class ComoJugar implements Screen {
+public class Controles implements Screen {
 
     private static final String[][] CONTROLES = {
         {"Movimiento", "A/D o Flecha Izquierda/Flecha Derecha"},
-        {"Salto", "W, Z o Flecha Arriba"},
-        {"Ataque", "X, J o Espacio"},
-        {"Pausa", "Esc"}
+        {"Salto", "W, Flecha Arriba, Espacio o Z"},
+        {"Ataque", "X o J"},
+        {"Pausa", "Esc"},
+        {"Interactuar", "E"}
     };
 
     private static final float ALPHA_PANEL = 0.6f;
@@ -41,7 +42,7 @@ public class ComoJugar implements Screen {
     private BitmapFont fontBoton;
     private Texture texturaBlanca;
 
-    public ComoJugar(Navegable NAV) {
+    public Controles(Navegable NAV) {
         this.NAV = NAV;
     }
 
@@ -62,7 +63,7 @@ public class ComoJugar implements Screen {
     }
 
     private void inicializarFondo() {
-        fondo = new Imagen("Menu/fondoComoJugar.png");
+        fondo = new Imagen("Menu/controles.png");
         fondo.setSize(stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
         fondo.setPosition(0, 0);
     }
@@ -85,7 +86,7 @@ public class ComoJugar implements Screen {
         style.overFontColor = Color.GOLD;
         style.downFontColor = Color.RED;
 
-        TextButton volver = new TextButton("VOLVER", style);
+        TextButton volver = new TextButton("Volver", style);
         volver.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -105,7 +106,7 @@ public class ComoJugar implements Screen {
         panel.setBackground(crearFondoPanel());
         panel.pad(30, 60, 30, 60);
 
-        Label titulo = new Label("Cómo jugar", new Label.LabelStyle(fontTitulo, Color.WHITE));
+        Label titulo = new Label("Controles", new Label.LabelStyle(fontTitulo, Color.GOLD));
         panel.add(titulo).colspan(2).padBottom(30).row();
 
         Label.LabelStyle estiloAccion = new Label.LabelStyle(fontAccion, Color.GOLD);

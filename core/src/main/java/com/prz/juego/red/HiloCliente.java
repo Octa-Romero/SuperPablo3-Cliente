@@ -15,8 +15,6 @@ import com.prz.juego.utilidades.Sonido;
 import com.prz.juego.niveles.Nivel;
 
 import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,6 +39,7 @@ public class HiloCliente extends Thread {
     private volatile boolean servidorEncontrado = false;
     private int idCliente;
     private volatile boolean conexionEstablecida = false;
+    private volatile boolean conexionRechazada = false;
     private volatile boolean busquedaFallida = false;
     private long ultimoIntentoConexion;
     private volatile boolean seleccionarNivel = false;
@@ -89,6 +88,11 @@ public class HiloCliente extends Thread {
     private volatile boolean reliquiaRecogida = false;
     private volatile float reliquiaX;
     private volatile float reliquiaY;
+    private static final int CANTIDAD_RELIQUIAS = 5;
+    private final boolean[] RELIQUIAS_RECOGIDAS = new boolean[CANTIDAD_RELIQUIAS];
+    private volatile boolean nivel7Alcanzado = false;
+    private volatile float[] portalNuevo;
+    private volatile boolean esperandoPortal = false;
 
     public HiloCliente(int idCliente) {
         this.idCliente = idCliente;
@@ -122,7 +126,6 @@ public class HiloCliente extends Thread {
                             servidorPerdido = true;
                             servidorEncontrado = false;
                             conexionEstablecida = false;
-                            System.out.println("Se perdió la conexión con el servidor");
                         }
                     }
                 } catch (Exception ignorada) {
@@ -192,6 +195,9 @@ public class HiloCliente extends Thread {
             enviarMensaje("PING");
         } else if (msj.equals("Conexion establecida")) {
             conexionEstablecida = true;
+            conexionRechazada = false;
+        } else if (msj.equals("CONEXION_RECHAZADA")) {
+            conexionRechazada = true;
         } else if (msj.equals("Empieza juego")) {
             Global.empieza = true;
         } else if (msj.equals("PABLO") || msj.equals("WALTER")) {
@@ -260,6 +266,10 @@ public class HiloCliente extends Thread {
             procesarEliminacionFueguito(msj);
         } else if (msj.startsWith("ESTADO_TUMBA;")) {
             procesarEstadoTumba(msj);
+        } else if (msj.startsWith("PORTAL;")) {
+            procesarPortal(msj);
+        } else if (msj.startsWith("PROGRESO;")) {
+            procesarProgreso(msj);
         } else if(msj.startsWith("RELIQUIA")){
             procesarEstadoReliquia(msj);
         } else if (msj.startsWith("SONIDO;")) {
@@ -323,24 +333,14 @@ public class HiloCliente extends Thread {
             personajeRemoto = partes[2];
         }
         if (partes.length >= 4) {
-            nivelReconexion = rutaClientePara(partes[3]);
+            try {
+                nivelReconexion = Nivel.getRuta(Integer.parseInt(partes[3]));
+            } catch (IllegalArgumentException e) {
+                System.out.println("Nivel de reconexión inválido");
+            }
         }
         if (partes.length >= 2) {
             estadoReconexion = partes[1];
-        }
-    }
-
-    private String rutaClientePara(String rutaServidor) {
-        Matcher coincidencia = Pattern.compile("(\\d+)\\.tmx$").matcher(rutaServidor);
-
-        if (!coincidencia.find()) {
-            return rutaServidor;
-        }
-
-        try {
-            return Nivel.getRuta(Integer.parseInt(coincidencia.group(1)));
-        } catch (IllegalArgumentException e) {
-            return rutaServidor;
         }
     }
 
@@ -446,12 +446,14 @@ public class HiloCliente extends Thread {
             float x = Float.parseFloat(partes[2]);
             float y = Float.parseFloat(partes[3]);
             int direccion = Integer.parseInt(partes[4]);
-            boolean spriteVisible = partes.length <= 7 || Boolean.parseBoolean(partes[7]);
+            boolean atacando = Boolean.parseBoolean(partes[5]);
+            double vida = Double.parseDouble(partes[6]);
+            boolean spriteVisible = Boolean.parseBoolean(partes[7]);
 
             Enemigo encontrado = buscarEnemigo(id);
 
             if (encontrado != null) {
-                encontrado.actualizarEstado(x, y, direccion, spriteVisible);
+                encontrado.actualizarEstado(x, y, direccion, atacando, spriteVisible, vida);
             }
         } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
             System.out.println("Estado del enemigo inválido");
@@ -479,8 +481,10 @@ public class HiloCliente extends Thread {
             float x = Float.parseFloat(partes[3]);
             float y = Float.parseFloat(partes[4]);
             float direccion = Float.parseFloat(partes[5]);
+            float ancho = partes.length > 7 ? Float.parseFloat(partes[6]) : 0f;
+            float alto = partes.length > 7 ? Float.parseFloat(partes[7]) : 0f;
 
-            proyectilesNuevo.add(new Proyectil(id, origen, x, y, direccion));
+            proyectilesNuevo.add(new Proyectil(id, origen, x, y, direccion, ancho, alto));
         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
             System.out.println("Parámetros de creación del proyectil inválidos");
         }
@@ -618,6 +622,9 @@ public class HiloCliente extends Thread {
             } else if (partes.length >= 2 && partes[1].equals("RECOGIDA")) {
                 reliquiaNueva = false;
                 reliquiaRecogida = true;
+            } else if (partes.length >= 4 && partes[1].equals("POS")) {
+                reliquiaX = Float.parseFloat(partes[2]);
+                reliquiaY = Float.parseFloat(partes[3]);
             }
         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
             System.out.println("Estado de reliquia inválido");
@@ -1169,6 +1176,60 @@ public class HiloCliente extends Thread {
         limpiarFueguitos();
     }
 
+    private synchronized void procesarPortal(String msj) {
+        String[] partes = msj.split(";");
+
+        try {
+            if (partes[1].equals("APARECER")) {
+                portalNuevo = new float[] {
+                    Float.parseFloat(partes[2]),
+                    Float.parseFloat(partes[3]),
+                    Float.parseFloat(partes[4]),
+                    Float.parseFloat(partes[5])
+                };
+            } else if (partes[1].equals("VOTO")) {
+                esperandoPortal = Boolean.parseBoolean(partes[2]);
+            }
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            System.out.println("Estado de portal inválido");
+        }
+    }
+
+    private void procesarProgreso(String msj) {
+        String[] partes = msj.split(";");
+
+        try {
+            synchronized (RELIQUIAS_RECOGIDAS) {
+                for (int i = 0; i < CANTIDAD_RELIQUIAS; i++) {
+                    RELIQUIAS_RECOGIDAS[i] = Boolean.parseBoolean(partes[i + 1]);
+                }
+            }
+            nivel7Alcanzado = Boolean.parseBoolean(partes[CANTIDAD_RELIQUIAS + 1]);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            System.out.println("Progreso recibido inválido");
+        }
+    }
+
+    public boolean[] getReliquiasRecogidas() {
+        synchronized (RELIQUIAS_RECOGIDAS) {
+            return RELIQUIAS_RECOGIDAS.clone();
+        }
+    }
+
+    public boolean isNivel7Alcanzado() {
+        return nivel7Alcanzado;
+    }
+
+    public synchronized float[] consumirPortalNuevo() {
+        float[] portal = portalNuevo;
+        portalNuevo = null;
+        return portal;
+    }
+
+    public boolean isEsperandoPortal() {
+        return esperandoPortal;
+    }
+
     public boolean getOtroJugadorVaAlHub() {
         return otroJugadorVaAlHub;
     }
@@ -1220,6 +1281,9 @@ public class HiloCliente extends Thread {
         reliquiaX = 0f;
         reliquiaY = 0f;
         limpiarFueguitos();
+        portalNuevo = null;
+        esperandoPortal = false;
+        mostrarCreditos = false;
     }
 
     public void resetearVolverHub() {
@@ -1280,5 +1344,9 @@ public class HiloCliente extends Thread {
         String estado = nivelReconexion;
         nivelReconexion = null;
         return estado;
+    }
+
+    public boolean isConexionRechazada() {
+        return conexionRechazada;
     }
 }

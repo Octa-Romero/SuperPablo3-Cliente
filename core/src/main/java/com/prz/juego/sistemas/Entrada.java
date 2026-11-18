@@ -10,12 +10,14 @@ public class Entrada extends InputAdapter {
     @Override
     public boolean keyDown(int keycode) {
 
-        if (keycode == Input.Keys.W || keycode == Input.Keys.UP || keycode == Input.Keys.Z) {
+        if (keycode == Input.Keys.W || keycode == Input.Keys.UP || keycode == Input.Keys.SPACE || keycode == Input.Keys.Z) {
             arriba = true;
         }
+
         if (keycode == Input.Keys.S || keycode == Input.Keys.DOWN) {
             abajo = true;
         }
+
         if (keycode == Input.Keys.D || keycode == Input.Keys.RIGHT) {
             derecha = true;
         }
@@ -24,7 +26,7 @@ public class Entrada extends InputAdapter {
             izquierda = true;
         }
 
-        if (keycode == Input.Keys.X || keycode == Input.Keys.J || keycode == Input.Keys.SPACE) {
+        if (keycode == Input.Keys.X || keycode == Input.Keys.J) {
             ataca = true;
         }
 

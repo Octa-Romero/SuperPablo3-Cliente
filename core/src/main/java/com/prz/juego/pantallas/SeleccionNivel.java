@@ -9,13 +9,16 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.prz.juego.niveles.Nivel;
 import com.prz.juego.principal.Navegable;
@@ -26,10 +29,14 @@ import com.prz.juego.utilidades.Config;
 import com.prz.juego.utilidades.FuenteJuego;
 import com.prz.juego.utilidades.Render;
 import com.prz.juego.utilidades.Sonido;
+import com.badlogic.gdx.Input;
 
 public class SeleccionNivel implements Screen {
 
     private static final int CANTIDAD_NIVELES = 7;
+    private static final int CANTIDAD_RELIQUIAS = 5;
+    private static final int NIVEL_CON_REQUISITOS = 6;
+    private static final int NIVEL_SECRETO = 7;
     private static final int PORTALES_GRILLA = CANTIDAD_NIVELES - 1;
     private static final int COLUMNAS = 3;
     private static final int COLUMNAS_TOTALES = COLUMNAS + 2;
@@ -43,6 +50,12 @@ public class SeleccionNivel implements Screen {
     private static final float PASO_ENTRE_PORTALES = 0.07f;
     private static final float DURACION_FADE = 0.25f;
 
+    private static final int TAMANO_FUENTE_ESTADO = 22;
+    private static final String TEXTO_COMPLETADO = "Completado";
+    private static final String TEXTO_BLOQUEADO = "Bloqueado";
+    private static final Color COLOR_BLOQUEADO = new Color(0.25f, 0.25f, 0.25f, 1f);
+    private static final Color COLOR_PENDIENTE = new Color(0.72f, 0.72f, 0.72f, 1f);
+
     private final Cliente cliente;
     private final Navegable NAV;
     private final PantallaJuego PANTALLA_HUB;
@@ -50,9 +63,12 @@ public class SeleccionNivel implements Screen {
     private Stage stage;
     private BitmapFont fontTitulo;
     private BitmapFont fontCancelar;
+    private BitmapFont fontEstado;
     private Imagen fondo;
 
     private final ImageButton[] portales = new ImageButton[CANTIDAD_NIVELES];
+    private final Stack[] contenedores = new Stack[CANTIDAD_NIVELES];
+    private final Label[] etiquetas = new Label[CANTIDAD_NIVELES];
 
     public SeleccionNivel(Navegable NAV, Cliente cliente, PantallaJuego PANTALLA_HUB) {
         this.NAV = NAV;
@@ -73,12 +89,32 @@ public class SeleccionNivel implements Screen {
     private void inicializarFuentes() {
         fontTitulo = FuenteJuego.generar(48);
         fontCancelar = FuenteJuego.generar(31);
+        fontEstado = FuenteJuego.generar(TAMANO_FUENTE_ESTADO);
     }
 
     private void inicializarFondo() {
         fondo = new Imagen("Menu/seleccionNivel.png");
         fondo.setSize(stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
         fondo.setPosition(0, 0);
+    }
+
+    private boolean todasLasReliquias(boolean[] reliquias) {
+        for (boolean recogida : reliquias) {
+            if (!recogida) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean estaDisponible(int numeroNivel) {
+        if (numeroNivel == NIVEL_CON_REQUISITOS) {
+            return todasLasReliquias(cliente.getReliquiasRecogidas());
+        }
+        if (numeroNivel == NIVEL_SECRETO) {
+            return cliente.isNivel7Alcanzado();
+        }
+        return true;
     }
 
     private ImageButton crearPortal(final int numeroNivel) {
@@ -91,6 +127,9 @@ public class SeleccionNivel implements Screen {
         portal.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                if (!estaDisponible(numeroNivel)) {
+                    return;
+                }
                 Sonido.CLICK.sonar();
                 cliente.enviarMensaje("VOTAR_NIVEL;" + numeroNivel);
             }
@@ -102,6 +141,24 @@ public class SeleccionNivel implements Screen {
             DURACION_FADE);
 
         return portal;
+    }
+
+    private Stack crearContenedor(int indice) {
+        ImageButton portal = crearPortal(indice + 1);
+
+        Label etiqueta = new Label("", new Label.LabelStyle(fontEstado, Color.WHITE));
+        etiqueta.setAlignment(Align.bottom);
+        etiqueta.setTouchable(Touchable.disabled);
+
+        Stack contenedor = new Stack();
+        contenedor.add(portal);
+        contenedor.add(etiqueta);
+
+        portales[indice] = portal;
+        etiquetas[indice] = etiqueta;
+        contenedores[indice] = contenedor;
+
+        return contenedor;
     }
 
     private void animarAparicion(Actor actor, float retraso, float duracion) {
@@ -140,14 +197,12 @@ public class SeleccionNivel implements Screen {
                 principal.add().width(ANCHO_LATERAL);
             }
 
-            portales[i] = crearPortal(i + 1);
-            principal.add(portales[i]).size(TAMANO_PORTAL).pad(PADDING_PORTAL);
+            principal.add(crearContenedor(i)).size(TAMANO_PORTAL).pad(PADDING_PORTAL);
 
             if ((i + 1) % COLUMNAS == 0) {
                 if (i + 1 == PORTALES_GRILLA) {
-                    portales[CANTIDAD_NIVELES - 1] = crearPortal(CANTIDAD_NIVELES);
                     principal
-                        .add(portales[CANTIDAD_NIVELES - 1])
+                        .add(crearContenedor(CANTIDAD_NIVELES - 1))
                         .size(TAMANO_PORTAL_EXTRA)
                         .pad(PADDING_PORTAL);
                 }
@@ -173,29 +228,62 @@ public class SeleccionNivel implements Screen {
         NAV.cambiarPantalla(PANTALLA_HUB);
     }
 
-    private void actualizarColoresPortales() {
+    private Color colorPortal(
+        int nivel, boolean completado, boolean bloqueado, int miVoto, int votoRemoto) {
+        if (bloqueado) {
+            return COLOR_BLOQUEADO;
+        }
+        if (nivel == miVoto && nivel == votoRemoto) {
+            return Color.GREEN;
+        }
+        if (nivel == miVoto) {
+            return Color.CYAN;
+        }
+        if (nivel == votoRemoto) {
+            return Color.GOLD;
+        }
+        return completado ? Color.WHITE : COLOR_PENDIENTE;
+    }
+
+    private void actualizarPortales() {
+        boolean[] reliquias = cliente.getReliquiasRecogidas();
+        boolean nivel7Alcanzado = cliente.isNivel7Alcanzado();
+        boolean todasRecogidas = todasLasReliquias(reliquias);
         int miVoto = cliente.getVotoLocal();
         int votoRemoto = cliente.getVotoRemoto();
 
-        for (int i = 0; i < portales.length; i++) {
+        for (int i = 0; i < CANTIDAD_NIVELES; i++) {
             int nivel = i + 1;
-            Color color = Color.WHITE;
+            boolean visible = nivel != NIVEL_SECRETO || nivel7Alcanzado;
+            boolean bloqueado = nivel == NIVEL_CON_REQUISITOS && !todasRecogidas;
+            boolean completado = nivel <= CANTIDAD_RELIQUIAS
+                ? reliquias[i]
+                : nivel == NIVEL_CON_REQUISITOS && nivel7Alcanzado;
 
-            if (nivel == miVoto && nivel == votoRemoto) {
-                color = Color.GREEN;
-            } else if (nivel == miVoto) {
-                color = Color.CYAN;
-            } else if (nivel == votoRemoto) {
-                color = Color.GOLD;
+            contenedores[i].setVisible(visible);
+            portales[i].setTouchable(visible && !bloqueado ? Touchable.enabled : Touchable.disabled);
+            portales[i].getImage().setColor(colorPortal(nivel, completado, bloqueado, miVoto, votoRemoto));
+
+            if (completado) {
+                etiquetas[i].setText(TEXTO_COMPLETADO);
+                etiquetas[i].setColor(Color.GREEN);
+            } else if (bloqueado) {
+                etiquetas[i].setText(TEXTO_BLOQUEADO);
+                etiquetas[i].setColor(Color.LIGHT_GRAY);
+            } else {
+                etiquetas[i].setText("");
             }
-
-            portales[i].getImage().setColor(color);
         }
     }
 
     @Override
     public void render(float delta) {
         Render.limpiarPantalla();
+
+        // DEBUG
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F2)) {
+            cliente.enviarMensaje("DEBUG_DESBLOQUEAR");
+        }
 
         if (cliente.consumirSeleccionCancelada()) {
             volverAlHub();
@@ -213,7 +301,7 @@ public class SeleccionNivel implements Screen {
         Render.end();
 
         stage.act(delta);
-        actualizarColoresPortales();
+        actualizarPortales();
         stage.draw();
     }
 
@@ -241,6 +329,7 @@ public class SeleccionNivel implements Screen {
         if (fontTitulo != null) {
             fontTitulo.dispose();
             fontCancelar.dispose();
+            fontEstado.dispose();
         }
         if (fondo != null) {
             fondo.dispose();

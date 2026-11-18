@@ -1,6 +1,9 @@
 package com.prz.juego.entidades;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Polygon;
 import com.prz.juego.recursos.GestorRecursos;
 import com.prz.juego.utilidades.Render;
 
@@ -17,6 +20,8 @@ public class Proyectil {
     private final int ID;
     private final String ORIGEN;
     private final float DIRECCION;
+    private final float ANCHO_PERSONALIZADO;
+    private final float ALTO_PERSONALIZADO;
 
     private volatile float x;
     private volatile float y;
@@ -25,11 +30,18 @@ public class Proyectil {
     private float alto;
 
     public Proyectil(int id, String origen, float x, float y, float direccion) {
+        this(id, origen, x, y, direccion, 0f, 0f);
+    }
+
+    public Proyectil(
+        int id, String origen, float x, float y, float direccion, float ancho, float alto) {
         this.ID = id;
         this.ORIGEN = origen;
         this.x = x;
         this.y = y;
         this.DIRECCION = direccion;
+        this.ANCHO_PERSONALIZADO = ancho;
+        this.ALTO_PERSONALIZADO = alto;
     }
 
     private boolean esBolaFuego() {
@@ -38,8 +50,14 @@ public class Proyectil {
 
     private void configurar() {
         boolean bolaFuego = esBolaFuego();
-        ancho = bolaFuego ? RADIO_BOLA_FUEGO * 2 : ANCHO_FLECHA;
-        alto = bolaFuego ? RADIO_BOLA_FUEGO * 2 : ALTO_FLECHA;
+
+        if (bolaFuego) {
+            ancho = RADIO_BOLA_FUEGO * 2;
+            alto = RADIO_BOLA_FUEGO * 2;
+        } else {
+            ancho = ANCHO_PERSONALIZADO > 0f ? ANCHO_PERSONALIZADO : ANCHO_FLECHA;
+            alto = ALTO_PERSONALIZADO > 0f ? ALTO_PERSONALIZADO : ALTO_FLECHA;
+        }
 
         sprite = new Sprite(GestorRecursos.obtenerTextura(bolaFuego ? TEXTURA_BOLA_FUEGO : TEXTURA_FLECHA));
         sprite.setSize(ancho, alto);
@@ -88,5 +106,24 @@ public class Proyectil {
     public void actualizarEstado(float x, float y) {
         this.x = x;
         this.y = y;
+    }
+
+    public void dibujarHitbox(ShapeRenderer shapeRenderer) {
+        shapeRenderer.setColor(Color.ORANGE);
+
+        if (esBolaFuego()) {
+            shapeRenderer.circle(x, y, RADIO_BOLA_FUEGO);
+            return;
+        }
+
+        float w = ANCHO_PERSONALIZADO > 0f ? ANCHO_PERSONALIZADO : ANCHO_FLECHA;
+        float h = ALTO_PERSONALIZADO > 0f ? ALTO_PERSONALIZADO : ALTO_FLECHA;
+
+        Polygon poligono = new Polygon(new float[] {0, 0, w, 0, w, h, 0, h});
+        poligono.setOrigin(w / 2f, h / 2f);
+        poligono.setRotation(DIRECCION);
+        poligono.setPosition(x - w / 2f, y - h / 2f);
+
+        shapeRenderer.polygon(poligono.getTransformedVertices());
     }
 }

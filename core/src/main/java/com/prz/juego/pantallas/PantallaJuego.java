@@ -12,6 +12,7 @@ import com.prz.juego.red.Cliente;
 import com.prz.juego.red.JugadorEstado;
 import com.prz.juego.sistemas.Hud;
 import com.prz.juego.sistemas.Entrada;
+import com.prz.juego.utilidades.Musica;
 import com.prz.juego.utilidades.Render;
 import com.prz.juego.utilidades.Sonido;
 
@@ -44,6 +45,7 @@ public class PantallaJuego implements Screen {
     private boolean pausado = false;
     private boolean cambiarASeleccionNivel = false;
     private boolean envioEntradaActivo = true;
+    private boolean mostrarHitboxes = false;
     private float tiempoMensaje = 0f;
 
     public PantallaJuego(Navegable NAV, Cliente cliente, String rutaNivel) {
@@ -63,6 +65,7 @@ public class PantallaJuego implements Screen {
         if (rutaNivel == null) {
             hub = new Hub();
             hub.cargar(RUTA_HUB, ESTADO_RED_LOCAL, ESTADO_RED_REMOTO);
+            Musica.HUB.sonar();
         } else {
             hub = null;
             nivel.cargar(ESTADO_RED_LOCAL, ESTADO_RED_REMOTO);
@@ -96,6 +99,10 @@ public class PantallaJuego implements Screen {
         Render.limpiarPantalla();
         verificarConexion();
 
+        if (ENTRADA.aprietaF1()) {
+            mostrarHitboxes = !mostrarHitboxes;
+        }
+
         if (CLIENTE.isExpulsado()) {
             if (CARTEL_DESCONEXION.estaActivo()) {
                 CARTEL_DESCONEXION.desactivar();
@@ -105,6 +112,7 @@ public class PantallaJuego implements Screen {
         }
 
         if (CARTEL_DESCONEXION.estaActivo()) {
+            ENTRADA.limpiar();
             dibujarEscena();
             if (hub == null) {
                 HUD.dibujar();
@@ -113,6 +121,19 @@ public class PantallaJuego implements Screen {
             CARTEL_DESCONEXION.update(delta);
             CARTEL_DESCONEXION.render();
             return;
+        }
+
+        if (hub == null) {
+            if (CLIENTE.ambosJugadoresVuelvenHub()) {
+                cargarHub();
+                return;
+            }
+
+            int siguienteNivel = CLIENTE.getNivelIniciado();
+            if (siguienteNivel != 0) {
+                NAV.iniciarJuego(Nivel.getRuta(siguienteNivel));
+                return;
+            }
         }
 
         manejarPausa();
@@ -172,11 +193,13 @@ public class PantallaJuego implements Screen {
 
         if (CLIENTE.isServidorPerdido() && !CARTEL_DESCONEXION.estaActivo()) {
             CARTEL_DESCONEXION.mostrarServidorPerdido();
+            limpiarPorDesconexion();
         }
 
         if (CLIENTE.isJugadorRemotoDesconectado() && !CARTEL_DESCONEXION.estaActivo()) {
             CARTEL_DESCONEXION.mostrarJugadorDesconectado();
             CLIENTE.resetearJugadorRemotoDesconectado();
+            limpiarPorDesconexion();
         }
 
         if (CLIENTE.isJugadorRemotoReconecto() && CARTEL_DESCONEXION.estaActivo()) {
@@ -217,6 +240,7 @@ public class PantallaJuego implements Screen {
             enviarEntradaNula();
             ESTADO_RED_LOCAL.forzarIdle();
             ESTADO_RED_REMOTO.forzarIdle();
+            hub.cerrarDialogo();
             cambiarASeleccionNivel = true;
         }
     }
@@ -284,6 +308,10 @@ public class PantallaJuego implements Screen {
             Render.begin(nivel.getCamara());
             nivel.render();
             Render.end();
+
+            if (mostrarHitboxes) {
+                nivel.dibujarHitboxes();
+            }
         }
     }
 
@@ -296,7 +324,8 @@ public class PantallaJuego implements Screen {
         enviarEstadoEntrada(2, ENTRADA.mueveArriba() ? "INPUT;ARRIBA" : "INPUT;NOARRIBA", refrescar);
         enviarEstadoEntrada(3, ENTRADA.mueveAbajo() ? "INPUT;ABAJO" : "INPUT;NOABAJO", refrescar);
 
-        if (ENTRADA.ataca()) {
+        boolean ataque = ENTRADA.ataca();
+        if (ataque && hub == null) {
             CLIENTE.enviarMensaje("INPUT;ATACA");
         }
 
@@ -388,14 +417,25 @@ public class PantallaJuego implements Screen {
 
         hub = new Hub();
         hub.cargar(RUTA_HUB, ESTADO_RED_LOCAL, ESTADO_RED_REMOTO);
+        hub.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        Musica.HUB.sonar();
 
         menuPausa = new MenuPausa(NAV, this, CLIENTE);
+        menuPausa.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         HUD.setJefe(null);
         ENTRADA.limpiar();
         CLIENTE.resetearVolverHub();
 
         configurarInput();
         envioEntradaActivo = true;
+    }
+
+    private void limpiarPorDesconexion() {
+        if (hub != null) {
+            hub.cerrarDialogo();
+        }
+        ENTRADA.limpiar();
+        enviarEntradaNula();
     }
 
     @Override

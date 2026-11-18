@@ -13,6 +13,7 @@ import com.prz.juego.principal.Navegable;
 import com.prz.juego.recursos.Imagen;
 import com.prz.juego.utilidades.Config;
 import com.prz.juego.utilidades.FuenteJuego;
+import com.prz.juego.utilidades.Musica;
 import com.prz.juego.utilidades.Render;
 
 public class PantallaFinal implements Screen {
@@ -73,6 +74,7 @@ public class PantallaFinal implements Screen {
 
     public PantallaFinal(Navegable NAV) {
         this.NAV = NAV;
+        Musica.CREDITOS.sonar();
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.prz.juego.principal;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.prz.juego.pantallas.PantallaJuego;
@@ -15,6 +16,15 @@ public class Principal extends Game implements Navegable {
 
     private Cliente cliente;
     private PantallaJuego pantallaJuego;
+    private static final float DELTA_MAXIMO = 1f / 20f;
+
+    @Override
+    public void render() {
+        Screen pantalla = getScreen();
+        if (pantalla != null) {
+            pantalla.render(Math.min(Gdx.graphics.getDeltaTime(), DELTA_MAXIMO));
+        }
+    }
 
     @Override
     public void create() {

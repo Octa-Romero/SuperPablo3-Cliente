@@ -38,8 +38,9 @@ public class PantallaMenu implements Screen {
     private static final float ANCHO_TEXTO_ESPERA = 560;
     private static final float ALPHA_FONDO_ESPERA = 0.45f;
     private static final float ALPHA_PANEL_ESPERA = 0.65f;
-    private static final String TEXTO_BUSCANDO = "Buscando servidor...";
-    private static final String TEXTO_ESPERANDO = "Esperando a otro jugador...";
+    private static final String TEXTO_BUSCANDO_SERVER = "Buscando servidor...";
+    private static final String TEXTO_BUSCANDO_JUGADOR = "Buscando otro jugador...";
+    private static final String TEXTO_CONEXION_RECHAZADA = "Ya hay un jugador conectado con esta IP";
 
     private final Navegable NAV;
     private final Cliente cliente;
@@ -61,6 +62,7 @@ public class PantallaMenu implements Screen {
     public PantallaMenu(Navegable NAV, Cliente cliente) {
         this.NAV = NAV;
         this.cliente = cliente;
+        Musica.MENU.sonar();
     }
 
     @Override
@@ -70,9 +72,6 @@ public class PantallaMenu implements Screen {
         inicializarFuentes();
         crearTexturaBlanca();
         crearInterfaz();
-
-        Musica.MENU.sonar();
-
         Gdx.input.setInputProcessor(stage);
     }
 
@@ -133,7 +132,7 @@ public class PantallaMenu implements Screen {
 
         botones.add(crearBoton("Opciones", () ->
             NAV.cambiarPantalla(new PantallaOpciones(NAV, PantallaMenu.this, false))));
-        botones.add(crearBoton("Cómo jugar", () -> NAV.cambiarPantalla(new ComoJugar(NAV))));
+        botones.add(crearBoton("Controles", () -> NAV.cambiarPantalla(new Controles(NAV))));
         botones.add(crearBoton("Salir", () -> Gdx.app.exit()));
 
         Table contenedor = new Table();
@@ -198,7 +197,7 @@ public class PantallaMenu implements Screen {
         if (buscandoServidor) {
             long transcurrido = System.currentTimeMillis() - tiempoInicioBusqueda;
             if (transcurrido < TIEMPO_MOSTRAR_BUSCANDO) {
-                setTextoEspera(TEXTO_BUSCANDO);
+                setTextoEspera(TEXTO_BUSCANDO_SERVER);
                 return;
             }
             cliente.conectar();
@@ -215,10 +214,12 @@ public class PantallaMenu implements Screen {
         if (cliente.isConexionEstablecida()) {
             finalizarEspera();
             NAV.cambiarPantalla(new SeleccionPersonaje(NAV, cliente, PantallaMenu.this));
+        } else if (cliente.isConexionRechazada()) {
+            setTextoEspera(TEXTO_CONEXION_RECHAZADA);
         } else if (cliente.encontroServidor()) {
-            setTextoEspera(TEXTO_ESPERANDO);
+            setTextoEspera(TEXTO_BUSCANDO_JUGADOR);
         } else {
-            setTextoEspera(TEXTO_BUSCANDO);
+            setTextoEspera(TEXTO_BUSCANDO_SERVER);
         }
     }
 
@@ -262,7 +263,7 @@ public class PantallaMenu implements Screen {
         panel.setBackground(base.tint(new Color(0, 0, 0, ALPHA_PANEL_ESPERA)));
         panel.pad(40, 100, 40, 100);
 
-        lblEspera = new Label(TEXTO_BUSCANDO, new Label.LabelStyle(fontSubtitulo, Color.WHITE));
+        lblEspera = new Label(TEXTO_BUSCANDO_SERVER, new Label.LabelStyle(fontSubtitulo, Color.WHITE));
         lblEspera.setAlignment(Align.center);
 
         TextButton btnCancelar = crearBoton("Cancelar", this::cancelarBusqueda);
