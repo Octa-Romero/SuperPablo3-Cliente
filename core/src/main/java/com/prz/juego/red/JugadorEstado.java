@@ -11,6 +11,7 @@ import com.prz.juego.utilidades.Render;
 public class JugadorEstado {
 
     private final Rectangle BOUNDS = new Rectangle();
+    private final int[] SIN_PREPARAR = new int[0];
 
     private Personajes personaje;
     private Sprite sprite;
@@ -92,6 +93,7 @@ public class JugadorEstado {
                 personaje.getSalto(),
                 personaje.getCaida(),
                 personaje.getAtaque(),
+                SIN_PREPARAR,
                 personaje.getDuracionFrame());
             texturaHud = GestorRecursos.obtenerTextura(personaje.getRutaHud());
 

@@ -1,43 +1,58 @@
 package com.prz.juego.entidades.enemigos;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Rectangle;
 import com.prz.juego.recursos.GestorRecursos;
+import com.prz.juego.sistemas.Animacion;
 import com.prz.juego.utilidades.Render;
 
 public class Enemigo {
 
-    private static final float ANCHO_ATAQUE_MELEE = 100f;
-    private static final float ALTO_ATAQUE_MELEE = 10f;
-
     private final int ID;
-    private final TipoEnemigo TIPO;
+    private final Enemigos TIPO;
+    private final float ANCHO;
+    private final float ALTO;
 
     private float x;
     private float y;
     private int direccion = 1;
-    private boolean atacando = false;
+    private int tipoAnimacion = 0;
+    private float tiempoAnimacion = 0f;
     private boolean spriteVisible = true;
     private double vida = 1;
+    private Rectangle ataque;
     private Sprite sprite;
-    private static final float ESCALA_MINIJEFE = 1.5f;
+    private Animacion animacion;
 
-    public Enemigo(int id, TipoEnemigo tipo, float x, float y) {
+    public Enemigo(int id, Enemigos tipo, float x, float y, float ancho, float alto) {
         ID = id;
         TIPO = tipo;
+        ANCHO = ancho;
+        ALTO = alto;
         this.x = x;
         this.y = y;
     }
 
     public void actualizarEstado(
-        float x, float y, int direccion, boolean atacando, boolean spriteVisible, double vida) {
+        float x,
+        float y,
+        int direccion,
+        double vida,
+        boolean spriteVisible,
+        int tipoAnimacion,
+        float tiempoAnimacion,
+        Rectangle ataque) {
         this.x = x;
         this.y = y;
         this.direccion = direccion;
-        this.atacando = atacando;
-        this.spriteVisible = spriteVisible;
         this.vida = vida;
+        this.spriteVisible = spriteVisible;
+        this.tipoAnimacion = tipoAnimacion;
+        this.tiempoAnimacion = tiempoAnimacion;
+        this.ataque = ataque;
     }
 
     public boolean estaMuerto() {
@@ -50,13 +65,36 @@ public class Enemigo {
         }
 
         if (sprite == null) {
-            sprite = new Sprite(GestorRecursos.obtenerTextura(TIPO.getRutaTextura()));
-            sprite.setSize(TIPO.getAncho(), TIPO.getAlto());
+            crearSprite();
         }
 
+        tiempoAnimacion += Gdx.graphics.getDeltaTime();
+        animacion.actualizarConEstado(sprite, tipoAnimacion, tiempoAnimacion);
+
+        float offsetX = direccion > 0 ? TIPO.getOffsetDerecha() : TIPO.getOffsetIzquierda();
         sprite.setFlip(direccion < 0, false);
-        sprite.setPosition(x, y);
+        sprite.setPosition(x + offsetX, y + TIPO.getOffsetY());
         sprite.draw(Render.batch);
+    }
+
+    private void crearSprite() {
+        sprite = new Sprite(GestorRecursos.obtenerTextura(TIPO.getRutaTextura()));
+        sprite.setSize(TIPO.getAnchoSprite(), TIPO.getAltoSprite());
+
+        animacion = new Animacion(GestorRecursos.obtenerTextura(TIPO.getRutaTextura()));
+        if (TIPO.tieneSpritesheet()) {
+            animacion.configurar(
+                GestorRecursos.obtenerTextura(TIPO.getRutaSheet()),
+                TIPO.getAnchoFrame(),
+                TIPO.getAltoFrame(),
+                TIPO.getReposo(),
+                TIPO.getCaminar(),
+                TIPO.getSalto(),
+                TIPO.getCaida(),
+                TIPO.getAtaque(),
+                TIPO.getPreparar(),
+                TIPO.getDuracionFrame());
+        }
     }
 
     public void dibujarHitbox(ShapeRenderer shapeRenderer) {
@@ -65,18 +103,11 @@ public class Enemigo {
         }
 
         shapeRenderer.setColor(Color.YELLOW);
-        shapeRenderer.rect(x, y, TIPO.getAncho(), TIPO.getAlto());
+        shapeRenderer.rect(x, y, ANCHO, ALTO);
 
-        if (atacando && (TIPO == TipoEnemigo.BICHO_MELEE || TIPO == TipoEnemigo.MINIJEFE_MELEE)) {
-            float escala = TIPO == TipoEnemigo.MINIJEFE_MELEE ? ESCALA_MINIJEFE : 1f;
-            float anchoAtaque = ANCHO_ATAQUE_MELEE * escala;
-            float altoAtaque = ALTO_ATAQUE_MELEE * escala;
-            float centro = x + TIPO.getAncho() / 2f;
-            float ataqueX = direccion > 0 ? centro : centro - anchoAtaque;
-            float ataqueY = y + TIPO.getAlto() / 2f - altoAtaque / 2f;
-
+        if (ataque != null) {
             shapeRenderer.setColor(Color.RED);
-            shapeRenderer.rect(ataqueX, ataqueY, anchoAtaque, altoAtaque);
+            shapeRenderer.rect(ataque.x, ataque.y, ataque.width, ataque.height);
         }
     }
 

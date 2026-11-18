@@ -11,12 +11,14 @@ public class Animacion {
     private static final int TIPO_SALTO = 2;
     private static final int TIPO_ATAQUE = 3;
     private static final int TIPO_CAIDA = 4;
+    private static final int TIPO_PREPARAR = 5;
 
     private Animation<TextureRegion> reposo;
     private Animation<TextureRegion> caminar;
     private Animation<TextureRegion> salto;
     private Animation<TextureRegion> caida;
     private Animation<TextureRegion> ataque;
+    private Animation<TextureRegion> preparar;
     private Animation<TextureRegion> actual;
     private float tiempo;
 
@@ -37,18 +39,27 @@ public class Animacion {
         int[] indicesSalto,
         int[] indicesCaida,
         int[] indicesAtaque,
+        int[] indicesPreparar,
         float duracionFrame) {
         validarConfiguracion(spritesheet, anchoFrame, altoFrame, indicesReposo, duracionFrame);
 
         TextureRegion[][] grilla = TextureRegion.split(spritesheet, anchoFrame, altoFrame);
         TextureRegion[] frames = aplanar(grilla);
-        validarIndices(frames.length, indicesReposo, indicesCaminar, indicesSalto, indicesCaida, indicesAtaque);
+        validarIndices(
+            frames.length,
+            indicesReposo,
+            indicesCaminar,
+            indicesSalto,
+            indicesCaida,
+            indicesAtaque,
+            indicesPreparar);
 
         reposo = crearAnimacion(frames, indicesReposo, duracionFrame, Animation.PlayMode.LOOP);
         caminar = crearAnimacionSiConfigurada(frames, indicesCaminar, duracionFrame, Animation.PlayMode.LOOP);
         salto = crearAnimacionSiConfigurada(frames, indicesSalto, duracionFrame, Animation.PlayMode.LOOP);
         caida = crearAnimacionSiConfigurada(frames, indicesCaida, duracionFrame, Animation.PlayMode.LOOP);
         ataque = crearAnimacionSiConfigurada(frames, indicesAtaque, duracionFrame, Animation.PlayMode.NORMAL);
+        preparar = crearAnimacionSiConfigurada(frames, indicesPreparar, duracionFrame, Animation.PlayMode.NORMAL);
 
         actual = null;
         tiempo = 0f;
@@ -92,6 +103,9 @@ public class Animacion {
                 break;
             case TIPO_CAIDA:
                 siguiente = caida;
+                break;
+            case TIPO_PREPARAR:
+                siguiente = preparar != null ? preparar : reposo;
                 break;
             case TIPO_CAMINAR:
                 siguiente = caminar != null ? caminar : reposo;

@@ -1,10 +1,11 @@
 package com.prz.juego.red;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.Rectangle;
 import com.prz.juego.entidades.Proyectil;
 import com.prz.juego.entidades.Tumba;
 import com.prz.juego.entidades.enemigos.Enemigo;
-import com.prz.juego.entidades.enemigos.TipoEnemigo;
+import com.prz.juego.entidades.enemigos.Enemigos;
 import com.prz.juego.entidades.jugadores.Personajes;
 import com.prz.juego.entidades.retumbar.*;
 import com.prz.juego.utilidades.Config;
@@ -428,11 +429,13 @@ public class HiloCliente extends Thread {
 
         try {
             int id = Integer.parseInt(partes[1]);
-            TipoEnemigo tipo = TipoEnemigo.valueOf(partes[2]);
+            Enemigos tipo = Enemigos.valueOf(partes[2]);
             float x = Float.parseFloat(partes[3]);
             float y = Float.parseFloat(partes[4]);
+            float ancho = Float.parseFloat(partes[6]);
+            float alto = Float.parseFloat(partes[7]);
 
-            enemigosRecibidos.add(new Enemigo(id, tipo, x, y));
+            enemigosRecibidos.add(new Enemigo(id, tipo, x, y, ancho, alto));
         } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
             System.out.println("Parámetros de creación del enemigo inválidos");
         }
@@ -446,14 +449,26 @@ public class HiloCliente extends Thread {
             float x = Float.parseFloat(partes[2]);
             float y = Float.parseFloat(partes[3]);
             int direccion = Integer.parseInt(partes[4]);
-            boolean atacando = Boolean.parseBoolean(partes[5]);
             double vida = Double.parseDouble(partes[6]);
             boolean spriteVisible = Boolean.parseBoolean(partes[7]);
+            int tipoAnimacion = Integer.parseInt(partes[8]);
+            float tiempoAnimacion = Float.parseFloat(partes[9]);
+            float anchoAtaque = Float.parseFloat(partes[12]);
+
+            Rectangle ataque = null;
+            if (anchoAtaque > 0f) {
+                ataque = new Rectangle(
+                    Float.parseFloat(partes[10]),
+                    Float.parseFloat(partes[11]),
+                    anchoAtaque,
+                    Float.parseFloat(partes[13]));
+            }
 
             Enemigo encontrado = buscarEnemigo(id);
 
             if (encontrado != null) {
-                encontrado.actualizarEstado(x, y, direccion, atacando, spriteVisible, vida);
+                encontrado.actualizarEstado(
+                    x, y, direccion, vida, spriteVisible, tipoAnimacion, tiempoAnimacion, ataque);
             }
         } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
             System.out.println("Estado del enemigo inválido");

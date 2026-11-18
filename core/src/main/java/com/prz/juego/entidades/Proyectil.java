@@ -11,7 +11,7 @@ public class Proyectil {
 
     private static final String ORIGEN_WALTER = "WALTER";
     private static final String TEXTURA_BOLA_FUEGO = "Personajes/Walter/bola_fuego.png";
-    private static final String TEXTURA_FLECHA = "Enemigos/BichoRango/flecha.png";
+    private static final String TEXTURA_FLECHA = "Enemigos/flecha.png";
     private static final float RADIO_BOLA_FUEGO = 12f;
     private static final float VELOCIDAD_ROTACION = -720f;
     private static final float ANCHO_FLECHA = 50f;
