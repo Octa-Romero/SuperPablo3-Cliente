@@ -48,12 +48,14 @@ public class Entrada extends InputAdapter {
     @Override
     public boolean keyUp(int keycode) {
 
-        if (keycode == Input.Keys.W || keycode == Input.Keys.UP || keycode == Input.Keys.Z) {
+        if (keycode == Input.Keys.W || keycode == Input.Keys.UP || keycode == Input.Keys.SPACE || keycode == Input.Keys.Z) {
             arriba = false;
         }
+
         if (keycode == Input.Keys.S || keycode == Input.Keys.DOWN) {
             abajo = false;
         }
+
         if (keycode == Input.Keys.D || keycode == Input.Keys.RIGHT) {
             derecha = false;
         }
